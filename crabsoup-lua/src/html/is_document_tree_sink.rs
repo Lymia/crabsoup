@@ -1,6 +1,5 @@
 use html5ever::{
     interface::{ElementFlags, NodeOrText, QuirksMode, TreeSink},
-    namespace_url, ns,
     tendril::StrTendril,
     Attribute, ExpandedName, LocalName, Namespace, QualName,
 };

@@ -1,5 +1,5 @@
 use anyhow::Result;
-use crabsoup_lua::html::parse_into;
+use crabsoup_lua::{html::parse_into, lua::CrabsoupLuaContext};
 use html5ever::{tendril::TendrilSink, ParseOpts};
 use scraper::Html;
 
@@ -42,6 +42,8 @@ fn main() -> Result<()> {
     println!("{:?}", crabsoup_lua::html::to_html(&document, result.root_node)?);
     println!("{:?}", crabsoup_lua::html::to_html(&document, result_fragment.root_node)?);
     println!("{:?}", crabsoup_lua::html::to_inner_text(&document, result.root_node)?);
+
+    CrabsoupLuaContext::new()?;
 
     Ok(())
 }

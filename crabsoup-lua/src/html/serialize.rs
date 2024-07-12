@@ -60,7 +60,7 @@ struct InnerTextSerializer {
     trailing_whitespace: bool,
 }
 impl Serializer for InnerTextSerializer {
-    fn start_elem<'a, AttrIter>(&mut self, name: QualName, attrs: AttrIter) -> std::io::Result<()>
+    fn start_elem<'a, AttrIter>(&mut self, name: QualName, _: AttrIter) -> std::io::Result<()>
     where AttrIter: Iterator<Item = AttrRef<'a>> {
         if self.skip_levels == 0 {
             if name.local.eq_str_ignore_ascii_case("head")
@@ -75,7 +75,7 @@ impl Serializer for InnerTextSerializer {
         Ok(())
     }
 
-    fn end_elem(&mut self, name: QualName) -> std::io::Result<()> {
+    fn end_elem(&mut self, _: QualName) -> std::io::Result<()> {
         if self.skip_levels != 0 {
             self.skip_levels -= 1;
         }
@@ -108,15 +108,15 @@ impl Serializer for InnerTextSerializer {
         Ok(())
     }
 
-    fn write_comment(&mut self, text: &str) -> std::io::Result<()> {
+    fn write_comment(&mut self, _: &str) -> std::io::Result<()> {
         Ok(())
     }
 
-    fn write_doctype(&mut self, name: &str) -> std::io::Result<()> {
+    fn write_doctype(&mut self, _: &str) -> std::io::Result<()> {
         Ok(())
     }
 
-    fn write_processing_instruction(&mut self, target: &str, data: &str) -> std::io::Result<()> {
+    fn write_processing_instruction(&mut self, _: &str, _: &str) -> std::io::Result<()> {
         Ok(())
     }
 }

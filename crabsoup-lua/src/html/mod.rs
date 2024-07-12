@@ -4,8 +4,8 @@ use crate::html::{
 use anyhow::Result;
 use ego_tree::NodeId;
 use html5ever::{
-    local_name, namespace_url, ns, serialize::TraversalScope, tendril::TendrilSink, ParseOpts,
-    QualName,
+    interface::TreeSink, local_name, namespace_url, ns, serialize::TraversalScope,
+    tendril::TendrilSink, tree_builder::NodeOrText, ParseOpts, QualName,
 };
 use scraper::Html;
 
@@ -57,4 +57,21 @@ pub fn to_inner_html(html: &Html, root: NodeId) -> Result<String> {
 
 pub fn to_inner_text(html: &Html, root: NodeId) -> Result<String> {
     serialize::to_inner_text(html, root)
+}
+
+pub fn clone_node(html: &mut Html, root: NodeId) -> Result<NodeId> {
+    let tree_data = html.tree.get(root).unwrap().value().clone();
+    let node = html.tree.orphan(tree_data).id();
+    let nodes: Vec<_> = html
+        .tree
+        .get(root)
+        .unwrap()
+        .children()
+        .map(|x| x.id())
+        .collect();
+    for child in nodes {
+        let new = clone_node(html, child)?;
+        html.append(&node, NodeOrText::AppendNode(new));
+    }
+    Ok(node)
 }

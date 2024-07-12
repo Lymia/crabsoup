@@ -1,5 +1,3 @@
-local builtin_funcs = ...
-
 -- Stored stdlib functions
 local error = error
 local string_gsub = string.gsub
@@ -9,8 +7,6 @@ local type = type
 local typeof = typeof
 local utf8_len = utf8.len
 local utf8_offset = utf8.offset
-
--- TODO: HTML module
 
 -- Function definitions for `String` module
 local String = {}

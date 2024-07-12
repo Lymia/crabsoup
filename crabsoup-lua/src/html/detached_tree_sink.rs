@@ -13,6 +13,7 @@ pub struct DetachedTreeSink<'a> {
     new_root: NodeId,
     errors: Vec<Cow<'static, str>>,
     quirks_mode: QuirksMode,
+    is_fragment: bool,
 }
 impl<'a> DetachedTreeSink<'a> {
     pub fn new(parent: &'a mut Html, is_fragment: bool) -> Self {
@@ -20,7 +21,13 @@ impl<'a> DetachedTreeSink<'a> {
             .tree
             .orphan(if is_fragment { Node::Fragment } else { Node::Document })
             .id();
-        DetachedTreeSink { parent, new_root, errors: vec![], quirks_mode: QuirksMode::NoQuirks }
+        DetachedTreeSink {
+            parent,
+            new_root,
+            errors: vec![],
+            quirks_mode: QuirksMode::NoQuirks,
+            is_fragment,
+        }
     }
 }
 
@@ -29,6 +36,7 @@ pub struct TreeSinkResult {
     pub root_node: NodeId,
     pub errors: Vec<Cow<'static, str>>,
     pub quirks_mode: QuirksMode,
+    pub is_fragment: bool,
 }
 
 impl<'a> TreeSink for DetachedTreeSink<'a> {
@@ -41,6 +49,7 @@ impl<'a> TreeSink for DetachedTreeSink<'a> {
             root_node: self.new_root,
             errors: self.errors,
             quirks_mode: self.quirks_mode,
+            is_fragment: self.is_fragment,
         }
     }
 
