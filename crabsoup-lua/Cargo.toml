@@ -13,3 +13,11 @@ license = "Apache-2.0"
 
 [dependencies]
 anyhow = { workspace = true }
+mlua = { workspace = true }
+tracing = { workspace = true }
+wyrand = { workspace = true }
+
+# HTML DOM related
+ego-tree = { workspace = true }
+html5ever = { workspace = true }
+scraper = { workspace = true }

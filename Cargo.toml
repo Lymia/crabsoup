@@ -12,5 +12,12 @@ opt-level = 3
 lto = true
 
 [workspace.dependencies]
-# Common dependencies
 anyhow = "1.0"
+mlua = { version = "0.9", features = ["async", "luau-jit", "send"] }
+tracing = "0.1"
+wyrand = { version = "0.2", features = ["wyhash"] }
+
+# HTML DOM related
+ego-tree = "0.6"
+html5ever = "0.26"
+scraper = { version = "0.19", features = ["atomic", "deterministic"] }
