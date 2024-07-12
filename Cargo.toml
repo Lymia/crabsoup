@@ -1,0 +1,16 @@
+[workspace]
+members = [
+    "crabsoup-lua",
+]
+resolver = "2"
+
+[profile.dev]
+opt-level = 's'
+
+[profile.release]
+opt-level = 3
+lto = true
+
+[workspace.dependencies]
+# Common dependencies
+anyhow = "1.0"

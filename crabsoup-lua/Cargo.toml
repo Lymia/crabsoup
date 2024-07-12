@@ -1,0 +1,15 @@
+[package]
+name = "crabsoup-lua"
+version = "0.1.0"
+authors = ["Lymia Kanokawa <lymia@lymia.moe>"]
+edition = "2021"
+
+description = "A Rust implementation of the plugin format used in soupault."
+
+repository = "https://github.com/Lymia/crabsoup"
+readme = "README.md"
+
+license = "Apache-2.0"
+
+[dependencies]
+anyhow = { workspace = true }

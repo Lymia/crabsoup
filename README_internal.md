@@ -1,0 +1,1 @@
+This is an internal crate used in `crabsoup`. Do not use it directly.
