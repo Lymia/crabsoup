@@ -51,8 +51,8 @@ impl HtmlContext {
 
         let raw_root = self.dom.tree.get(node.node_id).unwrap();
         let elem = match node.kind {
-            NodeType::Leaf | NodeType::FragmentRoot => raw_root,
-            NodeType::DocumentRoot => {
+            NodeType::Element | NodeType::Text | NodeType::Fragment => raw_root,
+            NodeType::Document => {
                 match raw_root
                     .children()
                     .filter(|x| x.value().is_element())
@@ -79,12 +79,12 @@ impl HtmlContext {
 
     fn new_node(&mut self, node: Node) -> HtmlNode {
         let ty = match &node {
-            Node::Document => NodeType::DocumentRoot,
-            Node::Fragment => NodeType::FragmentRoot,
-            _ => NodeType::Leaf,
+            Node::Document => NodeType::Document,
+            Node::Fragment => NodeType::Fragment,
+            _ => NodeType::Element,
         };
         let id = self.dom.tree.orphan(node).id();
-        if ty != NodeType::Leaf {
+        if ty != NodeType::Element {
             self.node_ty.insert(id, ty);
         }
         self.node(id)
@@ -102,12 +102,12 @@ impl HtmlContext {
         HtmlNode {
             ctx_id: self.ctx_id,
             node_id: id,
-            kind: self.node_ty.get(&id).cloned().unwrap_or(NodeType::Leaf),
+            kind: self.node_ty.get(&id).cloned().unwrap_or(NodeType::Element),
         }
     }
     fn node_opt(&self, id: Option<NodeId>) -> Option<HtmlNode> {
         id.map(|x| self.node(x))
-            .filter(|x| x.kind != NodeType::FragmentRoot)
+            .filter(|x| x.kind != NodeType::Fragment)
     }
 }
 impl UserData for HtmlContext {
@@ -119,9 +119,9 @@ impl UserData for HtmlContext {
         methods.add_method_mut("parse", |_, this, source: LuaString| {
             let result = parse_into(&mut this.dom, source.to_str()?);
             let kind = if result.is_fragment {
-                NodeType::FragmentRoot
+                NodeType::Fragment
             } else {
-                NodeType::DocumentRoot
+                NodeType::Document
             };
             this.node_ty.insert(result.root_node, kind);
             Ok(this.node(result.root_node))
@@ -129,7 +129,7 @@ impl UserData for HtmlContext {
 
         methods.add_method("to_html", |_, this, node: HtmlNodeRef| {
             this.check_node(&node)?;
-            if node.kind == NodeType::FragmentRoot {
+            if node.kind == NodeType::Fragment {
                 Ok(to_inner_html(&this.dom, node.node_id).map_err(Error::runtime)?)
             } else {
                 Ok(to_html(&this.dom, node.node_id).map_err(Error::runtime)?)
@@ -137,7 +137,7 @@ impl UserData for HtmlContext {
         });
         methods.add_method("to_inner_html", |_, this, node: HtmlNodeRef| {
             this.check_node(&node)?;
-            if node.kind != NodeType::Leaf {
+            if node.kind != NodeType::Element {
                 Err(mlua::Error::runtime("Can only take inner HTML of a leaf element."))
             } else {
                 Ok(to_inner_html(&this.dom, node.node_id).map_err(Error::runtime)?)
@@ -224,9 +224,10 @@ impl UserData for HtmlContext {
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 enum NodeType {
-    Leaf,
-    DocumentRoot,
-    FragmentRoot,
+    Element,
+    Text,
+    Document,
+    Fragment,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
@@ -246,9 +247,13 @@ impl UserData for HtmlNode {
         });
 
         methods
-            .add_method("is_document_root", |_, this, ()| Ok(this.kind == NodeType::DocumentRoot));
+            .add_method("is_document", |_, this, ()| Ok(this.kind == NodeType::Document));
         methods
-            .add_method("is_fragment_root", |_, this, ()| Ok(this.kind == NodeType::FragmentRoot));
+            .add_method("is_fragment", |_, this, ()| Ok(this.kind == NodeType::Fragment));
+        methods
+            .add_method("is_element", |_, this, ()| Ok(this.kind == NodeType::Element));
+        methods
+            .add_method("is_text", |_, this, ()| Ok(this.kind == NodeType::Text));
 
         methods.add_method("is_same", |_, this, other: HtmlNodeRef| Ok(this == &*other));
     }

@@ -29,7 +29,13 @@ impl CrabsoupLuaContext {
             table
         };
         lua.set_named_registry_value(SHARED_TABLE_LOC, shared_table)?;
+        lua.sandbox(true)?;
 
         Ok(CrabsoupLuaContext { lua })
+    }
+
+    pub fn repl(&mut self) -> Result<()> {
+        self.lua.load(include_str!("ilua.lua")).set_name("ilua.lua").call(())?;
+        Ok(())
     }
 }

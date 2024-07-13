@@ -43,7 +43,7 @@ fn main() -> Result<()> {
     println!("{:?}", crabsoup_lua::html::to_html(&document, result_fragment.root_node)?);
     println!("{:?}", crabsoup_lua::html::to_inner_text(&document, result.root_node)?);
 
-    CrabsoupLuaContext::new()?;
+    CrabsoupLuaContext::new()?.repl()?;
 
     Ok(())
 }
