@@ -1,5 +1,6 @@
 use mlua::{prelude::LuaString, Error, UserData, UserDataFields, UserDataMethods, Value};
 use rustyline::{error::ReadlineError, DefaultEditor};
+use std::borrow::Cow;
 use tracing::{debug, error, info, trace, warn};
 
 pub struct CrabSoupLib;
@@ -8,6 +9,7 @@ impl UserData for CrabSoupLib {
         fields.add_meta_field("__type", "CrabSoupLib");
         fields
             .add_field("_VERSION", concat!(env!("CARGO_PKG_NAME"), " ", env!("CARGO_PKG_VERSION")));
+        fields.add_field("VERSION_ONLY", env!("CARGO_PKG_VERSION"));
     }
 
     fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
@@ -18,16 +20,27 @@ impl UserData for CrabSoupLib {
 
         methods.add_function(
             "loadstring",
-            |lua, (chunk, chunkname, env): (LuaString, Option<LuaString>, Option<Value>)| {
-                let mut chunk = lua.load(chunk.to_str()?);
+            |lua, (code, chunkname, env): (LuaString, Option<LuaString>, Option<Value>)| {
+                let mut chunk = lua.load(code.to_str()?);
                 if let Some(chunkname) = chunkname {
                     chunk = chunk.set_name(chunkname.to_str()?);
+                } else {
+                    let code_name = code.to_str()?;
+                    let final_name = if code_name.chars().count() > 40 {
+                        let mut str: String = code_name.chars().take(40).collect();
+                        str.push_str("...");
+                        Cow::Owned(str)
+                    } else {
+                        Cow::Borrowed(code_name)
+                    };
+                    chunk = chunk.set_name(final_name);
                 }
                 if let Some(env) = env {
                     chunk = chunk.set_environment(env);
                 }
                 match chunk.into_function() {
                     Ok(func) => Ok((Some(func), None)),
+                    Err(Error::SyntaxError { message, .. }) => Ok((None, Some(message))),
                     Err(e) => Ok((None, Some(e.to_string()))),
                 }
             },
@@ -52,6 +65,39 @@ impl UserData for CrabSoupLib {
         methods.add_function("trace", |_, str: LuaString| {
             trace!("{}", str.to_str()?);
             Ok(())
+        });
+
+        methods.add_function("plugin_fail", |_, str: LuaString| {
+            Ok(PluginInstruction::Fail(str.to_str()?.to_string()))
+        });
+        methods.add_function("plugin_exit", |_, str: LuaString| {
+            Ok(PluginInstruction::Exit(str.to_str()?.to_string()))
+        });
+    }
+}
+
+enum PluginInstruction {
+    Fail(String),
+    Exit(String),
+}
+impl UserData for PluginInstruction {
+    fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {
+        fields.add_meta_field("__type", "PluginInstruction");
+    }
+
+    fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
+        methods.add_method("get_message", |lua, this, ()| match this {
+            PluginInstruction::Fail(msg) => Ok(lua.create_string(msg)),
+            PluginInstruction::Exit(msg) => Ok(lua.create_string(msg)),
+        });
+
+        methods.add_method("is_fail", |_, this, ()| match this {
+            PluginInstruction::Fail(_) => Ok(true),
+            _ => Ok(false),
+        });
+        methods.add_method("is_exit", |_, this, ()| match this {
+            PluginInstruction::Exit(_) => Ok(true),
+            _ => Ok(false),
         });
     }
 }

@@ -1,5 +1,5 @@
 use crate::lua::stdlib::CrabSoupLib;
-use mlua::{Lua, Result, Table};
+use mlua::{prelude::LuaFunction, Lua, LuaOptions, Result, StdLib, Table};
 
 mod htmllib;
 mod stdlib;
@@ -11,7 +11,8 @@ pub struct CrabsoupLuaContext {
 }
 impl CrabsoupLuaContext {
     pub fn new() -> Result<Self> {
-        let lua = Lua::new();
+        let libs = StdLib::ALL ^ StdLib::PACKAGE;
+        let lua = Lua::new_with(libs, LuaOptions::new())?;
 
         // setup operating environment
         let shared_table = {
@@ -27,9 +28,12 @@ impl CrabsoupLuaContext {
             }
 
             call!("rt/lua5x_stdlib.luau");
-            //call!("rt/lua25_stdlib.luau");
+            call!("rt/lua25_stdlib.luau");
+            call!("rt/ilua_pretty.lua");
+            call!("rt/ilua_repl.lua");
             call!("rt/soupault_api.luau");
             call!("rt/soupault_html_api.luau");
+            call!("rt/crabsoup_ext_api.luau");
 
             table
         };
@@ -42,10 +46,9 @@ impl CrabsoupLuaContext {
 
     pub fn repl(&self) -> Result<()> {
         let shared_table = self.lua.named_registry_value::<Table>(SHARED_TABLE_LOC)?;
-        self.lua
-            .load(include_str!("rt/ilua.lua"))
-            .set_name("rt/ilua.lua")
-            .call::<_, ()>(shared_table)?;
+        shared_table
+            .get::<_, LuaFunction>("run_repl_from_console")?
+            .call::<_, ()>(())?;
         Ok(())
     }
 }

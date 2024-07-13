@@ -1,3 +1,5 @@
+--!strict
+
 local builtin_funcs = ...
 
 -- Stored stdlib functions

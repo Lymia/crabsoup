@@ -1,63 +1,33 @@
 --
--- ilua.lua
+-- ilua_pretty.lua
 --
--- A more friendly Lua interactive prompt
--- doesn't need '='
--- will print out tables recursively
+-- The pretty printing library from ilua
 --
 -- Steve Donovan, 2007
 -- Chris Hixon, 2010
 -- Alissa Rao, 2024
 --
 
--- create another environment, _E, to help prevent coding mistakes
-local g = table.clone(_G)
-local _E = {}
-g.setmetatable(_E, {
-    __index = g,
-    __newindex = function(t,k,v)
-        return g.error("Attempt to assign to global variable '"..k.."'", 2)
-    end
-})
-g.setfenv(1, _E)
-
--- imported global functions
 local builtin_funcs = ...
 
-local format = g.string.format
-local sort = g.table.sort
-local append = g.table.insert
-local concat = g.table.concat
-local floor = g.math.floor
-local print = g.print
-local loadstring = g.loadstring
-local type = g.type
-local select = g.select
-local setfenv = g.setfenv
-local tostring = g.tostring
-local getmetatable = g.getmetatable
-local setmetatable = g.setmetatable
-local pairs = g.pairs
-local ipairs = g.ipairs
-local pcall = g.pcall
+-- imported global functions
+local format = string.format
+local sort = table.sort
+local append = table.insert
+local concat = table.concat
+local floor = math.floor
+local print = print
+local type = type
+local select = select
+local tostring = tostring
+local getmetatable = getmetatable
+local setmetatable = setmetatable
+local pairs = pairs
+local ipairs = ipairs
+local pcall = pcall
 
--- imported global vars
-local _VERSION = g._VERSION
-
--- variables from soupault API
-local trim = g.String.trim
-
--- readline support
-local readline, saveline
-do
-    local rustyline_editor = builtin_funcs.crabsoup.open_rustyline()
-    function readline(prompt)
-        return rustyline_editor:readline(prompt)
-    end
-    function saveline(line)
-        return rustyline_editor:saveline(line)
-    end
-end
+-- private functions
+local trim = builtin_funcs.trim
 
 -- local vars
 local identifier = "^[_%a][_%w]*$"
@@ -98,6 +68,7 @@ end
 --
 
 local Pretty = {}
+builtin_funcs.Pretty = Pretty
 
 Pretty.defaults = {
     items = 100,                  -- max number of items to list in one table
@@ -394,166 +365,3 @@ function Pretty:print(...)
         end
     end
 end
-
---
--- Ilua class
---
-
-local Ilua = {}
-
--- defaults
-Ilua.defaults = {
-    -- evaluation related
-    prompt = '>> ',         -- normal prompt
-    prompt2 = '.. ',        -- prompt during multiple line input
-    chunkname = "stdin",    -- name of the evaluated chunk when compiled
-    result_var = "_",       -- the variable name that stores the last results
-    verbose = false,        -- currently unused
-
-    -- internal, for reference only
-    savef = nil,
-    num_prec = nil,
-    num_all = nil,
-}
-
--- things to expose to the enviroment
-Ilua.expose = {
-    ["Ilua"] = true, ["ilua"] = true, ["Pretty"] = true,
-    ["p"] = true, ["ls"] = true, ["dir"] = true,
-}
-
-function Ilua:new(params)
-    local obj = {}
-    params = params or {}
-    setmetatable(obj, self)
-    self.__index = self
-    obj:init(params)
-    return obj
-end
-
-function Ilua:init(params)
-    for k, v in pairs(self.defaults) do
-        self[k] = v
-    end
-    for k, v in pairs(params) do
-        self[k] = v
-    end
-
-    -- init collections
-    self.collisions = {}
-    self.lib = {}
-    self.declared = {}
-
-    -- setup environment
-    self.env = self.env or setmetatable({}, { __index = g })
-
-    -- expose some things to the environment
-    local expose = self.expose
-    self.env.Ilua = expose["Ilua"] and Ilua or nil
-    self.env.ilua = expose["ilua"] and self or nil
-    self.env.Pretty = expose["Pretty"] and Pretty or nil
-
-    -- setup pretty print objects
-    local oh = function(str)
-        if str and str ~= "" then print(str) end
-    end
-    self.p = Pretty:new { output_handler = oh }
-    self.env.p = expose["p"] and self.p or nil
-    if not self.disable_ls then
-        self.ls = Pretty:new { compact=true, depth=1, output_handler = oh }
-        self.env.ls = expose["ls"] and self.ls or nil
-    end
-    if not self.disable_dir then
-        self.dir = Pretty:new { compact=false, depth=1, key="%-20s",
-                                function_info=true, table_info=true, output_handler = oh }
-        self.env.dir = expose["dir"] and self.dir or nil
-    end
-end
-
--- this is mostly meant for the ilua launcher/main
--- a separate Ilua instance may need to do something different so wouldn't call this
-function Ilua:start()
-    print('ILUA: ' .. _VERSION .. ' + ' .. builtin_funcs.crabsoup._VERSION)
-end
-
-function Ilua:precision(len,prec,all)
-    if not len then self.num_prec = nil
-    else
-        self.num_prec = '%'..len..'.'..prec..'f'
-    end
-    self.num_all = all
-end
-
-function Ilua:get_input()
-    local lines, i, input, chunk, err = {}, 1
-    while true do
-        input = readline((i == 1) and self.prompt or self.prompt2)
-        if not input then return end
-        lines[i] = input
-        input = concat(lines, "\n")
-        chunk, err = loadstring(format("return(%s)", input), self.chunkname)
-        if chunk then return input end
-        chunk, err = loadstring(input, self.chunkname)
-        if chunk or not err:match("<eof>$") then
-            return input
-        end
-        lines[1] = input
-        i = 2
-    end
-end
-
-function Ilua:wrap(...)
-    self.p(...)
-    self.env[self.result_var] = select(1, ...)
-end
-
-function Ilua:eval_lua(line)
-    if self.savef then
-        self.savef:write(self.prompt, line, '\n')
-    end
-    -- is it an expression?
-    local chunk, err = loadstring(format("ilua:wrap(%s)", line), self.chunkname)
-    if err then -- otherwise, a statement?
-        chunk, err = loadstring(format("ilua:wrap((function() %s end)())", line), self.chunkname)
-    end
-    if err then
-        print(err)
-        return
-    end
-    -- compiled ok, evaluate the chunk
-    setfenv(chunk, self.env)
-    local ok, res = pcall(chunk)
-    if not ok then
-        print(res)
-    end
-end
-
-function Ilua:run()
-    while true do
-        local input = self:get_input()
-        if not input or trim(input) == 'quit' then break end
-        self:eval_lua(input)
-        saveline(input)
-    end
-
-    if self.savef then
-        self.savef:close()
-    end
-end
-
---
--- "main" from here down
---
-
--- expose the main classes to global env so modules/files included can see them
-g.Ilua = Ilua
-g.Pretty = Pretty
-
--- create an Ilua instance
-local ilua = Ilua:new()
-
--- expose ilua to global environment so any modules/files loaded can see it
-g.ilua = ilua
-
-ilua:start()
-ilua:run()

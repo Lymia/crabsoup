@@ -1,15 +1,23 @@
+--!strict
+
+local builtin_funcs = ...
+local crabsoup = builtin_funcs.crabsoup
+
 -- Stored stdlib functions
+local coroutine_yield = coroutine.yield
 local error = error
 local string_gsub = string.gsub
 local string_sub = string.sub
 local table_concat = table.concat
-local type = type
+local tostring = tostring
 local typeof = typeof
 local utf8_len = utf8.len
 local utf8_offset = utf8.offset
 
+local pretty = builtin_funcs.Pretty:new()
+
 -- Function definitions for `String` module
-local String = {}
+local String = _G.String or {}
 
 function String.is_valid_utf8(str: string): boolean
     if utf8_len(str) then
@@ -87,11 +95,32 @@ function String.endswith(str: string, ending: string): boolean
     return ending == "" or string_sub(str, -#ending) == ending
 end
 
-_G.String = table.freeze(String)
+_G.String = String
 
 -- TODO: Sys module
 
--- TODO: Plugin module
+-- Function definitions for `Plugin` module
+local Plugin = _G.Plugin or {}
+
+function Plugin.fail(message: any?): never
+    coroutine_yield(crabsoup.plugin_fail(tostring(message)))
+    return error("unreachable")
+end
+
+function Plugin.exit(message: any?): never
+    coroutine_yield(crabsoup.plugin_exit(tostring(message)))
+    return error("unreachable")
+end
+
+function Plugin.require_version(version: any?)
+    error("not yet implemented")
+end
+
+function Plugin.soupault_version(): string
+    return "4.10.0" -- Newest *compatible* version of Soupault.
+end
+
+_G.Plugin = Plugin
 
 -- TODO: Log module
 
@@ -110,36 +139,39 @@ _G.String = table.freeze(String)
 -- TODO: Table module
 
 -- Function definitions for `Value` module
-local Value = {}
+local Value = _G.Value or {}
 
-Value.repr = tostring
+function Value.repr(value: any?): string
+    local str = pretty:format(value)
+    return str
+end
 
-function Value.is_nil(value: any): boolean
+function Value.is_nil(value: any?): boolean
     return value == nil
 end
 
-function Value.is_int(value: any): boolean
-    return type(value) == "number" and math.round(value) == value
+function Value.is_int(value: any?): boolean
+    return typeof(value) == "number" and math.round(value :: number) == value
 end
 
-function Value.is_float(value: any): boolean
-    return type(value) == "number"
+function Value.is_float(value: any?): boolean
+    return typeof(value) == "number"
 end
 
-function Value.is_string(value: any): boolean
-    return type(value) == "string"
+function Value.is_string(value: any?): boolean
+    return typeof(value) == "string"
 end
 
-function Value.is_table(value: any): boolean
-    return type(value) == "table"
+function Value.is_table(value: any?): boolean
+    return typeof(value) == "table"
 end
 
-function Value.is_list(value: any): boolean
-    if type(value) ~= "table" then
+function Value.is_list(value: any?): boolean
+    if not value or typeof(value) ~= "table" then
         return false
     else
         for k in value do
-            if type(k) ~= "number" then
+            if typeof(k) ~= "number" then
                 return false
             end
         end
@@ -147,8 +179,8 @@ function Value.is_list(value: any): boolean
     end
 end
 
-function Value.is_html(value: any): boolean
+function Value.is_html(value: any?): boolean
     return typeof(value) == "HtmlNode"
 end
 
-_G.Value = table.freeze(Value)
+_G.Value = Value

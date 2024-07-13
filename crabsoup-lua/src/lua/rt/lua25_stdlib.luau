@@ -1,16 +1,29 @@
+--!strict
+
 -- Stored stdlib functions
 local error = error
 local getfenv = getfenv
+local loadstring = loadstring
 local next = next
 
 -- Function definitions for Lua 2.5 API
-function _G.dofile(filename: string): any
-    error("NYI")
-    return nil
+local function return_helper(success: boolean, ...: unknown): ...unknown
+    if success then
+        if #{ ... } == 0 then
+            return true
+        else
+            return ...
+        end
+    else
+        return nil
+    end
+end
+function _G.dostring(chunk, chunkname, mode, env)
+    return return_helper(pcall(loadstring(chunk, chunkname, mode, env)))
 end
 
 function _G.nextvar(name: any): (any, any)
-    return next(getfenv(), next)
+    return next(getfenv(), name)
 end
 
 function _G.setglobal(name: string, value: any)
@@ -22,7 +35,7 @@ function _G.getglobal(name: string): any
 end
 
 function _G.setfallback(fallbackname: string, newfallback: any)
-    error("setfallback is not supported, and will never be supported. Please use Lua 5.1 metatables instead.")
+    error("setfallback is not supported, and will never be supported. Please use Lua 5.1 metatables instead.", 2)
 end
 
 _G.strfind = string.find
