@@ -2,11 +2,11 @@ use crate::{
     html::{clone_node, parse_into, to_html, to_inner_html},
     wyhash::WyHashMap,
 };
-use anyhow::Result;
 use ego_tree::NodeId;
 use html5ever::{namespace_url, ns, LocalName, QualName};
 use mlua::{
-    prelude::LuaString, Error, MetaMethod, UserData, UserDataFields, UserDataMethods, UserDataRef,
+    prelude::LuaString, Error, MetaMethod, Result, UserData, UserDataFields, UserDataMethods,
+    UserDataRef,
 };
 use scraper::{
     node::{Element, Text},
@@ -46,7 +46,7 @@ impl HtmlContext {
         }
     }
 
-    fn root_element(&self, node: &HtmlNodeRef) -> mlua::Result<ElementRef> {
+    fn root_element(&self, node: &HtmlNodeRef) -> Result<ElementRef> {
         self.check_node(node)?;
 
         let raw_root = self.dom.tree.get(node.node_id).unwrap();
@@ -69,7 +69,7 @@ impl HtmlContext {
         }
     }
 
-    fn check_node(&self, node: &HtmlNodeRef) -> mlua::Result<()> {
+    fn check_node(&self, node: &HtmlNodeRef) -> Result<()> {
         if node.ctx_id != self.ctx_id {
             Err(mlua::Error::runtime("HTML nodes cannot be shared between contexts."))
         } else {
@@ -91,7 +91,7 @@ impl HtmlContext {
     }
 
     fn clone_node(&mut self, node: NodeId) -> Result<HtmlNode> {
-        let new_node = clone_node(&mut self.dom, node)?;
+        let new_node = clone_node(&mut self.dom, node).map_err(Error::runtime)?;
         if let Some(ty) = self.node_ty.get(&node) {
             self.node_ty.insert(new_node, *ty);
         }
@@ -246,14 +246,10 @@ impl UserData for HtmlNode {
             Ok(format!("HtmlNode({:?}): {:?}@{:?}", this.kind, this.ctx_id, this.node_id))
         });
 
-        methods
-            .add_method("is_document", |_, this, ()| Ok(this.kind == NodeType::Document));
-        methods
-            .add_method("is_fragment", |_, this, ()| Ok(this.kind == NodeType::Fragment));
-        methods
-            .add_method("is_element", |_, this, ()| Ok(this.kind == NodeType::Element));
-        methods
-            .add_method("is_text", |_, this, ()| Ok(this.kind == NodeType::Text));
+        methods.add_method("is_document", |_, this, ()| Ok(this.kind == NodeType::Document));
+        methods.add_method("is_fragment", |_, this, ()| Ok(this.kind == NodeType::Fragment));
+        methods.add_method("is_element", |_, this, ()| Ok(this.kind == NodeType::Element));
+        methods.add_method("is_text", |_, this, ()| Ok(this.kind == NodeType::Text));
 
         methods.add_method("is_same", |_, this, other: HtmlNodeRef| Ok(this == &*other));
     }

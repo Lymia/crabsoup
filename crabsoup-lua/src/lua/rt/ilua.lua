@@ -7,10 +7,11 @@
 --
 -- Steve Donovan, 2007
 -- Chris Hixon, 2010
+-- Alissa Rao, 2024
 --
 
 -- create another environment, _E, to help prevent coding mistakes
-local g = _G
+local g = table.clone(_G)
 local _E = {}
 g.setmetatable(_E, {
     __index = g,
@@ -21,6 +22,8 @@ g.setmetatable(_E, {
 g.setfenv(1, _E)
 
 -- imported global functions
+local builtin_funcs = ...
+
 local format = g.string.format
 local sub = g.string.sub
 local rep = g.string.rep
@@ -29,9 +32,6 @@ local find = g.string.find
 local sort = g.table.sort
 local append = g.table.insert
 local concat = g.table.concat
-local write = g.io.write
-local read = g.io.read
-local flush = g.io.flush
 local floor = g.math.floor
 local print = g.print
 local loadstring = g.loadstring
@@ -58,8 +58,16 @@ local io = g.io
 local arg = g.arg
 local _VERSION = g._VERSION
 
+-- readline support
+local rustyline_editor = builtin_funcs.crabsoup.open_rustyline()
+local function readline(prompt)
+    return rustyline_editor:readline(prompt)
+end
+local function saveline(line)
+    -- not supported
+end
+
 -- local vars
-local readline, saveline
 local identifier = "^[_%a][_%w]*$"
 
 --
@@ -686,12 +694,14 @@ function Ilua:inject(tbl, dont_complain, lib)
     if not dont_complain then
         for name, coll in pairs(self.collisions) do
             local lib, oldlib = coll[1], coll[2]
-            write('warning: ',lib,'.',name,' overwrites ')
+
+            local buffer = "warning: "..tostring(lib).."."..tostring(name).." overwrites "
             if oldlib then
-                write(oldlib,'.',name,'\n')
+                buffer = buffer..tostring(oldlib).."."..tostring(name)
             else
-                write('global ',name,'\n')
+                buffer = buffer.."global "..tostring(name)
             end
+            print(buffer)
         end
     end
 end
@@ -709,7 +719,7 @@ function Ilua:setup_strict()
     end
 
     local function what ()
-        local d = debug.getinfo(3, "S")
+        local d = debug.info(3, "sln")
         return d and d.what or "C"
     end
 
@@ -772,21 +782,6 @@ end)
 pcall(function()
     require 'ilua_global' -- user defaults
 end)
-
--- Unix readline support, if readline.so is available...
-local rl
-local err = pcall(function()
-    rl = require 'readline'
-    readline = rl.readline
-    saveline = rl.add_history
-end)
-if not rl then
-    readline = function(prompt)
-        write(prompt)
-        return read()
-    end
-    saveline = function(s) end
-end
 
 local params = {}
 -- process command-line parameters

@@ -14,6 +14,7 @@ lto = true
 [workspace.dependencies]
 anyhow = "1.0"
 mlua = { version = "0.9", features = ["async", "luau-jit", "send"] }
+rustyline = { version = "14.0", default-features = false }
 tracing = "0.1"
 wyrand = { version = "0.2", features = ["wyhash"] }
 
