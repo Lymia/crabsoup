@@ -25,10 +25,6 @@ g.setfenv(1, _E)
 local builtin_funcs = ...
 
 local format = g.string.format
-local sub = g.string.sub
-local rep = g.string.rep
-local match = g.string.match
-local find = g.string.find
 local sort = g.table.sort
 local append = g.table.insert
 local concat = g.table.concat
@@ -43,28 +39,24 @@ local getmetatable = g.getmetatable
 local setmetatable = g.setmetatable
 local pairs = g.pairs
 local ipairs = g.ipairs
-local rawset = g.rawset
-local rawget = g.rawget
-local require = g.require
-local error = g.error
-local dofile = g.dofile
 local pcall = g.pcall
 
 -- imported global vars
-local debug = g.debug
-local string = g.string
-local os = g.os
-local io = g.io
-local arg = g.arg
 local _VERSION = g._VERSION
 
+-- variables from soupault API
+local trim = g.String.trim
+
 -- readline support
-local rustyline_editor = builtin_funcs.crabsoup.open_rustyline()
-local function readline(prompt)
-    return rustyline_editor:readline(prompt)
-end
-local function saveline(line)
-    -- not supported
+local readline, saveline
+do
+    local rustyline_editor = builtin_funcs.crabsoup.open_rustyline()
+    function readline(prompt)
+        return rustyline_editor:readline(prompt)
+    end
+    function saveline(line)
+        return rustyline_editor:saveline(line)
+    end
 end
 
 -- local vars
@@ -73,24 +65,6 @@ local identifier = "^[_%a][_%w]*$"
 --
 -- local functions
 --
-
--- returns an array that is a slice of an array ary,
--- beginning at index b, ending at index e, with stride of s.
--- b, e, and s are optional and default to:
--- b = begging of array, e = end of array, s = 1
--- can also be used for reverse, like slice(a, #a, 1, -1)
-local function slice(ary, b, e, s)
-    local n, b, e, s = {}, b or 1, e or #ary, s or 1
-    for i = b, e, s do
-        n[#n + 1] = ary[i]
-    end
-    return n
-end
-
--- trim whitespace from both ends of a string
-local function trim(str)
-    return str:gsub("^%s*(.-)%s*$", "%1")
-end
 
 -- function varsub(str, repl)
 -- replaces variables in strings like "%20s{foo} %s{bar}" using the table repl
@@ -432,15 +406,12 @@ Ilua.defaults = {
     -- evaluation related
     prompt = '>> ',         -- normal prompt
     prompt2 = '.. ',        -- prompt during multiple line input
-    strict = true,          -- set to true to turn undeclared variable checks
     chunkname = "stdin",    -- name of the evaluated chunk when compiled
     result_var = "_",       -- the variable name that stores the last results
     verbose = false,        -- currently unused
 
     -- internal, for reference only
     savef = nil,
-    line_handler_fn = nil,
-    global_handler_fn = nil,
     num_prec = nil,
     num_all = nil,
 }
@@ -449,7 +420,6 @@ Ilua.defaults = {
 Ilua.expose = {
     ["Ilua"] = true, ["ilua"] = true, ["Pretty"] = true,
     ["p"] = true, ["ls"] = true, ["dir"] = true,
-    ["slice"] = true
 }
 
 function Ilua:new(params)
@@ -474,24 +444,18 @@ function Ilua:init(params)
     self.lib = {}
     self.declared = {}
 
-    -- setup environment, use global if requested
-    if self.global_env then
-        self.env = g
-    else -- else, if an environment was provided, use that, or create new one
-        self.env = self.env or setmetatable({}, { __index = g })
-    end
-    self:setup_strict()
+    -- setup environment
+    self.env = self.env or setmetatable({}, { __index = g })
 
     -- expose some things to the environment
     local expose = self.expose
     self.env.Ilua = expose["Ilua"] and Ilua or nil
     self.env.ilua = expose["ilua"] and self or nil
     self.env.Pretty = expose["Pretty"] and Pretty or nil
-    self.env.slice = expose["slice"] and slice or nil
 
     -- setup pretty print objects
     local oh = function(str)
-        if str and str ~= "" then self:output(str) end
+        if str and str ~= "" then print(str) end
     end
     self.p = Pretty:new { output_handler = oh }
     self.env.p = expose["p"] and self.p or nil
@@ -509,86 +473,7 @@ end
 -- this is mostly meant for the ilua launcher/main
 -- a separate Ilua instance may need to do something different so wouldn't call this
 function Ilua:start()
-    -- startup message
-    if not self.disable_startup_message then
-        self:output('ILUA: ' .. _VERSION)
-        local jit = rawget(g, "jit") -- hack to show luajit info if it finds it
-        if jit then
-            local version = rawget(jit, "version")
-            local arch = rawget(jit, "arch")
-            self:output(version .. (arch and " ("..arch..")" or ""))
-        end
-    end
-
-    -- to allow for configuration of the ilua instance, require a module 'ilua_instance'
-    if not self.disable_instance_config then
-        pcall(function()
-            require 'ilua_instance'
-        end)
-    end
-
-    -- transcript
-    if self.file then
-        print('saving transcript "'..self.file..'"')
-        self.savef = io.open(self.file,'w')
-        self.savef:write('! ilua ', concat(self.args,' '),'\n')
-    end
-
-    -- inject libs already loaded on command line
-    if self.inject_libs then
-        for i, v in ipairs(self.inject_libs) do
-            self:inject(unpack(v))
-        end
-    end
-
-    -- load postponed libs
-    if self.load_libs then
-        for i, lib in ipairs(self.load_libs) do
-            require(lib)
-        end
-    end
-
-    -- import postponed libs
-    if self.import_libs then
-        for i, lib in ipairs(self.import_libs) do
-            self:import(lib, true)
-        end
-    end
-
-    -- any inject complaints?
-    self:inject()
-
-    -- load postponed files
-    if self.load_files then
-        for i, file in ipairs(self.load_files) do
-            dofile(file)
-        end
-    end
-
-    -- inject helpers
-    if self.inject_helpers then
-        self:helpers()
-    end
-end
-
--- injects some shortcut variables and functions
-function Ilua:helpers()
-    local e = self.env
-    -- object aliases
-    for k, v in pairs { i = self, I = Ilua, P = Pretty, env = e, e = e } do
-        e[k] = v
-    end
-    -- methods turned into functions
-    for i, k in ipairs { 'vars', 'v' } do
-        e[k] = function(...) return (self[k])(self, ...) end
-    end
-end
-
-function Ilua:output(str)
-    if self.savef then
-        self.savef:write(str, "\n")
-    end
-    print(str)
+    print('ILUA: ' .. _VERSION .. ' + ' .. builtin_funcs.crabsoup._VERSION)
 end
 
 function Ilua:precision(len,prec,all)
@@ -598,23 +483,6 @@ function Ilua:precision(len,prec,all)
     end
     self.num_all = all
 end
-
-function Ilua:line_handler(handler)
-    self.line_handler_fn = handler
-end
-
-function Ilua:global_handler(handler)
-    self.global_handler_fn = handler
-end
-
-function Ilua:print_variables()
-    for name,v in pairs(self.declared) do
-        print(name,type(self.env[name]))
-    end
-end
-
-Ilua.v = Ilua.print_variables
-Ilua.vars = Ilua.print_variables
 
 function Ilua:get_input()
     local lines, i, input, chunk, err = {}, 1
@@ -626,7 +494,7 @@ function Ilua:get_input()
         chunk, err = loadstring(format("return(%s)", input), self.chunkname)
         if chunk then return input end
         chunk, err = loadstring(input, self.chunkname)
-        if chunk or not err:match("'<eof>'$") then
+        if chunk or not err:match("<eof>$") then
             return input
         end
         lines[1] = input
@@ -643,106 +511,20 @@ function Ilua:eval_lua(line)
     if self.savef then
         self.savef:write(self.prompt, line, '\n')
     end
-    -- is the line handler interested?
-    if self.line_handler_fn then
-        line = self.line_handler_fn(line)
-        -- returning nil here means that the handler doesn't want
-        -- Lua to see the string
-        if not line then return end
-    end
     -- is it an expression?
     local chunk, err = loadstring(format("ilua:wrap(%s)", line), self.chunkname)
     if err then -- otherwise, a statement?
         chunk, err = loadstring(format("ilua:wrap((function() %s end)())", line), self.chunkname)
     end
     if err then
-        self:output(err)
+        print(err)
         return
     end
     -- compiled ok, evaluate the chunk
     setfenv(chunk, self.env)
     local ok, res = pcall(chunk)
     if not ok then
-        self:output(res)
-    end
-end
-
--- require a lib and inject it into ilua namespace
-function Ilua:import(lib, dont_complain)
-    local tbl = g.require(lib)
-    if type(tbl) ~= 'table' then
-        tbl = g[lib]
-    end
-    self:inject(tbl, dont_complain, lib)
-end
-
--- inject @tbl into the ilua namespace
-function Ilua:inject(tbl, dont_complain, lib)
-    lib = lib or '<unknown>'
-    if type(tbl) == 'table' then
-        for k,v in pairs(tbl) do
-            local val = rawget(self.env, k)
-            -- NB to keep track of collisions!
-            if val and k ~= '_M' and k ~= '_NAME' and
-                    k ~= '_PACKAGE' and k ~= '_VERSION' then
-                self.collisions[k] = {lib, self.lib[k]}
-            end
-            self.env[k] = v
-            self.lib[k] = lib
-        end
-    end
-    if not dont_complain then
-        for name, coll in pairs(self.collisions) do
-            local lib, oldlib = coll[1], coll[2]
-
-            local buffer = "warning: "..tostring(lib).."."..tostring(name).." overwrites "
-            if oldlib then
-                buffer = buffer..tostring(oldlib).."."..tostring(name)
-            else
-                buffer = buffer.."global "..tostring(name)
-            end
-            print(buffer)
-        end
-    end
-end
-
---
--- checks uses of undeclared global variables (if strict is on)
--- All global variables must be 'declared' through a regular assignment
--- (even assigning nil will do) in a main chunk before being used
--- anywhere.
-function Ilua:setup_strict()
-    local mt = getmetatable(self.env)
-    if mt == nil then
-        mt = {}
-        setmetatable(self.env, mt)
-    end
-
-    local function what ()
-        local d = debug.info(3, "sln")
-        return d and d.what or "C"
-    end
-
-    mt.__newindex = function (t, n, v)
-        self.declared[n] = true
-        rawset(t, n, v)
-    end
-
-    mt.__index = function (t, n)
-        if not n then return end
-        if not self.declared[n] and what() ~= "C" then
-            local lookup = self.global_handler_fn and self.global_handler_fn(n)
-            if lookup then return lookup end
-            if not self.global_env then
-                lookup = g[n]
-                if lookup then return lookup end
-            end
-            if self.strict then
-                error("variable '"..tostring(n).."' is not declared", 2)
-            end
-            return nil
-        end
-        return rawget(t, n)
+        print(res)
     end
 end
 
@@ -763,109 +545,12 @@ end
 -- "main" from here down
 --
 
-local function quit(code,msg)
-    io.stderr:write(msg,'\n')
-    os.exit(code)
-end
-
 -- expose the main classes to global env so modules/files included can see them
 g.Ilua = Ilua
 g.Pretty = Pretty
 
--- try to bring in any ilua configuration files; don't complain if this is unsuccessful.
--- note that the only things accessible at this point are the Ilua and Pretty classes,
--- which should be good enough to set/override defaults
--- (for configuring the default instance, use the module 'ilua_instance' - see Ilua:start())
-pcall(function()
-    require 'ilua_system' -- system wide defaults
-end)
-pcall(function()
-    require 'ilua_global' -- user defaults
-end)
-
-local params = {}
--- process command-line parameters
-if arg then
-    params['args'] = arg
-    local i = 1
-    local postpone = true
-
-    local function parm_value(opt,parm,def)
-        local val = parm:sub(3)
-        if #val == 0 then
-            i = i + 1
-            if i > #arg then
-                if not def then
-                    quit(-1,"expecting parameter for option '-"..opt.."'")
-                else
-                    return def
-                end
-            end
-            val = arg[i]
-        end
-        return val
-    end
-
-    while i <= #arg do
-        local v = arg[i]
-        local opt = v:sub(1,1)
-        if opt == '-' then
-            opt = v:sub(2,2)
-            if opt == 'h' then
-                quit(0,"ilua [[ -h | -g | -H | -l <lib> | -L <lib> | -t | -T | -s | -i | -p | <file> ] ... ]")
-            elseif opt == 'g' then
-                params['global_env'] = true
-            elseif opt == 'H' then
-                params['inject_helpers'] = true
-            elseif opt == 'l' then
-                local lib = parm_value(opt,v)
-                if postpone then
-                    params['load_libs'] = params['load_libs'] or {}
-                    append(params['load_libs'], lib)
-                else
-                    require(lib)
-                end
-            elseif opt == 'L' then
-                local lib = parm_value(opt,v)
-                if postpone then
-                    params['import_libs'] = params['import_libs'] or {}
-                    append(params['import_libs'], lib)
-                else
-                    local tbl = require(lib)
-                    -- we cannot always trust require to return the table!
-                    if type(tbl) ~= 'table' then
-                        tbl = g[lib]
-                    end
-                    params['inject_libs'] = params['inject_libs'] or {}
-                    append(params['inject_libs'], {tbl, true, lib})
-                end
-            elseif opt == 't' then
-                params['file'] = parm_value(opt,v,"ilua.log")
-            elseif opt == 'T' then
-                params['file'] = 'ilua_'..os.date ('%y_%m_%d_%H_%M')..'.log'
-            elseif opt == 's' then
-                params['strict'] = false
-            elseif opt == 'v' then
-                params['verbose'] = true
-            elseif opt == 'i' then
-                postpone = false
-            elseif opt == 'p' then
-                postpone = true
-            end
-        else -- a lua file to be executed immediately or later, depending on current value of postpone
-            if postpone then
-                params['load_files'] = params['load_files'] or {}
-                append(params['load_files'], v)
-            else
-                dofile(v)
-            end
-        end
-        i = i + 1
-    end
-end
-
 -- create an Ilua instance
-local ilua = Ilua:new(params)
+local ilua = Ilua:new()
 
 -- expose ilua to global environment so any modules/files loaded can see it
 g.ilua = ilua
