@@ -62,6 +62,7 @@ impl HtmlContext {
                     Some(root) => root,
                 }
             }
+            _ => todo!(),
         };
         match ElementRef::wrap(elem) {
             None => Err(Error::runtime("Node is not an element.")),
@@ -219,6 +220,15 @@ impl UserData for HtmlContext {
                 }
             },
         );
+        methods.add_method("get_attribute", |lua, this, (node, name): (HtmlNodeRef, LuaString)| {
+            this.check_node(&node)?;
+            let elem = this.root_element(&node)?;
+            if let Some(value) = elem.value().attr(name.to_str()?) {
+                Ok(Some(lua.create_string(value)?))
+            } else {
+                Ok(None)
+            }
+        });
     }
 }
 
@@ -226,6 +236,9 @@ impl UserData for HtmlContext {
 enum NodeType {
     Element,
     Text,
+    Doctype,
+    ProcessingInstruction,
+    Comment,
     Document,
     Fragment,
 }
@@ -246,10 +259,13 @@ impl UserData for HtmlNode {
             Ok(format!("HtmlNode({:?}): {:?}@{:?}", this.kind, this.ctx_id, this.node_id))
         });
 
-        methods.add_method("is_document", |_, this, ()| Ok(this.kind == NodeType::Document));
-        methods.add_method("is_fragment", |_, this, ()| Ok(this.kind == NodeType::Fragment));
         methods.add_method("is_element", |_, this, ()| Ok(this.kind == NodeType::Element));
         methods.add_method("is_text", |_, this, ()| Ok(this.kind == NodeType::Text));
+        methods.add_method("is_doctype", |_, this, ()| Ok(this.kind == NodeType::Document));
+        methods.add_method("is_pi", |_, this, ()| Ok(this.kind == NodeType::ProcessingInstruction));
+        methods.add_method("is_comment", |_, this, ()| Ok(this.kind == NodeType::Comment));
+        methods.add_method("is_document", |_, this, ()| Ok(this.kind == NodeType::Document));
+        methods.add_method("is_fragment", |_, this, ()| Ok(this.kind == NodeType::Fragment));
 
         methods.add_method("is_same", |_, this, other: HtmlNodeRef| Ok(this == &*other));
     }

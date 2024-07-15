@@ -1,6 +1,6 @@
 --!strict
 
-local builtin_funcs = ...
+local builtin_funcs, _G = ...
 local crabsoup = builtin_funcs.crabsoup
 
 -- Stored stdlib functions

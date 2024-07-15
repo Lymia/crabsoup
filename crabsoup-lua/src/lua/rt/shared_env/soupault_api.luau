@@ -1,14 +1,11 @@
 --!strict
 
-local builtin_funcs = ...
-local crabsoup = builtin_funcs.crabsoup
+local builtin_funcs, _G = ...
 
 -- Stored stdlib functions
 local coroutine_yield = coroutine.yield
 local error = error
-local string_gsub = string.gsub
 local string_sub = string.sub
-local table_concat = table.concat
 local tostring = tostring
 local typeof = typeof
 local utf8_len = utf8.len
@@ -18,38 +15,25 @@ local pretty = builtin_funcs.Pretty:new()
 
 -- Function definitions for `String` module
 local String = _G.String or {}
+_G.String = String
 
-function String.is_valid_utf8(str: string): boolean
-    if utf8_len(str) then
-        return true
-    else
-        return false
-    end
-end
-
-function String.length(str: string): number
-    local len = utf8_len(str)
-    return if len then len else #str
-end
-
-function String.length_ascii(str: string): number
-    return #str
-end
-
-function String.trim(str: string): string
-    return string_gsub(str, "^%s*(.-)%s*$", "%1")
-end
-
-function String.truncate(str: string, length: number): string
+function String.truncate(str: string, length: number, trailer: string?): string
     local len = utf8_len(str)
     if len then
         if len == length then
             return str
         else
-            return string_sub(str, 0, utf8_offset(str, length))
+            local offset = utf8_offset(str, length)
+            if offset >= #str then
+                return str
+            else
+                return string_sub(str, 0, offset) .. (trailer or "")
+            end
         end
+    elseif length >= #str then
+        return str
     else
-        return string_sub(str, 0, length)
+        return string_sub(str, 0, length) .. (trailer or "")
     end
 end
 
@@ -59,12 +43,6 @@ end
 
 function String.slugify_ascii(str: string): string
     return error("not yet implemented")
-end
-
-String.to_number = tonumber
-
-function String.join(sep: string, list: {string}): string
-    return table_concat(list, sep)
 end
 
 function String.render_template(template_string: string, env: any): string
@@ -79,7 +57,7 @@ function String.base64_decode(string: string): string
     return error("not yet implemented")
 end
 
-function String.url_encode(string: string): string
+function String.url_encode(string: string, exclude: {string}?): string
     return error("not yet implemented")
 end
 
@@ -87,20 +65,11 @@ function String.url_decode(string: string): string
     return error("not yet implemented")
 end
 
-function String.startswith(str: string, start: string): boolean
-    return start == "" or string_sub(str, 1, #start) == start
-end
-
-function String.endswith(str: string, ending: string): boolean
-    return ending == "" or string_sub(str, -#ending) == ending
-end
-
-_G.String = String
-
 -- TODO: Sys module
 
 -- Function definitions for `Plugin` module
 local Plugin = _G.Plugin or {}
+_G.Plugin = Plugin
 
 function Plugin.fail(message: any?): never
     coroutine_yield(crabsoup.plugin_fail(tostring(message)))
@@ -120,8 +89,6 @@ function Plugin.soupault_version(): string
     return "4.10.0" -- Newest *compatible* version of Soupault.
 end
 
-_G.Plugin = Plugin
-
 -- TODO: Log module
 
 -- TODO: JSON module
@@ -140,6 +107,7 @@ _G.Plugin = Plugin
 
 -- Function definitions for `Value` module
 local Value = _G.Value or {}
+_G.Value = Value
 
 function Value.repr(value: any?): string
     local str = pretty:format(value)
@@ -182,5 +150,3 @@ end
 function Value.is_html(value: any?): boolean
     return typeof(value) == "HtmlNode"
 end
-
-_G.Value = Value

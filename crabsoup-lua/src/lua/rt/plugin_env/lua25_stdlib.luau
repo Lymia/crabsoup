@@ -1,25 +1,15 @@
 --!strict
 
+local builtin_funcs, _G = ...
+
 -- Stored stdlib functions
 local error = error
 local getfenv = getfenv
-local loadstring = loadstring
 local next = next
 
 -- Function definitions for Lua 2.5 API
-local function return_helper(success: boolean, ...: unknown): ...unknown
-    if success then
-        if #{ ... } == 0 then
-            return true
-        else
-            return ...
-        end
-    else
-        return nil
-    end
-end
 function _G.dostring(chunk, chunkname, mode, env)
-    return return_helper(pcall(loadstring(chunk, chunkname, mode, env)))
+    error("Dynamic code loading is not currently supported.")
 end
 
 function _G.nextvar(name: any): (any, any)

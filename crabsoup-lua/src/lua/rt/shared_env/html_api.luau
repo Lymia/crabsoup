@@ -1,6 +1,6 @@
 --!strict
 
-local builtin_funcs = ...
+local builtin_funcs, _G = ...
 
 -- Stored stdlib functions
 local table_freeze = table.freeze

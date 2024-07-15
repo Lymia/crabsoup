@@ -25,9 +25,7 @@ local setmetatable = setmetatable
 local pairs = pairs
 local ipairs = ipairs
 local pcall = pcall
-
--- private functions
-local trim = builtin_funcs.trim
+local trim = string.trim
 
 -- local vars
 local identifier = "^[_%a][_%w]*$"
@@ -364,4 +362,9 @@ function Pretty:print(...)
             print(output)
         end
     end
+end
+
+local pretty_instance = Pretty:new()
+function builtin_funcs.repr(a)
+    return pretty_instance:format(a)
 end
