@@ -114,6 +114,7 @@ local function fn2str(func)
 
     return tostring(func)
 end
+builtin_funcs.fn2str = fn2str
 function builtin_funcs.register_builtin_name(func, name)
     builtin_function_names[func] = name
 end

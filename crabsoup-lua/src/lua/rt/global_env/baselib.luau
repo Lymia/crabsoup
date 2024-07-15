@@ -33,3 +33,84 @@ end
 _G.math.isnan = builtin_funcs.crabsoup.is_nan
 _G.math.isinf = builtin_funcs.crabsoup.is_inf
 _G.math.isfinite = builtin_funcs.crabsoup.is_finite
+
+-- Sandboxed versions of setfenv and getfenv
+builtin_funcs.orig_setfenv = _G.setfenv
+builtin_funcs.orig_getfenv = _G.getfenv
+
+_G.setfenv = nil
+_G.getfenv = nil
+
+local system_fenv = {}
+function builtin_funcs.mark_system_fenv(env)
+    system_fenv[env] = true
+end
+
+local function get_function_for_level(level: number): (...any) -> any
+    if not math.isfinite(level) or math.round(level) ~= level then
+        return error("numeric level must be an integer", 3)
+    elseif level < 1 then
+        return error("numeric level must be a positive integer", 4)
+    else
+        local real_level = level + 3
+        local func = debug.info(real_level, "f")
+        if not func then
+            return error(`could not retrieve function for stack frame {level}`, 4)
+        end
+        return func
+    end
+end
+local function retrieve_target(target: number | (...any) -> any | nil): (any?, (...any) -> any, string?)
+    local target_out, result, source
+    if not target or target == 0 then
+        result = builtin_funcs.low_level.get_globals()
+    else
+        local ty = typeof(target)
+        if ty == "number" then
+            target_out = get_function_for_level(target :: number)
+            result = builtin_funcs.low_level.raw_getfenv(target_out)
+            source = builtin_funcs.fn2str(target_out)
+        elseif ty == "function" then
+            target_out = target :: (...any) -> any
+            result = builtin_funcs.low_level.raw_getfenv(target)
+            source = builtin_funcs.fn2str(target)
+        else
+            return error("target must be nil, a function or a number", 3)
+        end
+    end
+    return target_out, result, source
+end
+
+function _G.getfenv(target: number | (...any) -> any | nil): any
+    local _, result, source = retrieve_target(target)
+    if system_fenv[result] then
+        if not source then
+            return error("cannot retrieve the global variables table for a protected context", 2)
+        else
+            return error(`cannot access fenv of builtin function '{source}'`, 2)
+        end
+    end
+    builtin_funcs.low_level.deoptimize_env(result)
+    return result
+end
+function _G.setfenv(target: number | (...any) -> any | nil, table: any)
+    if typeof(table) ~= "table" then
+        return error("function environment must be a table", 2)
+    end
+
+    local target_out, result, source = retrieve_target(target)
+    if system_fenv[result] then
+        if not source then
+            return error("cannot set the global variables table for a protected context", 2)
+        else
+            return error(`cannot set fenv of builtin function '{source}'`, 2)
+        end
+    end
+
+    builtin_funcs.low_level.deoptimize_env(table)
+    if not target_out then
+        builtin_funcs.low_level.set_globals(table)
+    else
+        builtin_funcs.low_level.raw_setfenv(target_out, table)
+    end
+end

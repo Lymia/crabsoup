@@ -75,10 +75,41 @@ pub fn load_unsafe_functions(lua: &Lua) -> Result<Table> {
         0
     }
 
+    unsafe extern "C-unwind" fn get_globals(lua: *mut lua_State) -> i32 {
+        lua_pushglobaltable(lua);
+        1
+    }
+
+    unsafe extern "C-unwind" fn set_globals(lua: *mut lua_State) -> i32 {
+        // signature: (env)
+        luaL_checktype(lua, 1, LUA_TTABLE);
+        lua_replace(lua, LUA_GLOBALSINDEX);
+        0
+    }
+
+    unsafe extern "C-unwind" fn raw_getfenv(lua: *mut lua_State) -> i32 {
+        // signature: (function) -> env
+        luaL_checktype(lua, 1, LUA_TFUNCTION);
+        lua_getfenv(lua, 1);
+        1
+    }
+
+    unsafe extern "C-unwind" fn raw_setfenv(lua: *mut lua_State) -> i32 {
+        // signature: (function, env)
+        luaL_checktype(lua, 1, LUA_TFUNCTION);
+        luaL_checktype(lua, 2, LUA_TTABLE);
+        lua_setfenv(lua, 1);
+        0
+    }
+
     let table = lua.create_table()?;
     unsafe {
         table.set("load_in_new_thread", lua.create_c_function(load_in_new_thread)?)?;
         table.set("deoptimize_env", lua.create_c_function(deoptimize_env)?)?;
+        table.set("get_globals", lua.create_c_function(get_globals)?)?;
+        table.set("set_globals", lua.create_c_function(set_globals)?)?;
+        table.set("raw_getfenv", lua.create_c_function(raw_getfenv)?)?;
+        table.set("raw_setfenv", lua.create_c_function(raw_setfenv)?)?;
     }
     Ok(table)
 }

@@ -20,4 +20,5 @@ end
 
 for _, v in builtin_funcs.envs do
     register_builtins_for_env("", v, {})
+    builtin_funcs.mark_system_fenv(v)
 end
