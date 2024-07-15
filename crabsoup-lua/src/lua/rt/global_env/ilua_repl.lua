@@ -26,7 +26,7 @@ local function repl_main()
     local env = getfenv(0)
 
     print('ILUA: ' .. _VERSION .. ' + ' .. builtin_funcs.crabsoup._VERSION)
-    local chunkname = "stdin"
+    local chunkname = "@<stdin>"
 
     -- readline support
     local readline, saveline

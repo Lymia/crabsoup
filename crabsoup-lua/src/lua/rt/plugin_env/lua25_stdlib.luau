@@ -13,15 +13,15 @@ function _G.dostring(chunk, chunkname, mode, env)
 end
 
 function _G.nextvar(name: any): (any, any)
-    return next(getfenv(), name)
+    return next(getfenv(0), name)
 end
 
 function _G.setglobal(name: string, value: any)
-    getfenv()[name] = value
+    getfenv(0)[name] = value
 end
 
 function _G.getglobal(name: string): any
-    return getfenv()[name]
+    return getfenv(0)[name]
 end
 
 function _G.setfallback(fallbackname: string, newfallback: any)

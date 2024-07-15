@@ -13,11 +13,6 @@ local builtin_funcs = ...
 -- local vars
 local identifier = "^[_%a][_%w]*$"
 
---
--- local functions
---
-
--- function varsub(str, repl)
 -- replaces variables in strings like "%20s{foo} %s{bar}" using the table repl
 -- to look up replacements. use string:format patterns followed by {variable}
 -- and pass the variables in a table like { foo="FOO", bar="BAR" }
@@ -44,6 +39,52 @@ local function escape_string(str)
     return string.format('"%s"', str)
 end
 
+-- this sort function compares table keys to allow a sort by key
+-- the order is: numeric keys, string keys, other keys(converted to string)
+local function key_cmp(a, b)
+    local at = type(a)
+    local bt = type(b)
+    if at == "number" then
+        if bt == "number" then
+            return a < b
+        else
+            return true
+        end
+    elseif at == "string" then
+        if bt == "string" then
+            return a < b
+        elseif bt == "number" then
+            return false
+        else
+            return true
+        end
+    else
+        if bt == "string" or bt == "number" then
+            return false
+        else
+            return tostring(a) < tostring(b)
+        end
+    end
+end
+
+-- returns an iterator to sort by table keys using func
+-- as the comparison func. defaults to Pretty.key_cmp
+local function pairs_by_keys(tbl, func)
+    func = func or key_cmp
+    local a = {}
+    for n in pairs(tbl) do
+        a[#a + 1] = n
+    end
+    table.sort(a, func)
+
+    local i = 0
+    return function()
+        -- iterator function
+        i = i + 1
+        return a[i], tbl[a[i]]
+    end
+end
+
 --
 -- Pretty print / format class
 --
@@ -58,9 +99,6 @@ Pretty.defaults = {
     indent1 = "    ", -- string repeated each indent level
     indent2 = "    ", -- string used to indent final level
     indent3 = "    ", -- string used to indent final level continuation
-    empty = "{ }", -- string used for empty table
-    bl = "{ ", -- table braces, single line mode
-    br = " }",
     bl_m = "{\n", -- table braces, multiline mode, substitution available:
     br_m = "\n%s{i}}", -- %s{i}, %s{i1}, %s{i2}, %s{i3} are calulated indents
     eol = "\n", -- end of line (multiline)
@@ -70,7 +108,6 @@ Pretty.defaults = {
     value = false, -- format of value in field (set to pattern to enable)
     field = "%s", -- format of field (which is either "k=v" or "v", with delimiter)
     tstr = true, -- use to tostring(table) if table has meta __tostring
-    table_info = false, -- show the table info (usually a hex address)
     function_info = false, -- show the function info (similar to table_info)
     multiline = true, -- set to false to disable multiline output
     compact = true, -- will compact leaf tables in multiline mode
@@ -109,8 +146,7 @@ function Pretty:table2str(tbl, path, depth, multiline)
     -- don't print tables we've seen before
     for p, t in pairs(self.seen) do
         if tbl == t then
-            local tinfo = self.table_info and tostring(tbl) or p
-            return string.format("<< %s >>", tinfo)
+            return string.format("<< %s >>", p)
         end
     end
     -- max_depth
@@ -121,56 +157,12 @@ function Pretty:table2str(tbl, path, depth, multiline)
     return self:table_children2str(tbl, path, depth, multiline)
 end
 
--- this sort function compares table keys to allow a sort by key
--- the order is: numeric keys, string keys, other keys(converted to string)
-function Pretty.key_cmp(a, b)
-    local at = type(a)
-    local bt = type(b)
-    if at == "number" then
-        if bt == "number" then
-            return a < b
-        else
-            return true
-        end
-    elseif at == "string" then
-        if bt == "string" then
-            return a < b
-        elseif bt == "number" then
-            return false
-        else
-            return true
-        end
-    else
-        if bt == "string" or bt == "number" then
-            return false
-        else
-            return tostring(a) < tostring(b)
-        end
-    end
-end
-
--- returns an iterator to sort by table keys using func
--- as the comparison func. defaults to Pretty.key_cmp
-function Pretty.pairs_by_keys(tbl, func)
-    func = func or Pretty.key_cmp
-    local a = {}
-    for n in pairs(tbl) do
-        a[#a + 1] = n
-    end
-    table.sort(a, func)
-    local i = 0
-    return function()
-        -- iterator function
-        i = i + 1
-        return a[i], tbl[a[i]]
-    end
-end
-
 function Pretty:table_children2str(tbl, path, depth, multiline)
+    local bl, br, empty = "{ ", " }", "{ }" -- table braces, single line mode
+    local sep = ", " -- the seperator used between table entries
+
     local sp, eol, eq = self.sp, self.eol, self.eq
-    local bl, br = self.bl, self.br
     local bl_m, br_m = self.bl_m, self.br_m
-    local tinfo = self.table_info and tostring(tbl) .. sp or ""
     local key_fmt, val_fmt, field = self.key, self.val, self.field
     local compactable, cnt, c = 0, 0, {}
 
@@ -192,7 +184,7 @@ function Pretty:table_children2str(tbl, path, depth, multiline)
 
     -- process child nodes, sorted
     local last = nil
-    for k, v in Pretty.pairs_by_keys(tbl, self.sort_function) do
+    for k, v in pairs_by_keys(tbl, self.sort_function) do
         -- item limit
         if self.items and cnt >= self.items then
             table.insert(c, "...")
@@ -251,7 +243,7 @@ function Pretty:table_children2str(tbl, path, depth, multiline)
         local lines = {}
         local line = ""
         for i, v in ipairs(c) do
-            local f = string.format(field, v .. (i == cnt and "" or ", "))
+            local f = string.format(field, v .. (i == cnt and "" or sep))
             if line == "" then
                 line = ind2 .. f
             elseif #line + #f <= self.len then
@@ -262,24 +254,24 @@ function Pretty:table_children2str(tbl, path, depth, multiline)
             end
         end
         table.insert(lines, line)
-        return tinfo .. bl_m .. table.concat(lines, eol) .. br_m
+        return bl_m .. table.concat(lines, eol) .. br_m
     elseif #c == 0 then
         -- empty
-        return tinfo .. self.empty
+        return empty
     elseif multiline then
         -- multiline
         local c2 = {}
         for i, v in ipairs(c) do
-            table.insert(c2, ind2 .. string.format(field, v .. (i == cnt and "" or ", ")))
+            table.insert(c2, ind2 .. string.format(field, v .. (i == cnt and "" or sep)))
         end
-        return tinfo .. bl_m .. table.concat(c2, eol) .. br_m
+        return bl_m .. table.concat(c2, eol) .. br_m
     else
         -- single line
         local c2 = {}
         for i, v in ipairs(c) do
-            table.insert(c2, string.format(field, v .. (i == cnt and "" or ", ")))
+            table.insert(c2, string.format(field, v .. (i == cnt and "" or sep)))
         end
-        return tinfo .. bl .. table.concat(c2) .. br
+        return bl .. table.concat(c2) .. br
     end
 end
 

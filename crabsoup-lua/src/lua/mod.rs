@@ -10,7 +10,7 @@ const SHARED_TABLE_LOC: &str = "crabsoup-shared";
 macro_rules! include_call {
     ($lua:expr, $source:expr, $shared:expr, $global:expr) => {{
         $lua.load(include_str!($source))
-            .set_name($source)
+            .set_name(format!("@<rt>/{}", &$source[3..]))
             .call::<_, ()>((&$shared, &$global))?;
     }};
 }
