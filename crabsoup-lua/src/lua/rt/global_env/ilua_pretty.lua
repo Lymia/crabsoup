@@ -238,7 +238,7 @@ function table_children2str(tbl, path, depth, multiline, seen)
         local lines = {}
         local line = ""
         for i, v in ipairs(c) do
-            local f = v .. (i == cnt and "" or sep)
+            local f = v .. sep
             if line == "" then
                 line = ind2 .. f
             elseif #line + #f <= line_len then
@@ -257,7 +257,7 @@ function table_children2str(tbl, path, depth, multiline, seen)
         -- multiline
         local c2 = {}
         for i, v in ipairs(c) do
-            table.insert(c2, ind2 .. v .. (i == cnt and "" or sep))
+            table.insert(c2, ind2 .. v .. sep)
         end
         return bl_m .. table.concat(c2, eol) .. br_m
     else
