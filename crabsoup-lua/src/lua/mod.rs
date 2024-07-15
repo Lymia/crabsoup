@@ -1,5 +1,5 @@
 use crate::lua::baselib::CrabSoupLib;
-use mlua::{prelude::LuaFunction, Lua, LuaOptions, Result, StdLib, Table, Thread};
+use mlua::{prelude::LuaFunction, ChunkMode, Lua, LuaOptions, Result, StdLib, Table, Thread};
 
 mod baselib;
 mod htmllib;
@@ -9,8 +9,9 @@ const SHARED_TABLE_LOC: &str = "crabsoup-shared";
 
 macro_rules! include_call {
     ($lua:expr, $source:expr, $shared:expr, $global:expr) => {{
-        $lua.load(include_str!($source))
-            .set_name(format!("@<rt>/{}", &$source[3..]))
+        $lua.load(include_bytes!(concat!(env!("OUT_DIR"), "/luau_compiled/", $source)).as_slice())
+            .set_mode(ChunkMode::Binary)
+            .set_name(concat!("@<rt>/{}", $source))
             .call::<_, ()>((&$shared, &$global))?;
     }};
 }
@@ -38,33 +39,33 @@ impl CrabsoupLuaContext {
             // Global operating environment
             let global = lua.globals();
             envs_table.set("global", &global)?;
-            include_call!(lua, "rt/global_env/baselib.luau", table, global);
+            include_call!(lua, "global_env/baselib.luau", table, global);
             utils::sandbox_global_environment(&lua)?; // intentionally early, allows optimizations
-            include_call!(lua, "rt/global_env/ilua_pretty.lua", table, global);
-            include_call!(lua, "rt/global_env/ilua_repl.lua", table, global);
+            include_call!(lua, "global_env/ilua_pretty.lua", table, global);
+            include_call!(lua, "global_env/ilua_repl.lua", table, global);
 
             // Standalone environment
             let standalone_env = utils::clone_env_table(&lua, lua.globals())?;
             envs_table.set("standalone", &standalone_env)?;
-            include_call!(lua, "rt/shared_env/lua5x_stdlib.luau", table, standalone_env);
-            include_call!(lua, "rt/shared_env/soupault_api.luau", table, standalone_env);
-            include_call!(lua, "rt/shared_env/html_api.luau", table, standalone_env);
-            include_call!(lua, "rt/shared_env/crabsoup_ext_api.luau", table, standalone_env);
+            include_call!(lua, "shared_env/lua5x_stdlib.luau", table, standalone_env);
+            include_call!(lua, "shared_env/soupault_api.luau", table, standalone_env);
+            include_call!(lua, "shared_env/html_api.luau", table, standalone_env);
+            include_call!(lua, "shared_env/crabsoup_ext_api.luau", table, standalone_env);
             utils::create_sandbox_environment(&lua, standalone_env)?;
 
             // Plugin environment
             let plugin_env = utils::clone_env_table(&lua, lua.globals())?;
             envs_table.set("plugin", &plugin_env)?;
-            include_call!(lua, "rt/shared_env/lua5x_stdlib.luau", table, plugin_env);
-            include_call!(lua, "rt/shared_env/soupault_api.luau", table, plugin_env);
-            include_call!(lua, "rt/shared_env/html_api.luau", table, plugin_env);
-            include_call!(lua, "rt/shared_env/crabsoup_ext_api.luau", table, plugin_env);
-            include_call!(lua, "rt/plugin_env/lua25_stdlib.luau", table, plugin_env);
-            include_call!(lua, "rt/plugin_env/legacy_api.luau", table, plugin_env);
+            include_call!(lua, "shared_env/lua5x_stdlib.luau", table, plugin_env);
+            include_call!(lua, "shared_env/soupault_api.luau", table, plugin_env);
+            include_call!(lua, "shared_env/html_api.luau", table, plugin_env);
+            include_call!(lua, "shared_env/crabsoup_ext_api.luau", table, plugin_env);
+            include_call!(lua, "plugin_env/lua25_stdlib.luau", table, plugin_env);
+            include_call!(lua, "plugin_env/legacy_api.luau", table, plugin_env);
             utils::create_sandbox_environment(&lua, plugin_env)?;
 
             // Finalize
-            include_call!(lua, "rt/finalize.luau", table, global);
+            include_call!(lua, "finalize.luau", table, global);
 
             // Returns the shared table
             table

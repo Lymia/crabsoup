@@ -13,6 +13,7 @@ lto = true
 
 [workspace.dependencies]
 anyhow = "1.0"
+glob = "0.3"
 mlua = { version = "0.9", features = ["async", "luau-jit", "send"] }
 rustyline = { version = "14.0", default-features = false }
 tracing = "0.1"

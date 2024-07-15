@@ -65,13 +65,12 @@ local function retrieve_target(target: number | (...any) -> any | nil): (any?, (
     if not target or target == 0 then
         result = builtin_funcs.low_level.get_globals()
     else
-        local ty = typeof(target)
-        if ty == "number" then
-            target_out = get_function_for_level(target :: number)
+        if type(target) == "number" then
+            target_out = get_function_for_level(target)
             result = builtin_funcs.low_level.raw_getfenv(target_out)
             source = builtin_funcs.fn2str(target_out)
-        elseif ty == "function" then
-            target_out = target :: (...any) -> any
+        elseif type(target) == "function" then
+            target_out = target
             result = builtin_funcs.low_level.raw_getfenv(target)
             source = builtin_funcs.fn2str(target)
         else

@@ -158,6 +158,7 @@ function table2str(tbl, path, depth, multiline, seen)
     if seen[tbl] then
         return "<recursion: " .. seen[tbl] .. ">"
     end
+
     if #path == 0 then
         seen[tbl] = "."
     else

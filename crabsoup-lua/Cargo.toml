@@ -13,6 +13,7 @@ license = "Apache-2.0"
 
 [dependencies]
 anyhow = { workspace = true }
+glob = { workspace = true }
 mlua = { workspace = true }
 rustyline = { workspace = true }
 tracing = { workspace = true }
@@ -22,3 +23,8 @@ wyrand = { workspace = true }
 ego-tree = { workspace = true }
 html5ever = { workspace = true }
 scraper = { workspace = true }
+
+[build-dependencies]
+anyhow = { workspace = true }
+glob = { workspace = true }
+mlua = { workspace = true }

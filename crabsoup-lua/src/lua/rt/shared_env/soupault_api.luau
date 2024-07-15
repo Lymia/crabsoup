@@ -109,31 +109,31 @@ function Value.is_nil(value: any?): boolean
 end
 
 function Value.is_int(value: any?): boolean
-    if typeof(value) == "number" then
-        return math.isfinite(value :: number) and math.round(value :: number) == value
+    if type(value) == "number" then
+        return math.isfinite(value) and math.round(value) == value
     else
         return false
     end
 end
 
 function Value.is_float(value: any?): boolean
-    return typeof(value) == "number"
+    return type(value) == "number"
 end
 
 function Value.is_string(value: any?): boolean
-    return typeof(value) == "string"
+    return type(value) == "string"
 end
 
 function Value.is_table(value: any?): boolean
-    return typeof(value) == "table"
+    return type(value) == "table"
 end
 
 function Value.is_list(value: any?): boolean
-    if not value or typeof(value) ~= "table" then
+    if not value or type(value) ~= "table" then
         return false
     else
         for k in value do
-            if typeof(k) ~= "number" then
+            if type(k) ~= "number" then
                 return false
             end
         end
