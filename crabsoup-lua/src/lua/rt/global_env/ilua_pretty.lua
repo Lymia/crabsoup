@@ -25,7 +25,7 @@ local identifier = "^[_%a][_%w]*$"
 -- missing variables or errors in formatting will result in empty strings
 -- being inserted for the corresponding placeholder pattern
 local function varsub(str, repl)
-    return str:gsub("(%%.-){([_%a][_%w]-)}", function(f,k)
+    return string.gsub(str, "(%%.-){([_%a][_%w]-)}", function(f,k)
         local r, ok = repl[k]
         ok, r = pcall(string.format, f, r)
         return ok and r or ""
@@ -37,9 +37,9 @@ end
 local function escape_string(str)
     local es_repl = { ["\n"] = "\\n", ["\r"] = "\\r", ["\t"] = "\\t",
                       ["\\"] = "\\\\", ['"'] = '\\"' }
-    str = str:gsub('(["\r\n\t\\])', es_repl)
-    str = str:gsub("(%c)", function(c)
-        return string.format("\\%d", c:byte())
+    str = string.gsub(str, '(["\r\n\t\\])', es_repl)
+    str = string.gsub(str, "(%c)", function(c)
+        return string.format("\\%d", string.byte(c))
     end)
     return string.format('"%s"', str)
 end
@@ -178,7 +178,7 @@ function Pretty:table_children2str(tbl, path, depth, multiline)
     local compactable, cnt, c = 0, 0, {}
     -- multiline setup
     if multiline then
-        ind1 = self.indent1:rep(depth)
+        ind1 = string.rep(self.indent1, depth)
         ind2 = ind1 .. self.indent2
         ind3 = ind1 .. self.indent3
         local irepl = { i=ind1, i1=ind1, i2=ind2, i3=ind3 }
@@ -188,7 +188,7 @@ function Pretty:table_children2str(tbl, path, depth, multiline)
     if self.metatables then
         local mt = getmetatable(tbl)
         if mt then
-            table.append(c, "<metatable>".. self.eq .. self:val2str(mt,
+            table.insert(c, "<metatable>".. self.eq .. self:val2str(mt,
                     path .. (path == "" and "" or ".") .. "<metatable>", depth + 1, multiline))
         end
     end
@@ -198,7 +198,7 @@ function Pretty:table_children2str(tbl, path, depth, multiline)
     for k, v in Pretty.pairs_by_keys(tbl, self.sort_function) do
         -- item limit
         if self.items and cnt >= self.items then
-            table.append(c, "...")
+            table.insert(c, "...")
             compactable = compactable + 1
             break
         end
@@ -217,7 +217,7 @@ function Pretty:table_children2str(tbl, path, depth, multiline)
         end
         local key = tostring(k)
         if type(k) == "string" then
-            if k:match(identifier) then
+            if string.match(k, identifier) then
                 print_brackets = false
             else
                 key = escape_string(key)
@@ -229,23 +229,23 @@ function Pretty:table_children2str(tbl, path, depth, multiline)
         -- format val
         local val = self:val2str(v,
                 path .. (path == "" and "" or ".") .. key, depth + 1, multiline)
-        if not val:match("[\r\n]") then
+        if not string.match(val, "[\r\n]") then
             compactable = compactable + 1
         end
         if val_fmt then
-            val = val_fmt:format(val)
+            val = string.format(val_fmt, val)
         end
         -- put the pieces together
         local out = ""
         if key_fmt then
-            key = key_fmt:format(key)
+            key = string.format(key_fmt, key)
         end
         if print_index then
             out = key .. eq .. val
         else
             out = val
         end
-        table.append(c, out)
+        table.insert(c, out)
         cnt = cnt + 1
     end
 
@@ -254,30 +254,30 @@ function Pretty:table_children2str(tbl, path, depth, multiline)
         local lines = {}
         local line = ""
         for i, v in ipairs(c) do
-            local f = field:format(v .. (i == cnt and "" or delim1))
+            local f = string.format(field, v .. (i == cnt and "" or delim1))
             if line == "" then
                 line = ind2 .. f
             elseif #line + #f <= self.len then
                 line = line .. f
             else
-                table.append(lines, line)
+                table.insert(lines, line)
                 line = ind3 .. f
             end
         end
-        table.append(lines, line)
+        table.insert(lines, line)
         return tinfo .. bl_m .. table.concat(lines, eol) .. br_m
     elseif #c == 0 then -- empty
         return tinfo .. self.empty
     elseif multiline then -- multiline
         local c2 = {}
         for i, v in ipairs(c) do
-            table.append(c2, ind2 .. field:format(v .. (i == cnt and "" or delim2)))
+            table.insert(c2, ind2 .. string.format(field, v .. (i == cnt and "" or delim2)))
         end
         return tinfo .. bl_m .. table.concat(c2, eol) .. br_m
     else -- single line
         local c2 = {}
         for i, v in ipairs(c) do
-            table.append(c2, field:format(v .. (i == cnt and "" or delim1)))
+            table.insert    (c2, string.format(field, v .. (i == cnt and "" or delim1)))
         end
         return tinfo .. bl .. table.concat(c2) .. br
     end
@@ -306,7 +306,7 @@ function Pretty:val2str(val, path, depth, multiline)
         -- we try only to apply floating-point precision for numbers deemed to be floating-point,
         -- unless the 3rd arg to precision() is true.
         if self.num_prec and (self.num_all or math.floor(val) ~= val) then
-            return self.num_prec:format(val)
+            return string.format(self.num_prec, val)
         else
             return tostring(val)
         end
