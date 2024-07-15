@@ -1,0 +1,23 @@
+[package]
+name = "crabsoup"
+version = "0.1.0"
+authors = ["Lymia Kanokawa <lymia@lymia.moe>"]
+edition = "2021"
+
+description = "A Rust re-implementation of soupault."
+
+repository = "https://github.com/Lymia/crabsoup"
+readme = "README.md"
+
+license = "Apache-2.0"
+
+[dependencies]
+anyhow = { workspace = true }
+
+# Internal libraries
+crabsoup-lua = { workspace = true }
+
+[build-dependencies]
+anyhow = { workspace = true }
+glob = { workspace = true }
+mlua = { workspace = true }

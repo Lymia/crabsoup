@@ -77,6 +77,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "crabsoup"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "crabsoup-lua",
+ "glob",
+ "mlua",
+]
+
+[[package]]
 name = "crabsoup-lua"
 version = "0.1.0"
 dependencies = [

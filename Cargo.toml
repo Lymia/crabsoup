@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "crabsoup",
     "crabsoup-lua",
 ]
 resolver = "2"
@@ -23,3 +24,6 @@ wyrand = { version = "0.2", features = ["wyhash"] }
 ego-tree = "0.6"
 html5ever = "0.26"
 scraper = { version = "0.19", features = ["atomic", "deterministic"] }
+
+# Internal libraries
+crabsoup-lua = { version = "0.1.0", path = "crabsoup-lua" }
