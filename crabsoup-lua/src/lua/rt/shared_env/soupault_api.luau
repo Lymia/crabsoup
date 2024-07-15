@@ -12,8 +12,6 @@ local typeof = typeof
 local utf8_len = utf8.len
 local utf8_offset = utf8.offset
 
-local pretty = builtin_funcs.Pretty:new()
-
 -- Function definitions for `String` module
 local String = _G.String or {}
 _G.String = String
@@ -111,7 +109,7 @@ local Value = _G.Value or {}
 _G.Value = Value
 
 function Value.repr(value: any?): string
-    local str = pretty:format(value)
+    local str = builtin_funcs.repr(value)
     return str
 end
 

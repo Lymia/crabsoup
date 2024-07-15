@@ -101,60 +101,41 @@ local function indent(count)
     end
 end
 
+-- Returns a string for a given function
+local builtin_function_names = {}
+local function fn2str(func)
+    if typeof(func) ~= "function" then
+        error("fn2str requires a function")
+    end
+
+    if builtin_function_names[func] then
+        return builtin_function_names[func]
+    end
+
+    return tostring(func)
+end
+function builtin_funcs.register_builtin_name(func, name)
+    builtin_function_names[func] = name
+end
+
 --
--- Pretty print / format class
+-- Pretty printer configuration
 --
+local max_items = 100 -- max number of items to list in one table
+local max_depth = 7 -- max recursion depth when printing tables
+local line_len = 120 -- max line length hint
+local indent_len = 4 -- number of spaces to indent with
 
-local Pretty = {}
-builtin_funcs.Pretty = Pretty
+--
+-- Pretty printer for various types
+--
+local table2str, table_children2str
 
-Pretty.defaults = {
-    items = 100, -- max number of items to list in one table
-    depth = 7, -- max recursion depth when printing tables
-    len = 80, -- max line length hint
-    indent_count = 4, -- number of spaces to indent with
+local function val2str(val, path, depth, multiline, seen)
+    local tp = typeof(val)
 
-    function_info = false, -- show the function info (similar to table_info)
-    multiline = true, -- set to false to disable multiline output
-}
-
-Pretty.__call = function(self, ...)
-    self:print(...)
-end
-
-function Pretty:new(params)
-    local obj = {}
-    params = params or {}
-    setmetatable(obj, self)
-    self.__index = self
-    obj:init(params)
-    return obj
-end
-
-function Pretty:init(params)
-    for k, v in pairs(self.defaults) do
-        self[k] = v
-    end
-    for k, v in pairs(params) do
-        self[k] = v
-    end
-    self.print_handlers = self.print_handlers or {}
-    self:reset_seen()
-end
-
-function Pretty:reset_seen()
-    self.seen = {}
-    setmetatable(self.seen, { __do_not_enter = "<< ! >>" })
-end
-
-function Pretty:val2str(val, path, depth, multiline)
-    local tp = type(val)
-    if self.print_handlers[tp] then
-        local s = self.print_handlers[tp](val)
-        return s or '?'
-    end
     if tp == 'function' then
-        return self.function_info and tostring(val) or "function"
+        return fn2str(val)
     elseif tp == 'table' then
         local mt = getmetatable(val)
         if mt and mt.__do_not_enter then
@@ -162,40 +143,31 @@ function Pretty:val2str(val, path, depth, multiline)
         elseif mt and mt.__tostring then
             return tostring(val)
         else
-            return self:table2str(val, path, depth, multiline)
+            return table2str(val, path, depth, multiline, seen)
         end
     elseif tp == 'string' then
         return escape_string(val)
-    elseif tp == 'number' then
-        -- we try only to apply floating-point precision for numbers deemed to be floating-point,
-        -- unless the 3rd arg to precision() is true.
-        if self.num_prec and (self.num_all or math.floor(val) ~= val) then
-            return string.format(self.num_prec, val)
-        else
-            return tostring(val)
-        end
     else
         return tostring(val)
     end
 end
 
-function Pretty:table2str(tbl, path, depth, multiline)
+function table2str(tbl, path, depth, multiline, seen)
     -- don't print tables we've seen before
-    for p, t in pairs(self.seen) do
-        if tbl == t then
-            return string.format("<< %s >>", p)
-        end
+    if seen[tbl] then
+        return "<recursion: " .. seen[tbl] .. ">"
     end
+    seen[tbl] = path
+
     -- max_depth
-    self.seen[path] = tbl
-    if depth >= self.depth then
+    if depth >= max_depth then
         return ">>>"
     end
-    return self:table_children2str(tbl, path, depth, multiline)
+    return table_children2str(tbl, path, depth, multiline, seen)
 end
 
-function Pretty:table_children2str(tbl, path, depth, multiline)
-    local ind1, ind2 = indent(depth * self.indent_count), indent((depth + 1) * self.indent_count)
+function table_children2str(tbl, path, depth, multiline, seen)
+    local ind1, ind2 = indent(depth * indent_len), indent((depth + 1) * indent_len)
 
     local bl, br, empty = "{ ", " }", "{ }" -- table braces, single line mode
     local bl_m, br_m = "{\n", "\n" .. ind1 .. "}" -- table braces, multiline mode
@@ -208,15 +180,15 @@ function Pretty:table_children2str(tbl, path, depth, multiline)
     -- metatable
     local mt = getmetatable(tbl)
     if mt then
-        local meta_str = self:val2str(mt, path .. (path == "" and "" or ".") .. "<metatable>", depth + 1, multiline)
-        table.insert(c, "<metatable>" .. self.eq .. meta_str)
+        local meta_str = val2str(mt, path .. (path == "" and "" or ".") .. "<metatable>", depth + 1, multiline, seen)
+        table.insert(c, "<metatable>" .. eq .. meta_str)
     end
 
     -- process child nodes, sorted
     local last = nil
-    for k, v in pairs_by_keys(tbl, self.sort_function) do
+    for k, v in pairs_by_keys(tbl) do
         -- item limit
-        if self.items and cnt >= self.items then
+        if cnt >= max_items then
             table.insert(c, "...")
             compactable = compactable + 1
             break
@@ -246,8 +218,7 @@ function Pretty:table_children2str(tbl, path, depth, multiline)
             key = '[' .. key .. ']'
         end
         -- format val
-        local val = self:val2str(v,
-                path .. (path == "" and "" or ".") .. key, depth + 1, multiline)
+        local val = val2str(v, path .. (path == "" and "" or ".") .. key, depth + 1, multiline, seen)
         if not string.match(val, "[\r\n]") then
             compactable = compactable + 1
         end
@@ -270,7 +241,7 @@ function Pretty:table_children2str(tbl, path, depth, multiline)
             local f = v .. (i == cnt and "" or sep)
             if line == "" then
                 line = ind2 .. f
-            elseif #line + #f <= self.len then
+            elseif #line + #f <= line_len then
                 line = line .. f
             else
                 table.insert(lines, line)
@@ -299,39 +270,30 @@ function Pretty:table_children2str(tbl, path, depth, multiline)
     end
 end
 
-function Pretty:format(...)
+local function format(multiline, ...)
     local out, v = "", nil
+    local seen = {}
+
     -- first try single line output
-    self:reset_seen()
     for i = 1, select("#", ...) do
         v = select(i, ...)
-        out = string.format("%s%s ", out, self:val2str(v, "", 0, false))
+        out = string.format("%s%s ", out, val2str(v, "", 0, false, seen))
     end
+
     -- if it is too long, use multiline mode, if enabled
-    if self.multiline and #out > self.len then
+    if multiline and #out > line_len then
         out = ""
-        self:reset_seen()
+        seen = {}
         for i = 1, select("#", ...) do
             v = select(i, ...)
-            out = string.format("%s%s\n", out, self:val2str(v, "", 0, true))
+            out = string.format("%s%s\n", out, val2str(v, "", 0, true, seen))
         end
     end
-    self:reset_seen()
-    return string.trim(out)
+
+    local result = string.trim(out)
+    return result
 end
 
-function Pretty:print(...)
-    local output = self:format(...)
-    if self.output_handler then
-        self.output_handler(output)
-    else
-        if output and output ~= "" then
-            print(output)
-        end
-    end
-end
-
-local pretty_instance = Pretty:new()
-function builtin_funcs.repr(a)
-    return pretty_instance:format(a)
+function builtin_funcs.repr(...)
+    return format(true, ...)
 end

@@ -15,13 +15,6 @@ local builtin_funcs = ...
 local safe_loadstring = builtin_funcs.crabsoup.loadstring
 
 -- ILUA implementation
-local pretty = builtin_funcs.Pretty:new {
-    output_handler = function(str)
-        if str and str ~= "" then
-            print(str)
-        end
-    end,
-}
 local function repl_main()
     local env = getfenv(0)
 
@@ -64,7 +57,7 @@ local function repl_main()
     end
 
     local function wrap_output(...)
-        pretty(...)
+        print(builtin_funcs.repr(...))
         env._ = select(1, ...)
     end
 
