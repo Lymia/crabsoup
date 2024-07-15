@@ -38,9 +38,9 @@ impl CrabsoupLuaContext {
             // Global operating environment
             let global = lua.globals();
             include_call!(lua, "rt/global_env/baselib.luau", table, global);
+            utils::sandbox_global_environment(&lua)?; // intentionally early, allows optimizations
             include_call!(lua, "rt/global_env/ilua_pretty.lua", table, global);
             include_call!(lua, "rt/global_env/ilua_repl.lua", table, global);
-            utils::sandbox_global_environment(&lua)?;
 
             // Standalone environment
             let standalone_env = utils::clone_env_table(&lua, lua.globals())?;

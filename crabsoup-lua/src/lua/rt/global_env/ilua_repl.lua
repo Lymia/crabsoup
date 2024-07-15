@@ -13,19 +13,6 @@
 -- imported global functions
 local builtin_funcs = ...
 
-local format = string.format
-local concat = table.concat
-local print = print
-local select = select
-local setmetatable = setmetatable
-local pairs = pairs
-local pcall = pcall
-local error = error
-local trim = string.trim
-
--- imported global vars
-local _VERSION = _VERSION
-
 -- variables from crabsoup API
 local Pretty = builtin_funcs.Pretty
 local crabsoup = builtin_funcs.crabsoup
@@ -55,12 +42,6 @@ Ilua.defaults = {
     prompt2 = '.. ',        -- prompt during multiple line input
     chunkname = "stdin",    -- name of the evaluated chunk when compiled
     result_var = "_",       -- the variable name that stores the last results
-    verbose = false,        -- currently unused
-
-    -- internal, for reference only
-    savef = nil,
-    num_prec = nil,
-    num_all = nil,
 }
 
 function Ilua:new(params)
@@ -99,22 +80,14 @@ function Ilua:start()
     print('ILUA: ' .. _VERSION .. ' + ' .. builtin_funcs.crabsoup._VERSION)
 end
 
-function Ilua:precision(len,prec,all)
-    if not len then self.num_prec = nil
-    else
-        self.num_prec = '%'..len..'.'..prec..'f'
-    end
-    self.num_all = all
-end
-
 function Ilua:get_input()
     local lines, i, input, chunk, err = {}, 1
     while true do
         input = readline((i == 1) and self.prompt or self.prompt2)
         if not input then return end
         lines[i] = input
-        input = concat(lines, "\n")
-        chunk, err = crabsoup.loadstring(format("return(%s)", input), self.chunkname, {})
+        input = table.concat(lines, "\n")
+        chunk, err = crabsoup.loadstring(string.format("return(%s)", input), self.chunkname, {})
         if chunk then return input end
         chunk, err = crabsoup.loadstring(input, self.chunkname, {})
         if chunk or not err:match("<eof>$") then
@@ -131,14 +104,10 @@ function Ilua:wrap(...)
 end
 
 function Ilua:eval_lua(line)
-    if self.savef then
-        self.savef:write(self.prompt, line, '\n')
-    end
-
     -- is it an expression?
-    local chunk, err = crabsoup.loadstring(format("(...):wrap((function() return %s end)())", line), self.chunkname, self.env)
+    local chunk, err = crabsoup.loadstring(string.format("(...):wrap((function() return %s end)())", line), self.chunkname, self.env)
     if err then -- otherwise, a statement?
-        chunk, err = crabsoup.loadstring(format("(...):wrap((function() %s end)())", line), self.chunkname, self.env)
+        chunk, err = crabsoup.loadstring(string.format("(...):wrap((function() %s end)())", line), self.chunkname, self.env)
     end
     if err then
         print(err)
@@ -155,13 +124,9 @@ end
 function Ilua:run()
     while true do
         local input = self:get_input()
-        if not input or trim(input) == 'quit' then break end
+        if not input or string.trim(input) == 'quit' then break end
         self:eval_lua(input)
         saveline(input)
-    end
-
-    if self.savef then
-        self.savef:close()
     end
 end
 

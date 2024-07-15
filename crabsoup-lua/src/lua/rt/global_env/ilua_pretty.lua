@@ -10,23 +10,6 @@
 
 local builtin_funcs = ...
 
--- imported global functions
-local format = string.format
-local sort = table.sort
-local append = table.insert
-local concat = table.concat
-local floor = math.floor
-local print = print
-local type = type
-local select = select
-local tostring = tostring
-local getmetatable = getmetatable
-local setmetatable = setmetatable
-local pairs = pairs
-local ipairs = ipairs
-local pcall = pcall
-local trim = string.trim
-
 -- local vars
 local identifier = "^[_%a][_%w]*$"
 
@@ -44,7 +27,7 @@ local identifier = "^[_%a][_%w]*$"
 local function varsub(str, repl)
     return str:gsub("(%%.-){([_%a][_%w]-)}", function(f,k)
         local r, ok = repl[k]
-        ok, r = pcall(format, f, r)
+        ok, r = pcall(string.format, f, r)
         return ok and r or ""
     end)
 end
@@ -56,9 +39,9 @@ local function escape_string(str)
                       ["\\"] = "\\\\", ['"'] = '\\"' }
     str = str:gsub('(["\r\n\t\\])', es_repl)
     str = str:gsub("(%c)", function(c)
-        return format("\\%d", c:byte())
+        return string.format("\\%d", c:byte())
     end)
-    return format('"%s"', str)
+    return string.format('"%s"', str)
 end
 
 --
@@ -131,7 +114,7 @@ function Pretty:table2str(tbl, path, depth, multiline)
     for p, t in pairs(self.seen) do
         if tbl == t then
             local tinfo = self.table_info and tostring(tbl) or p
-            return format("<< %s >>", tinfo)
+            return string.format("<< %s >>", tinfo)
         end
     end
     -- max_depth
@@ -176,7 +159,7 @@ function Pretty.pairs_by_keys(tbl, func)
     func = func or Pretty.key_cmp
     local a = {}
     for n in pairs(tbl) do a[#a + 1] = n end
-    sort(a, func)
+    table.sort(a, func)
     local i = 0
     return function ()  -- iterator function
         i = i + 1
@@ -205,7 +188,7 @@ function Pretty:table_children2str(tbl, path, depth, multiline)
     if self.metatables then
         local mt = getmetatable(tbl)
         if mt then
-            append(c, "<metatable>".. self.eq .. self:val2str(mt,
+            table.append(c, "<metatable>".. self.eq .. self:val2str(mt,
                     path .. (path == "" and "" or ".") .. "<metatable>", depth + 1, multiline))
         end
     end
@@ -215,7 +198,7 @@ function Pretty:table_children2str(tbl, path, depth, multiline)
     for k, v in Pretty.pairs_by_keys(tbl, self.sort_function) do
         -- item limit
         if self.items and cnt >= self.items then
-            append(c, "...")
+            table.append(c, "...")
             compactable = compactable + 1
             break
         end
@@ -262,7 +245,7 @@ function Pretty:table_children2str(tbl, path, depth, multiline)
         else
             out = val
         end
-        append(c, out)
+        table.append(c, out)
         cnt = cnt + 1
     end
 
@@ -277,26 +260,26 @@ function Pretty:table_children2str(tbl, path, depth, multiline)
             elseif #line + #f <= self.len then
                 line = line .. f
             else
-                append(lines, line)
+                table.append(lines, line)
                 line = ind3 .. f
             end
         end
-        append(lines, line)
-        return tinfo .. bl_m .. concat(lines, eol) .. br_m
+        table.append(lines, line)
+        return tinfo .. bl_m .. table.concat(lines, eol) .. br_m
     elseif #c == 0 then -- empty
         return tinfo .. self.empty
     elseif multiline then -- multiline
         local c2 = {}
         for i, v in ipairs(c) do
-            append(c2, ind2 .. field:format(v .. (i == cnt and "" or delim2)))
+            table.append(c2, ind2 .. field:format(v .. (i == cnt and "" or delim2)))
         end
-        return tinfo .. bl_m .. concat(c2, eol) .. br_m
+        return tinfo .. bl_m .. table.concat(c2, eol) .. br_m
     else -- single line
         local c2 = {}
         for i, v in ipairs(c) do
-            append(c2, field:format(v .. (i == cnt and "" or delim1)))
+            table.append(c2, field:format(v .. (i == cnt and "" or delim1)))
         end
-        return tinfo .. bl .. concat(c2) .. br
+        return tinfo .. bl .. table.concat(c2) .. br
     end
 end
 
@@ -322,7 +305,7 @@ function Pretty:val2str(val, path, depth, multiline)
     elseif tp == 'number' then
         -- we try only to apply floating-point precision for numbers deemed to be floating-point,
         -- unless the 3rd arg to precision() is true.
-        if self.num_prec and (self.num_all or floor(val) ~= val) then
+        if self.num_prec and (self.num_all or math.floor(val) ~= val) then
             return self.num_prec:format(val)
         else
             return tostring(val)
@@ -338,7 +321,7 @@ function Pretty:format(...)
     self:reset_seen()
     for i = 1, select("#", ...) do
         v = select(i, ...)
-        out = format("%s%s ", out, self:val2str(v, "", 0, false))
+        out = string.format("%s%s ", out, self:val2str(v, "", 0, false))
     end
     -- if it is too long, use multiline mode, if enabled
     if self.multiline and #out > self.len then
@@ -346,11 +329,11 @@ function Pretty:format(...)
         self:reset_seen()
         for i = 1, select("#", ...) do
             v = select(i, ...)
-            out = format("%s%s\n", out, self:val2str(v, "", 0, true))
+            out = string.format("%s%s\n", out, self:val2str(v, "", 0, true))
         end
     end
     self:reset_seen()
-    return trim(out)
+    return string.trim(out)
 end
 
 function Pretty:print(...)
