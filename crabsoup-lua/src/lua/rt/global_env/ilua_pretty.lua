@@ -13,30 +13,32 @@ local builtin_funcs = ...
 -- local vars
 local identifier = "^[_%a][_%w]*$"
 
--- replaces variables in strings like "%20s{foo} %s{bar}" using the table repl
--- to look up replacements. use string:format patterns followed by {variable}
--- and pass the variables in a table like { foo="FOO", bar="BAR" }
--- variable names need to match Lua identifiers ([_%a][_%w]-)
--- missing variables or errors in formatting will result in empty strings
--- being inserted for the corresponding placeholder pattern
-local function varsub(str, repl)
-    return string.gsub(str, "(%%.-){([_%a][_%w]-)}", function(f, k)
-        local r, ok = repl[k]
-        ok, r = pcall(string.format, f, r)
-        return ok and r or ""
-    end)
-end
-
 -- encodes a string as you would write it in code,
 -- escaping control and other special characters
+local function escape_char(c)
+    return string.format("\\%03d", string.byte(c))
+end
 local function escape_string(str)
-    local es_repl = { ["\n"] = "\\n", ["\r"] = "\\r", ["\t"] = "\\t",
-                      ["\\"] = "\\\\", ['"'] = '\\"' }
-    str = string.gsub(str, '(["\r\n\t\\])', es_repl)
-    str = string.gsub(str, "(%c)", function(c)
-        return string.format("\\%d", string.byte(c))
-    end)
-    return string.format('"%s"', str)
+    local es_repl = {
+        ["\0"] = "\\0",
+        ["\a"] = "\\a",
+        ["\b"] = "\\b",
+        ["\f"] = "\\f",
+        ["\n"] = "\\n",
+        ["\r"] = "\\r",
+        ["\t"] = "\\t",
+        ["\v"] = "\\v",
+        ["\\"] = "\\\\",
+        ['"'] = '\\"',
+    }
+
+    str = string.gsub(str, '(["\0\a\b\f\n\r\n\t\v\\])', es_repl)
+    str = string.gsub(str, "(%c)", escape_char)
+    if not utf8.len(str) then
+        -- escape invalid UTF-8 characters
+        str = string.gsub(str, "([\128-\255])", escape_char)
+    end
+    return '"' .. str .. '"'
 end
 
 -- this sort function compares table keys to allow a sort by key
@@ -85,6 +87,20 @@ local function pairs_by_keys(tbl, func)
     end
 end
 
+-- returns a string containing a given number of spaces
+local cached_indent = {}
+local function indent(count)
+    if cached_indent[count] then
+        return cached_indent[count]
+    else
+        local result = string.rep(" ", count)
+        if count <= 50 then
+            cached_indent[count] = result
+        end
+        return result
+    end
+end
+
 --
 -- Pretty print / format class
 --
@@ -96,21 +112,10 @@ Pretty.defaults = {
     items = 100, -- max number of items to list in one table
     depth = 7, -- max recursion depth when printing tables
     len = 80, -- max line length hint
-    indent1 = "    ", -- string repeated each indent level
-    indent2 = "    ", -- string used to indent final level
-    indent3 = "    ", -- string used to indent final level continuation
-    bl_m = "{\n", -- table braces, multiline mode, substitution available:
-    br_m = "\n%s{i}}", -- %s{i}, %s{i1}, %s{i2}, %s{i3} are calulated indents
-    eol = "\n", -- end of line (multiline)
-    sp = " ", -- used other places where spacing might be desired but optional
-    eq = " = ", -- table equals string value (printed as key..eq..value)
-    key = false, -- format of key in field (set to pattern to enable)
-    value = false, -- format of value in field (set to pattern to enable)
-    field = "%s", -- format of field (which is either "k=v" or "v", with delimiter)
-    tstr = true, -- use to tostring(table) if table has meta __tostring
+    indent_count = 4, -- number of spaces to indent with
+
     function_info = false, -- show the function info (similar to table_info)
     multiline = true, -- set to false to disable multiline output
-    compact = true, -- will compact leaf tables in multiline mode
 }
 
 Pretty.__call = function(self, ...)
@@ -142,6 +147,38 @@ function Pretty:reset_seen()
     setmetatable(self.seen, { __do_not_enter = "<< ! >>" })
 end
 
+function Pretty:val2str(val, path, depth, multiline)
+    local tp = type(val)
+    if self.print_handlers[tp] then
+        local s = self.print_handlers[tp](val)
+        return s or '?'
+    end
+    if tp == 'function' then
+        return self.function_info and tostring(val) or "function"
+    elseif tp == 'table' then
+        local mt = getmetatable(val)
+        if mt and mt.__do_not_enter then
+            return mt.__do_not_enter
+        elseif mt and mt.__tostring then
+            return tostring(val)
+        else
+            return self:table2str(val, path, depth, multiline)
+        end
+    elseif tp == 'string' then
+        return escape_string(val)
+    elseif tp == 'number' then
+        -- we try only to apply floating-point precision for numbers deemed to be floating-point,
+        -- unless the 3rd arg to precision() is true.
+        if self.num_prec and (self.num_all or math.floor(val) ~= val) then
+            return string.format(self.num_prec, val)
+        else
+            return tostring(val)
+        end
+    else
+        return tostring(val)
+    end
+end
+
 function Pretty:table2str(tbl, path, depth, multiline)
     -- don't print tables we've seen before
     for p, t in pairs(self.seen) do
@@ -158,28 +195,21 @@ function Pretty:table2str(tbl, path, depth, multiline)
 end
 
 function Pretty:table_children2str(tbl, path, depth, multiline)
+    local ind1, ind2 = indent(depth * self.indent_count), indent((depth + 1) * self.indent_count)
+
     local bl, br, empty = "{ ", " }", "{ }" -- table braces, single line mode
+    local bl_m, br_m = "{\n", "\n" .. ind1 .. "}" -- table braces, multiline mode
     local sep = ", " -- the seperator used between table entries
+    local eol = "\n" -- end of line (multiline)
+    local eq = " = " -- table equals string value (printed as key..eq..value)
 
-    local sp, eol, eq = self.sp, self.eol, self.eq
-    local bl_m, br_m = self.bl_m, self.br_m
-    local key_fmt, val_fmt, field = self.key, self.val, self.field
     local compactable, cnt, c = 0, 0, {}
-
-    -- multiline setup
-    local ind1, ind2, ind3 = "", "", ""
-    if multiline then
-        ind1 = string.rep(self.indent1, depth)
-        ind2 = ind1 .. self.indent2
-        ind3 = ind1 .. self.indent3
-        local irepl = { i = ind1, i1 = ind1, i2 = ind2, i3 = ind3 }
-        bl_m, br_m = varsub(bl_m, irepl), varsub(br_m, irepl)
-    end
 
     -- metatable
     local mt = getmetatable(tbl)
     if mt then
-        table.insert(c, "<metatable>" .. self.eq .. self:val2str(mt, path .. (path == "" and "" or ".") .. "<metatable>", depth + 1, multiline))
+        local meta_str = self:val2str(mt, path .. (path == "" and "" or ".") .. "<metatable>", depth + 1, multiline)
+        table.insert(c, "<metatable>" .. self.eq .. meta_str)
     end
 
     -- process child nodes, sorted
@@ -221,14 +251,8 @@ function Pretty:table_children2str(tbl, path, depth, multiline)
         if not string.match(val, "[\r\n]") then
             compactable = compactable + 1
         end
-        if val_fmt then
-            val = string.format(val_fmt, val)
-        end
         -- put the pieces together
         local out = ""
-        if key_fmt then
-            key = string.format(key_fmt, key)
-        end
         if print_index then
             out = key .. eq .. val
         else
@@ -239,18 +263,18 @@ function Pretty:table_children2str(tbl, path, depth, multiline)
     end
 
     -- compact
-    if multiline and self.compact and #c > 0 and compactable == #c then
+    if multiline and #c > 0 and compactable == #c then
         local lines = {}
         local line = ""
         for i, v in ipairs(c) do
-            local f = string.format(field, v .. (i == cnt and "" or sep))
+            local f = v .. (i == cnt and "" or sep)
             if line == "" then
                 line = ind2 .. f
             elseif #line + #f <= self.len then
                 line = line .. f
             else
                 table.insert(lines, line)
-                line = ind3 .. f
+                line = ind2 .. f
             end
         end
         table.insert(lines, line)
@@ -262,48 +286,16 @@ function Pretty:table_children2str(tbl, path, depth, multiline)
         -- multiline
         local c2 = {}
         for i, v in ipairs(c) do
-            table.insert(c2, ind2 .. string.format(field, v .. (i == cnt and "" or sep)))
+            table.insert(c2, ind2 .. v .. (i == cnt and "" or sep))
         end
         return bl_m .. table.concat(c2, eol) .. br_m
     else
         -- single line
         local c2 = {}
         for i, v in ipairs(c) do
-            table.insert(c2, string.format(field, v .. (i == cnt and "" or sep)))
+            table.insert(c2, v .. (i == cnt and "" or sep))
         end
         return bl .. table.concat(c2) .. br
-    end
-end
-
-function Pretty:val2str(val, path, depth, multiline)
-    local tp = type(val)
-    if self.print_handlers[tp] then
-        local s = self.print_handlers[tp](val)
-        return s or '?'
-    end
-    if tp == 'function' then
-        return self.function_info and tostring(val) or "function"
-    elseif tp == 'table' then
-        local mt = getmetatable(val)
-        if mt and mt.__do_not_enter then
-            return mt.__do_not_enter
-        elseif self.tstr and mt and mt.__tostring then
-            return tostring(val)
-        else
-            return self:table2str(val, path, depth, multiline)
-        end
-    elseif tp == 'string' then
-        return escape_string(val)
-    elseif tp == 'number' then
-        -- we try only to apply floating-point precision for numbers deemed to be floating-point,
-        -- unless the 3rd arg to precision() is true.
-        if self.num_prec and (self.num_all or math.floor(val) ~= val) then
-            return string.format(self.num_prec, val)
-        else
-            return tostring(val)
-        end
-    else
-        return tostring(val)
     end
 end
 
