@@ -28,3 +28,8 @@ function builtin_funcs.run_standalone(string, chunk_name)
     end
     return builtin_funcs.low_level.load_in_new_thread(loader, env)
 end
+
+-- Extensions to the standard math API
+_G.math.isnan = builtin_funcs.crabsoup.is_nan
+_G.math.isinf = builtin_funcs.crabsoup.is_inf
+_G.math.isfinite = builtin_funcs.crabsoup.is_finite

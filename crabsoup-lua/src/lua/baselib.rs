@@ -7,8 +7,8 @@ pub struct CrabSoupLib;
 impl UserData for CrabSoupLib {
     fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {
         fields.add_meta_field("__type", "CrabSoupLib");
-        fields
-            .add_field("_VERSION", concat!(env!("CARGO_PKG_NAME"), " ", env!("CARGO_PKG_VERSION")));
+        let version = concat!(env!("CARGO_PKG_NAME"), " ", env!("CARGO_PKG_VERSION"));
+        fields.add_field("_VERSION", version);
         fields.add_field("VERSION_ONLY", env!("CARGO_PKG_VERSION"));
     }
 
@@ -45,6 +45,10 @@ impl UserData for CrabSoupLib {
                 }
             },
         );
+
+        methods.add_function("is_nan", |_, f: f64| Ok(f.is_nan()));
+        methods.add_function("is_inf", |_, f: f64| Ok(f.is_infinite()));
+        methods.add_function("is_finite", |_, f: f64| Ok(f.is_finite()));
 
         methods.add_function("error", |_, str: LuaString| {
             error!("{}", str.to_str()?);

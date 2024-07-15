@@ -134,6 +134,18 @@ The website build pass, when the two-pass workflow is enabled. Always 0 if `inde
 
 The following functions are added to the standard library of Luau. All functions here are new to crabsoup and are not available in soupault.
 
+#### math.isnan(value: number): boolean
+
+Returns `true` only if `value` is an `NaN` value of some variety.
+
+#### math.isinf(value: number): boolean
+
+Returns `true` only if `value` is a infinite value of some variety.
+
+#### math.isfinite(value: number): boolean
+
+Returns `true` only if `value` is neither infinite nor `NaN`.
+
 #### string.trim(str: string): string
 
 Removes leading and trailing whitespace from the string.

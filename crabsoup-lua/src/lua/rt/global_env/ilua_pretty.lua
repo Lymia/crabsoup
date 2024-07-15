@@ -55,8 +55,6 @@ Pretty.defaults = {
     items = 100, -- max number of items to list in one table
     depth = 7, -- max recursion depth when printing tables
     len = 80, -- max line length hint
-    delim1 = ", ", -- item delimiter (single line / compact)
-    delim2 = ", ", -- item delimiter (multiline)
     indent1 = "    ", -- string repeated each indent level
     indent2 = "    ", -- string used to indent final level
     indent3 = "    ", -- string used to indent final level continuation
@@ -74,7 +72,6 @@ Pretty.defaults = {
     tstr = true, -- use to tostring(table) if table has meta __tostring
     table_info = false, -- show the table info (usually a hex address)
     function_info = false, -- show the function info (similar to table_info)
-    metatables = false, -- show metatables when printing tables
     multiline = true, -- set to false to disable multiline output
     compact = true, -- will compact leaf tables in multiline mode
 }
@@ -170,15 +167,15 @@ function Pretty.pairs_by_keys(tbl, func)
 end
 
 function Pretty:table_children2str(tbl, path, depth, multiline)
-    local ind1, ind2, ind3 = "", "", ""
-    local delim1, delim2 = self.delim1, self.delim2
     local sp, eol, eq = self.sp, self.eol, self.eq
     local bl, br = self.bl, self.br
     local bl_m, br_m = self.bl_m, self.br_m
     local tinfo = self.table_info and tostring(tbl) .. sp or ""
     local key_fmt, val_fmt, field = self.key, self.val, self.field
     local compactable, cnt, c = 0, 0, {}
+
     -- multiline setup
+    local ind1, ind2, ind3 = "", "", ""
     if multiline then
         ind1 = string.rep(self.indent1, depth)
         ind2 = ind1 .. self.indent2
@@ -186,13 +183,11 @@ function Pretty:table_children2str(tbl, path, depth, multiline)
         local irepl = { i = ind1, i1 = ind1, i2 = ind2, i3 = ind3 }
         bl_m, br_m = varsub(bl_m, irepl), varsub(br_m, irepl)
     end
+
     -- metatable
-    if self.metatables then
-        local mt = getmetatable(tbl)
-        if mt then
-            table.insert(c, "<metatable>" .. self.eq .. self:val2str(mt,
-                    path .. (path == "" and "" or ".") .. "<metatable>", depth + 1, multiline))
-        end
+    local mt = getmetatable(tbl)
+    if mt then
+        table.insert(c, "<metatable>" .. self.eq .. self:val2str(mt, path .. (path == "" and "" or ".") .. "<metatable>", depth + 1, multiline))
     end
 
     -- process child nodes, sorted
@@ -256,7 +251,7 @@ function Pretty:table_children2str(tbl, path, depth, multiline)
         local lines = {}
         local line = ""
         for i, v in ipairs(c) do
-            local f = string.format(field, v .. (i == cnt and "" or delim1))
+            local f = string.format(field, v .. (i == cnt and "" or ", "))
             if line == "" then
                 line = ind2 .. f
             elseif #line + #f <= self.len then
@@ -275,14 +270,14 @@ function Pretty:table_children2str(tbl, path, depth, multiline)
         -- multiline
         local c2 = {}
         for i, v in ipairs(c) do
-            table.insert(c2, ind2 .. string.format(field, v .. (i == cnt and "" or delim2)))
+            table.insert(c2, ind2 .. string.format(field, v .. (i == cnt and "" or ", ")))
         end
         return tinfo .. bl_m .. table.concat(c2, eol) .. br_m
     else
         -- single line
         local c2 = {}
         for i, v in ipairs(c) do
-            table.insert(c2, string.format(field, v .. (i == cnt and "" or delim1)))
+            table.insert(c2, string.format(field, v .. (i == cnt and "" or ", ")))
         end
         return tinfo .. bl .. table.concat(c2) .. br
     end

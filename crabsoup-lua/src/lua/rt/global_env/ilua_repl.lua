@@ -12,137 +12,92 @@
 
 -- imported global functions
 local builtin_funcs = ...
+local safe_loadstring = builtin_funcs.crabsoup.loadstring
 
--- variables from crabsoup API
-local Pretty = builtin_funcs.Pretty
-local crabsoup = builtin_funcs.crabsoup
-
--- readline support
-local readline, saveline
-do
-    local rustyline_editor = builtin_funcs.crabsoup.open_rustyline()
-    function readline(prompt)
-        return rustyline_editor:readline(prompt)
-    end
-    function saveline(line)
-        return rustyline_editor:saveline(line)
-    end
-end
-
---
--- Ilua class
---
-
-local Ilua = {}
-
--- defaults
-Ilua.defaults = {
-    -- evaluation related
-    prompt = '>> ', -- normal prompt
-    prompt2 = '.. ', -- prompt during multiple line input
-    chunkname = "stdin", -- name of the evaluated chunk when compiled
-    result_var = "_", -- the variable name that stores the last results
-}
-
-function Ilua:new(params)
-    local obj = {}
-    params = params or {}
-    setmetatable(obj, self)
-    self.__index = self
-    obj:init(params)
-    return obj
-end
-
-function Ilua:init(params)
-    for k, v in pairs(self.defaults) do
-        self[k] = v
-    end
-    for k, v in pairs(params) do
-        self[k] = v
-    end
-
-    -- setup environment
-    if not self.env then
-        self.env = self.env or table.clone(_G)
-        self.env._G = self.env
-    end
-
-    -- setup pretty print objects
-    local oh = function(str)
+-- ILUA implementation
+local pretty = builtin_funcs.Pretty:new {
+    output_handler = function(str)
         if str and str ~= "" then
             print(str)
         end
-    end
-    self.p = Pretty:new { output_handler = oh }
-end
+    end,
+}
+local function repl_main()
+    local env = getfenv(0)
 
--- this is mostly meant for the ilua launcher/main
--- a separate Ilua instance may need to do something different so wouldn't call this
-function Ilua:start()
     print('ILUA: ' .. _VERSION .. ' + ' .. builtin_funcs.crabsoup._VERSION)
-end
+    local chunkname = "stdin"
 
-function Ilua:get_input()
-    local lines, i, input, chunk, err = {}, 1
-    while true do
-        input = readline((i == 1) and self.prompt or self.prompt2)
-        if not input then
+    -- readline support
+    local readline, saveline
+    do
+        local rustyline_editor = builtin_funcs.crabsoup.open_rustyline()
+        function readline(prompt)
+            return rustyline_editor:readline(prompt)
+        end
+        function saveline(line)
+            return rustyline_editor:saveline(line)
+        end
+    end
+
+    -- functions
+    local function get_input()
+        local lines, i, input, chunk, err = {}, 1
+        while true do
+            input = readline((i == 1) and ">> " or ".. ")
+            if not input then
+                return
+            end
+            lines[i] = input
+            input = table.concat(lines, "\n")
+            chunk, err = safe_loadstring(string.format("return(%s)", input), chunkname, {})
+            if chunk then
+                return input
+            end
+            chunk, err = safe_loadstring(input, chunkname, {})
+            if chunk or not string.match(err, "<eof>$") then
+                return input
+            end
+            lines[1] = input
+            i = 2
+        end
+    end
+
+    local function wrap_output(...)
+        pretty(...)
+        env._ = select(1, ...)
+    end
+
+    local function eval_lua(line)
+        -- is it an expression?
+        local chunk, err = safe_loadstring(string.format("(...)((function() return %s end)())", line), chunkname)
+        if err then
+            -- otherwise, a statement?
+            chunk, err = safe_loadstring(string.format("(...)((function() %s end)())", line), chunkname)
+        end
+        if err then
+            print(err)
             return
         end
-        lines[i] = input
-        input = table.concat(lines, "\n")
-        chunk, err = crabsoup.loadstring(string.format("return(%s)", input), self.chunkname, {})
-        if chunk then
-            return input
+
+        -- compiled ok, evaluate the chunk
+        local ok, res = pcall(chunk, wrap_output)
+        if not ok then
+            print(res)
         end
-        chunk, err = crabsoup.loadstring(input, self.chunkname, {})
-        if chunk or not err:match("<eof>$") then
-            return input
-        end
-        lines[1] = input
-        i = 2
-    end
-end
-
-function Ilua:wrap(...)
-    self.p(...)
-    self.env[self.result_var] = select(1, ...)
-end
-
-function Ilua:eval_lua(line)
-    -- is it an expression?
-    local chunk, err = crabsoup.loadstring(string.format("(...):wrap((function() return %s end)())", line), self.chunkname, self.env)
-    if err then
-        -- otherwise, a statement?
-        chunk, err = crabsoup.loadstring(string.format("(...):wrap((function() %s end)())", line), self.chunkname, self.env)
-    end
-    if err then
-        print(err)
-        return
     end
 
-    -- compiled ok, evaluate the chunk
-    local ok, res = pcall(chunk, self)
-    if not ok then
-        print(res)
-    end
-end
-
-function Ilua:run()
     while true do
-        local input = self:get_input()
+        local input = get_input()
         if not input or string.trim(input) == 'quit' then
             break
         end
-        self:eval_lua(input)
+        eval_lua(input)
         saveline(input)
     end
 end
 
---
 -- Export functions
---
-
 local is_repl_running = false
 local function run_repl(env)
     local function do_repl()
@@ -152,10 +107,7 @@ local function run_repl(env)
 
         is_repl_running = true
         local success, err = pcall(function()
-            local ilua = Ilua:new({ ["env"] = env })
-            ilua:start()
-            ilua:run()
-
+            repl_main(env)
         end)
         is_repl_running = false
 
@@ -186,7 +138,7 @@ local function run_repl(env)
 end
 
 function builtin_funcs.run_repl_from_console()
-    run_repl(setmetatable({}, { __index = builtin_funcs.envs.standalone }))
+    run_repl(builtin_funcs.envs.standalone)
 end
 
 function builtin_funcs.run_repl_in_env(env)

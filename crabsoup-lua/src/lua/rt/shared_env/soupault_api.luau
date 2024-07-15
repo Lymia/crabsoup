@@ -120,7 +120,11 @@ function Value.is_nil(value: any?): boolean
 end
 
 function Value.is_int(value: any?): boolean
-    return typeof(value) == "number" and math.round(value :: number) == value
+    if typeof(value) == "number" then
+        return math.isfinite(value :: number) and math.round(value :: number) == value
+    else
+        return false
+    end
 end
 
 function Value.is_float(value: any?): boolean
