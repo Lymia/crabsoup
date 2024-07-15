@@ -38,10 +38,10 @@ local Ilua = {}
 -- defaults
 Ilua.defaults = {
     -- evaluation related
-    prompt = '>> ',         -- normal prompt
-    prompt2 = '.. ',        -- prompt during multiple line input
-    chunkname = "stdin",    -- name of the evaluated chunk when compiled
-    result_var = "_",       -- the variable name that stores the last results
+    prompt = '>> ', -- normal prompt
+    prompt2 = '.. ', -- prompt during multiple line input
+    chunkname = "stdin", -- name of the evaluated chunk when compiled
+    result_var = "_", -- the variable name that stores the last results
 }
 
 function Ilua:new(params)
@@ -69,7 +69,9 @@ function Ilua:init(params)
 
     -- setup pretty print objects
     local oh = function(str)
-        if str and str ~= "" then print(str) end
+        if str and str ~= "" then
+            print(str)
+        end
     end
     self.p = Pretty:new { output_handler = oh }
 end
@@ -84,11 +86,15 @@ function Ilua:get_input()
     local lines, i, input, chunk, err = {}, 1
     while true do
         input = readline((i == 1) and self.prompt or self.prompt2)
-        if not input then return end
+        if not input then
+            return
+        end
         lines[i] = input
         input = table.concat(lines, "\n")
         chunk, err = crabsoup.loadstring(string.format("return(%s)", input), self.chunkname, {})
-        if chunk then return input end
+        if chunk then
+            return input
+        end
         chunk, err = crabsoup.loadstring(input, self.chunkname, {})
         if chunk or not err:match("<eof>$") then
             return input
@@ -106,7 +112,8 @@ end
 function Ilua:eval_lua(line)
     -- is it an expression?
     local chunk, err = crabsoup.loadstring(string.format("(...):wrap((function() return %s end)())", line), self.chunkname, self.env)
-    if err then -- otherwise, a statement?
+    if err then
+        -- otherwise, a statement?
         chunk, err = crabsoup.loadstring(string.format("(...):wrap((function() %s end)())", line), self.chunkname, self.env)
     end
     if err then
@@ -124,7 +131,9 @@ end
 function Ilua:run()
     while true do
         local input = self:get_input()
-        if not input or string.trim(input) == 'quit' then break end
+        if not input or string.trim(input) == 'quit' then
+            break
+        end
         self:eval_lua(input)
         saveline(input)
     end

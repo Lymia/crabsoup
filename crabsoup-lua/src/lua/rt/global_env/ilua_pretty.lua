@@ -25,7 +25,7 @@ local identifier = "^[_%a][_%w]*$"
 -- missing variables or errors in formatting will result in empty strings
 -- being inserted for the corresponding placeholder pattern
 local function varsub(str, repl)
-    return string.gsub(str, "(%%.-){([_%a][_%w]-)}", function(f,k)
+    return string.gsub(str, "(%%.-){([_%a][_%w]-)}", function(f, k)
         local r, ok = repl[k]
         ok, r = pcall(string.format, f, r)
         return ok and r or ""
@@ -52,31 +52,31 @@ local Pretty = {}
 builtin_funcs.Pretty = Pretty
 
 Pretty.defaults = {
-    items = 100,                  -- max number of items to list in one table
-    depth = 7,                    -- max recursion depth when printing tables
-    len = 80,                     -- max line length hint
-    delim1 = ", ",                -- item delimiter (single line / compact)
-    delim2 = ", ",                -- item delimiter (multiline)
-    indent1 = "    ",             -- string repeated each indent level
-    indent2 = "    ",             -- string used to indent final level
-    indent3 = "    ",             -- string used to indent final level continuation
-    empty = "{ }",                -- string used for empty table
-    bl = "{ ",                    -- table braces, single line mode
+    items = 100, -- max number of items to list in one table
+    depth = 7, -- max recursion depth when printing tables
+    len = 80, -- max line length hint
+    delim1 = ", ", -- item delimiter (single line / compact)
+    delim2 = ", ", -- item delimiter (multiline)
+    indent1 = "    ", -- string repeated each indent level
+    indent2 = "    ", -- string used to indent final level
+    indent3 = "    ", -- string used to indent final level continuation
+    empty = "{ }", -- string used for empty table
+    bl = "{ ", -- table braces, single line mode
     br = " }",
-    bl_m = "{\n",                 -- table braces, multiline mode, substitution available:
-    br_m = "\n%s{i}}",            -- %s{i}, %s{i1}, %s{i2}, %s{i3} are calulated indents
-    eol = "\n",                   -- end of line (multiline)
-    sp = " ",                     -- used other places where spacing might be desired but optional
-    eq = " = ",                   -- table equals string value (printed as key..eq..value)
-    key = false,                  -- format of key in field (set to pattern to enable)
-    value = false,                -- format of value in field (set to pattern to enable)
-    field = "%s",                 -- format of field (which is either "k=v" or "v", with delimiter)
-    tstr = true,                  -- use to tostring(table) if table has meta __tostring
-    table_info = false,           -- show the table info (usually a hex address)
-    function_info = false,        -- show the function info (similar to table_info)
-    metatables = false,           -- show metatables when printing tables
-    multiline = true,             -- set to false to disable multiline output
-    compact = true,               -- will compact leaf tables in multiline mode
+    bl_m = "{\n", -- table braces, multiline mode, substitution available:
+    br_m = "\n%s{i}}", -- %s{i}, %s{i1}, %s{i2}, %s{i3} are calulated indents
+    eol = "\n", -- end of line (multiline)
+    sp = " ", -- used other places where spacing might be desired but optional
+    eq = " = ", -- table equals string value (printed as key..eq..value)
+    key = false, -- format of key in field (set to pattern to enable)
+    value = false, -- format of value in field (set to pattern to enable)
+    field = "%s", -- format of field (which is either "k=v" or "v", with delimiter)
+    tstr = true, -- use to tostring(table) if table has meta __tostring
+    table_info = false, -- show the table info (usually a hex address)
+    function_info = false, -- show the function info (similar to table_info)
+    metatables = false, -- show metatables when printing tables
+    multiline = true, -- set to false to disable multiline output
+    compact = true, -- will compact leaf tables in multiline mode
 }
 
 Pretty.__call = function(self, ...)
@@ -102,7 +102,6 @@ function Pretty:init(params)
     self.print_handlers = self.print_handlers or {}
     self:reset_seen()
 end
-
 
 function Pretty:reset_seen()
     self.seen = {}
@@ -158,22 +157,25 @@ end
 function Pretty.pairs_by_keys(tbl, func)
     func = func or Pretty.key_cmp
     local a = {}
-    for n in pairs(tbl) do a[#a + 1] = n end
+    for n in pairs(tbl) do
+        a[#a + 1] = n
+    end
     table.sort(a, func)
     local i = 0
-    return function ()  -- iterator function
+    return function()
+        -- iterator function
         i = i + 1
         return a[i], tbl[a[i]]
     end
 end
 
 function Pretty:table_children2str(tbl, path, depth, multiline)
-    local ind1, ind2, ind3  = "", "", ""
+    local ind1, ind2, ind3 = "", "", ""
     local delim1, delim2 = self.delim1, self.delim2
     local sp, eol, eq = self.sp, self.eol, self.eq
     local bl, br = self.bl, self.br
     local bl_m, br_m = self.bl_m, self.br_m
-    local tinfo = self.table_info and tostring(tbl)..sp or ""
+    local tinfo = self.table_info and tostring(tbl) .. sp or ""
     local key_fmt, val_fmt, field = self.key, self.val, self.field
     local compactable, cnt, c = 0, 0, {}
     -- multiline setup
@@ -181,14 +183,14 @@ function Pretty:table_children2str(tbl, path, depth, multiline)
         ind1 = string.rep(self.indent1, depth)
         ind2 = ind1 .. self.indent2
         ind3 = ind1 .. self.indent3
-        local irepl = { i=ind1, i1=ind1, i2=ind2, i3=ind3 }
+        local irepl = { i = ind1, i1 = ind1, i2 = ind2, i3 = ind3 }
         bl_m, br_m = varsub(bl_m, irepl), varsub(br_m, irepl)
     end
     -- metatable
     if self.metatables then
         local mt = getmetatable(tbl)
         if mt then
-            table.insert(c, "<metatable>".. self.eq .. self:val2str(mt,
+            table.insert(c, "<metatable>" .. self.eq .. self:val2str(mt,
                     path .. (path == "" and "" or ".") .. "<metatable>", depth + 1, multiline))
         end
     end
@@ -266,18 +268,21 @@ function Pretty:table_children2str(tbl, path, depth, multiline)
         end
         table.insert(lines, line)
         return tinfo .. bl_m .. table.concat(lines, eol) .. br_m
-    elseif #c == 0 then -- empty
+    elseif #c == 0 then
+        -- empty
         return tinfo .. self.empty
-    elseif multiline then -- multiline
+    elseif multiline then
+        -- multiline
         local c2 = {}
         for i, v in ipairs(c) do
             table.insert(c2, ind2 .. string.format(field, v .. (i == cnt and "" or delim2)))
         end
         return tinfo .. bl_m .. table.concat(c2, eol) .. br_m
-    else -- single line
+    else
+        -- single line
         local c2 = {}
         for i, v in ipairs(c) do
-            table.insert    (c2, string.format(field, v .. (i == cnt and "" or delim1)))
+            table.insert(c2, string.format(field, v .. (i == cnt and "" or delim1)))
         end
         return tinfo .. bl .. table.concat(c2) .. br
     end
