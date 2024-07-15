@@ -166,33 +166,55 @@ function Ilua:run()
 end
 
 --
--- Special functions
+-- Export functions
 --
 
 local is_repl_running = false
-local function run_repl(params)
-    if is_repl_running then
-        error("Please do not try to start a REPL in another REPL.", 3)
+local function run_repl(env)
+    local function do_repl()
+        if is_repl_running then
+            error("Please do not try to start a REPL in another REPL.", 3)
+        end
+
+        is_repl_running = true
+        local success, err = pcall(function()
+            local ilua = Ilua:new({ ["env"] = env })
+            ilua:start()
+            ilua:run()
+
+        end)
+        is_repl_running = false
+
+        if not success then
+            error("REPL encountered an error: " .. err, 3)
+        end
     end
 
-    is_repl_running = true
-    local success, err = pcall(function()
-        local ilua = Ilua:new(params)
-        ilua:start()
-        ilua:run()
+    local thread = builtin_funcs.low_level.load_in_new_thread(do_repl, env)
+    while coroutine.status(thread) == "suspended" do
+        local status, result = coroutine.resume(thread)
+        if not status then
+            error(result)
+        end
 
-    end)
-    is_repl_running = false
-
-    if not success then
-        error("REPL encountered an error: " .. err, 3)
+        if typeof(result) == "PluginInstruction" then
+            if result:is_exit() then
+                print("Exit requested via Plugin.exit")
+                break
+            end
+            if result:is_fail() then
+                error("Caught plugin failure: " .. result:get_message())
+            end
+        elseif result then
+            print("Coroutine yielded value: " .. tostring(result))
+        end
     end
 end
 
 function builtin_funcs.run_repl_from_console()
-    run_repl({})
+    run_repl(setmetatable({}, { __index = builtin_funcs.envs.standalone }))
 end
 
 function builtin_funcs.run_repl_in_env(env)
-    run_repl({ ["env"] = env })
+    run_repl(env)
 end

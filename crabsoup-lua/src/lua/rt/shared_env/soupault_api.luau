@@ -1,6 +1,7 @@
 --!strict
 
 local builtin_funcs, _G = ...
+local crabsoup = builtin_funcs.crabsoup
 
 -- Stored stdlib functions
 local coroutine_yield = coroutine.yield

@@ -19,9 +19,12 @@ function _G.string.endswith(str: string, ending: string): boolean
     return ending == "" or string_sub(str, -#ending) == ending
 end
 
--- Remove setfenv/getfenv, as it deoptimizes luau, and I don't know to what scope
-builtin_funcs.setfenv = _G.setfenv
-builtin_funcs.getfenv = _G.getfenv
-
-_G.setfenv = nil
-_G.getfenv = nil
+-- Helper functions used by Rust code
+function builtin_funcs.run_standalone(string, chunk_name)
+    local env = builtin_funcs.envs.standalone
+    local function loader(...)
+        local chunk = builtin_funcs.crabsoup.loadstring(string, chunk_name)
+        return chunk(...)
+    end
+    return builtin_funcs.low_level.load_in_new_thread(loader, env)
+end

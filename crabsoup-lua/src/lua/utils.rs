@@ -1,12 +1,6 @@
 //! Contains raw Lua API invocations.
 
-use mlua::{
-    ffi::{
-        luaL_sandbox, luaL_sandboxthread, lua_gettop, lua_isnil, lua_mainthread, lua_newthread,
-        lua_pop, lua_replace, lua_setsafeenv, lua_xmove, LUA_GLOBALSINDEX,
-    },
-    lua_State, Function, Lua, Result, Table, Thread, Value,
-};
+use mlua::{ffi::*, lua_State, Function, Lua, Result, Table, Value};
 
 pub fn sandbox_global_environment(lua: &Lua) -> Result<()> {
     unsafe extern "C-unwind" fn do_sandbox(lua: *mut lua_State) -> i32 {
@@ -21,7 +15,8 @@ pub fn sandbox_global_environment(lua: &Lua) -> Result<()> {
 }
 
 pub fn clone_env_table<'lua>(lua: &'lua Lua, old_table: Table<'lua>) -> Result<Table<'lua>> {
-    let new_table = lua.globals()
+    let new_table = lua
+        .globals()
         .get::<_, Table>("table")?
         .get::<_, Function>("clone")?
         .call::<_, Table>(old_table)?;
@@ -49,26 +44,22 @@ pub fn create_sandbox_environment(lua: &Lua, table: Table) -> Result<()> {
     Ok(())
 }
 
-pub fn create_new_thread<'lua>(
-    lua: &'lua Lua,
-    env: Option<Table<'lua>>,
-    loader: Function<'lua>,
-) -> Result<Thread<'lua>> {
-    unsafe extern "C-unwind" fn loader_wrapper_function(lua: *mut lua_State) -> i32 {
+pub fn load_unsafe_functions(lua: &Lua) -> Result<Table> {
+    unsafe extern "C-unwind" fn load_in_new_thread(lua: *mut lua_State) -> i32 {
         // signature: (loader, env) -> thread
+        luaL_checktype(lua, 1, LUA_TFUNCTION);
+        luaL_checktype(lua, 2, LUA_TTABLE);
 
         // Transfer all arguments to the main Lua thread.
         let lua_main = lua_mainthread(lua);
         let lua_thread = lua_newthread(lua_main);
+        lua_rotate(lua, -3, 1);
         lua_xmove(lua, lua_thread, 2);
 
         // Creates the new thread
-        if lua_isnil(lua_thread, -1) == 0 {
-            lua_replace(lua_thread, LUA_GLOBALSINDEX);
-        } else {
-            lua_pop(lua_thread, 1);
-        }
-        luaL_sandboxthread(lua);
+        lua_replace(lua_thread, LUA_GLOBALSINDEX);
+        luaL_sandboxthread(lua_thread);
+        // (loader function is left on stack here)
 
         // Pushes the newly created thread to the `lua` thread
         if lua != lua_main {
@@ -77,8 +68,17 @@ pub fn create_new_thread<'lua>(
         1
     }
 
-    unsafe {
-        let func = lua.create_c_function(loader_wrapper_function)?;
-        Ok(func.call::<_, Thread>((loader, env))?)
+    unsafe extern "C-unwind" fn deoptimize_env(lua: *mut lua_State) -> i32 {
+        // signature: (env)
+        luaL_checktype(lua, 1, LUA_TTABLE);
+        lua_setsafeenv(lua, 1, 0);
+        0
     }
+
+    let table = lua.create_table()?;
+    unsafe {
+        table.set("load_in_new_thread", lua.create_c_function(load_in_new_thread)?)?;
+        table.set("deoptimize_env", lua.create_c_function(deoptimize_env)?)?;
+    }
+    Ok(table)
 }

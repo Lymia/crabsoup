@@ -1,8 +1,8 @@
 use crate::lua::baselib::CrabSoupLib;
-use mlua::{prelude::LuaFunction, Lua, LuaOptions, Result, StdLib, Table};
+use mlua::{prelude::LuaFunction, Lua, LuaOptions, Result, StdLib, Table, Thread};
 
-mod htmllib;
 mod baselib;
+mod htmllib;
 mod utils;
 
 const SHARED_TABLE_LOC: &str = "crabsoup-shared";
@@ -29,6 +29,7 @@ impl CrabsoupLuaContext {
 
             // internal libraries
             table.set("crabsoup", CrabSoupLib)?;
+            table.set("low_level", utils::load_unsafe_functions(&lua)?)?;
 
             // environments table store
             let envs_table = lua.create_table()?;
@@ -53,7 +54,7 @@ impl CrabsoupLuaContext {
             // Plugin environment
             let plugin_env = utils::clone_env_table(&lua, lua.globals())?;
             envs_table.set("plugin", &plugin_env)?;
-            include_call!(lua, "rt/shared_env/lua5x_stdlib.luau", table, standalone_env);
+            include_call!(lua, "rt/shared_env/lua5x_stdlib.luau", table, plugin_env);
             include_call!(lua, "rt/shared_env/soupault_api.luau", table, plugin_env);
             include_call!(lua, "rt/shared_env/html_api.luau", table, plugin_env);
             include_call!(lua, "rt/shared_env/crabsoup_ext_api.luau", table, plugin_env);
@@ -61,6 +62,7 @@ impl CrabsoupLuaContext {
             include_call!(lua, "rt/plugin_env/legacy_api.luau", table, plugin_env);
             utils::create_sandbox_environment(&lua, plugin_env)?;
 
+            // Returns the shared table
             table
         };
         lua.set_named_registry_value(SHARED_TABLE_LOC, shared_table)?;
@@ -68,6 +70,14 @@ impl CrabsoupLuaContext {
         // finish initialization
         lua.sandbox(true)?;
         Ok(CrabsoupLuaContext { lua })
+    }
+
+    pub fn run_standalone(&self, code: &str, chunk_name: Option<&str>) -> Result<Thread> {
+        let shared_table = self.lua.named_registry_value::<Table>(SHARED_TABLE_LOC)?;
+        let thread = shared_table
+            .get::<_, LuaFunction>("run_standalone")?
+            .call::<_, Thread>((code, chunk_name))?;
+        Ok(thread)
     }
 
     pub fn repl(&self) -> Result<()> {
