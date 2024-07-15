@@ -2,12 +2,9 @@
 
 local builtin_funcs, _G = ...
 
--- Stored stdlib functions
-local table_freeze = table.freeze
-
 -- Function definitions for `HTML` module
 function builtin_funcs.create_html_library(context)
     local HTML = {}
 
-    return table_freeze(HTML)
+    return table.freeze(HTML)
 end

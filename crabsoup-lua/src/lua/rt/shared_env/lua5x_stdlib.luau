@@ -3,25 +3,27 @@
 local builtin_funcs, _G = ...
 local crabsoup = builtin_funcs.crabsoup
 
--- Stored stdlib functions
-local getfenv = getfenv
-local string_gsub = string.gsub
-
--- Internal functions
-
-function builtin_funcs.trim(str)
-    return string_gsub(str, "^%s*(.-)%s*$", "%1")
-end
-
 -- Reimplement base library functions
 local function loadstring(chunk: string, chunkname: string?, mode: string?, env: any?): (((...any) -> any)?, string?)
-   if mode then
+    if type(chunk) ~= "string" then
+        return error("chunk must be a string")
+    end
+    if chunkname and type(chunkname) ~= "string" then
+        return error("chunk name must be a string or nil")
+    end
+    if env and type(env) ~= "table" then
+        return error("function environment must be a table or nil")
+    end
+
+    if mode then
        crabsoup.warn("`mode` is ignored on `loadstring` and `load`")
-   end
-   if not env then
+    end
+
+    if not env then
        env = getfenv(2)
-   end
-   return crabsoup.loadstring(chunk, chunkname, env)
+    end
+    builtin_funcs.low_level.deoptimize_env(env)
+    return crabsoup.loadstring(chunk, chunkname, env)
 end
 
 function _G.load(chunk: () -> string? | string, chunkname: string?, mode: string?, env: any?): (((...any) -> any)?, string?)
@@ -39,7 +41,7 @@ function _G.load(chunk: () -> string? | string, chunkname: string?, mode: string
             end
         end
     else
-        error("Chunk function given to `load` must be a function or string.", 2)
+        return error("Chunk function given to `load` must be a function or string.", 2)
     end
     if not env then
         env = getfenv(2)
@@ -48,8 +50,7 @@ function _G.load(chunk: () -> string? | string, chunkname: string?, mode: string
 end
 
 function _G.dofile(filename: string): any
-    error("not yet implemented", 2)
-    return nil
+    return error("not yet implemented", 2)
 end
 
 _G.loadstring = loadstring

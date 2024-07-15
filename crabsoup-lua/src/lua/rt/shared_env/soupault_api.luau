@@ -3,36 +3,27 @@
 local builtin_funcs, _G = ...
 local crabsoup = builtin_funcs.crabsoup
 
--- Stored stdlib functions
-local coroutine_yield = coroutine.yield
-local error = error
-local string_sub = string.sub
-local tostring = tostring
-local typeof = typeof
-local utf8_len = utf8.len
-local utf8_offset = utf8.offset
-
 -- Function definitions for `String` module
 local String = _G.String or {}
 _G.String = String
 
 function String.truncate(str: string, length: number, trailer: string?): string
-    local len = utf8_len(str)
+    local len = utf8.len(str)
     if len then
         if len == length then
             return str
         else
-            local offset = utf8_offset(str, length)
+            local offset = utf8.offset(str, length)
             if offset >= #str then
                 return str
             else
-                return string_sub(str, 0, offset) .. (trailer or "")
+                return string.sub(str, 0, offset) .. (trailer or "")
             end
         end
     elseif length >= #str then
         return str
     else
-        return string_sub(str, 0, length) .. (trailer or "")
+        return string.sub(str, 0, length) .. (trailer or "")
     end
 end
 
@@ -71,12 +62,12 @@ local Plugin = _G.Plugin or {}
 _G.Plugin = Plugin
 
 function Plugin.fail(message: any?): never
-    coroutine_yield(crabsoup.plugin_fail(tostring(message)))
+    coroutine.yield(crabsoup.plugin_fail(tostring(message)))
     return error("unreachable")
 end
 
 function Plugin.exit(message: any?): never
-    coroutine_yield(crabsoup.plugin_exit(tostring(message)))
+    coroutine.yield(crabsoup.plugin_exit(tostring(message)))
     return error("unreachable")
 end
 
