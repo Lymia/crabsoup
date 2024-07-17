@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "crabsoup",
+    "crabsoup-kuchikiki",
     "crabsoup-lua",
 ]
 resolver = "2"
@@ -15,15 +16,11 @@ lto = true
 [workspace.dependencies]
 anyhow = "1.0"
 glob = "0.3"
-mlua = { version = "0.9", features = ["async", "luau-jit", "send"] }
+mlua = { version = "0.9", features = ["luau-jit"] }
 rustyline = { version = "14.0", default-features = false }
 tracing = "0.1"
 wyrand = { version = "0.2", features = ["wyhash"] }
 
-# HTML DOM related
-ego-tree = "0.6"
-html5ever = "0.26"
-scraper = { version = "0.19", features = ["atomic", "deterministic"] }
-
 # Internal libraries
+crabsoup-kuchikiki = { version = "0.8.2-crabsoup", path = "crabsoup-kuchikiki" }
 crabsoup-lua = { version = "0.1.0", path = "crabsoup-lua" }

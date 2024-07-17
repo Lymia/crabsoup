@@ -14,7 +14,7 @@ license = "Apache-2.0"
 [dependencies]
 anyhow = { workspace = true }
 
-# Internal libraries
+# Local dependencies
 crabsoup-lua = { workspace = true }
 
 [build-dependencies]

@@ -19,10 +19,8 @@ rustyline = { workspace = true }
 tracing = { workspace = true }
 wyrand = { workspace = true }
 
-# HTML DOM related
-ego-tree = { workspace = true }
-html5ever = { workspace = true }
-scraper = { workspace = true }
+# Local dependencies
+crabsoup-kuchikiki = { workspace = true }
 
 [build-dependencies]
 anyhow = { workspace = true }

@@ -34,11 +34,9 @@ file = "plugins/site-url.lua"
 
 You can also use the `lua_source` option instead of `file` to directly include Lua code in the configuration file.
 
-### Using `crabsoup-lua`
+### Using `crabsoup lua`
 
-The `crabsoup-lua` command can be used to load plugins as Lua scripts. This binary exposes a slightly different API that includes functionality for plugin loading, sandboxing and execution - and lacks APIs that are meant to operate on a single page.
-
-The `crabsoup` binary is implemented as pure Lua code, running through the `crabsoup-lua` executor.
+The `crabsoup lua` subcommand can be used to load plugins as Lua scripts. This binary exposes a slightly different API that includes functionality for plugin loading, sandboxing and execution - and lacks APIs that are meant to operate on a single page.
 
 ## Lua Environment
 
@@ -71,14 +69,14 @@ The standalone has the following differences from the standard environment:
 * It includes all functions found in the Standalone API section of this document.
 * It does not include any functions found in the Compatibility API section.
 
-This is the environment the `crabsoup` binary runs in, and thus allows access to all functionality used to create the program. Any scripts loaded through the `crabsoup-lua` binary are loaded into this environment.
+This is the environment the `crabsoup` binary runs in, and thus allows access to all functionality used to create the program. Any scripts loaded through the `crabsoup lua` command are loaded into this environment.
 
 ## Plugin API
 
 ### Reading this section
 
 APIs marked "*(since soupault 1.0.0)*" are only available since a given soupault version. crabsoup as of version {CRABSOUP_VERSION} attempts to remain compatible with the soupault 4.10.0 API.
-
+    
 APIs marked "*(since crabsoup 0.1.0)*" are only available since a given crabsoup version. This also implies that the method is an extension and is not available in the original soupault.
 
 ### Global Variables

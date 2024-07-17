@@ -36,3 +36,9 @@ Don't write code like this even for soupault, it's extremely confusing.
 Most global tables such as `Sys` are locked, and cannot be modified by plugin code. This is done because the `crabsoup` binary is written in Lua, and thus, shares the same global tables.
 
 Please rewrite your code to not monkey patch global tables.
+
+### Weak HTML Parent References
+
+The HTML library used by Crabsoup uses weak references to access the parent node of elements. Therefore, `HTML.parent` may return nil if the parent element of a node has been garbage collected.
+
+This is unlikely to happen in practice, as in practice, you only access the parent of elements whose roots are stored in another variable (such as the `page` global).

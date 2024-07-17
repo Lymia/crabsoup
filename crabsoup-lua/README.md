@@ -1,1 +1,1 @@
-../README.md
+This crate is internal to `crabsoup`.
