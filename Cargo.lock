@@ -153,9 +153,13 @@ name = "crabsoup"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "crabsoup-lua",
+ "crabsoup-kuchikiki",
  "glob",
+ "html5ever",
  "mlua",
+ "rustyline",
+ "tracing",
+ "wyrand",
 ]
 
 [[package]]
@@ -168,19 +172,6 @@ dependencies = [
  "indexmap",
  "selectors",
  "tempfile",
-]
-
-[[package]]
-name = "crabsoup-lua"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "crabsoup-kuchikiki",
- "glob",
- "mlua",
- "rustyline",
- "tracing",
- "wyrand",
 ]
 
 [[package]]

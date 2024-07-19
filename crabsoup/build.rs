@@ -14,10 +14,10 @@ pub fn main() -> Result<()> {
     out_path.push("luau_compiled");
     std::fs::create_dir_all(&out_path)?;
 
-    for path in glob::glob("src/lua/**/*")? {
+    for path in glob::glob("lua/**/*")? {
         let path = path?;
         if path.is_file() {
-            let suffix = path.strip_prefix("src/lua/")?;
+            let suffix = path.strip_prefix("lua/")?;
             let mut output = out_path.clone();
             output.push(suffix);
 

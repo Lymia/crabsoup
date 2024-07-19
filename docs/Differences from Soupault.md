@@ -2,15 +2,13 @@
 
 While crabsoup makes an effort to be compatible with all major functionality of soupault, some differences exist due to the very different implementation.
 
-## A Note on Encodings
-
-Due to being written in Rust, crabsoup is a natively unicode program with a strong preference to work with UTF-8 encoded text when possible. As such, many APIs may unexpectedly fail when used on non-Unicode text when soupault would not.
-
-This is considered a *bug* by the developers, and should be reported as such.
-
 ## Lua Plugins
 
 While most plugins in practice should work without modification from Soupault, a few major differences should be kept in mind:
+
+### UTF-8 Encoding
+
+Due to being written in Rust, crabsoup is a natively unicode program with a strong preference to work with UTF-8 encoded text when possible. As such, many APIs may unexpectedly fail when used on non-Unicode strings when soupault would not.
 
 ### Removed Lua 2.5 APIs
 

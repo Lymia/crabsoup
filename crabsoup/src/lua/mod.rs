@@ -9,10 +9,12 @@ const SHARED_TABLE_LOC: &str = "crabsoup-shared";
 
 macro_rules! include_call {
     ($lua:expr, $source:expr, $shared:expr, $global:expr) => {{
-        $lua.load(include_bytes!(concat!(env!("OUT_DIR"), "/luau_compiled/", $source)).as_slice())
-            .set_mode(ChunkMode::Binary)
-            .set_name(concat!("@<rt>/{}", $source))
-            .call::<_, ()>((&$shared, &$global))?;
+        $lua.load(
+            include_bytes!(concat!(env!("OUT_DIR"), "/luau_compiled/rt/", $source)).as_slice(),
+        )
+        .set_mode(ChunkMode::Binary)
+        .set_name(concat!("@<rt>/{}", $source))
+        .call::<_, ()>((&$shared, &$global))?;
     }};
 }
 
