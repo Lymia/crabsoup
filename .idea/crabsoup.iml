@@ -8,6 +8,7 @@
       <sourceFolder url="file://$MODULE_DIR$/crabsoup-kuchikiki/examples" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crabsoup-kuchikiki/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crabsoup/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crabsoup-kuchikiki/benches" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
