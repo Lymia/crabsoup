@@ -41,6 +41,7 @@ impl CrabsoupLuaContext {
             // Global operating environment
             let global = lua.globals();
             envs_table.set("global", &global)?;
+            global.set("HTML", htmllib::create_html_table(&lua)?)?;
             include_call!(lua, "global_env/baselib.luau", table, global);
             utils::sandbox_global_environment(&lua)?; // intentionally early, allows optimizations
             include_call!(lua, "global_env/ilua_pretty.lua", table, global);

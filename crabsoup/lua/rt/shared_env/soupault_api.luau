@@ -142,5 +142,5 @@ function Value.is_list(value: any?): boolean
 end
 
 function Value.is_html(value: any?): boolean
-    return typeof(value) == "HtmlNode"
+    return typeof(value) == "NodeRef"
 end
