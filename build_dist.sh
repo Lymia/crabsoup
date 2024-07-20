@@ -6,7 +6,7 @@ VERSION="0.1.0"
 rm -rfv dist
 mkdir dist
 
-cargo zigbuild -p $BIN_NAME --target x86_64-unknown-linux-musl --release || exit 1
+cargo build -p $BIN_NAME --target x86_64-unknown-linux-musl --release || exit 1
 cargo zigbuild -p $BIN_NAME --target aarch64-unknown-linux-musl --release || exit 1
 cargo zigbuild -p $BIN_NAME --target x86_64-apple-darwin --release || exit 1
 cargo zigbuild -p $BIN_NAME --target aarch64-apple-darwin --release || exit 1
