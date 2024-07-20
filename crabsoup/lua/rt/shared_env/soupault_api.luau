@@ -61,12 +61,12 @@ end
 local Plugin = _G.Plugin or {}
 _G.Plugin = Plugin
 
-function Plugin.fail(message: any?): never
+function Plugin.fail<T>(message: T): never
     coroutine.yield(baselib.plugin_fail(tostring(message)))
     return error("unreachable")
 end
 
-function Plugin.exit(message: any?): never
+function Plugin.exit<T>(message: T): never
     coroutine.yield(baselib.plugin_exit(tostring(message)))
     return error("unreachable")
 end
@@ -83,6 +83,30 @@ function Plugin.crabsoup_version(): string
     return _CRABSOUP_VERSION
 end
 
+-- Function definitions for `Log` module
+local Log = _G.Log or {}
+_G.Log = Log
+
+function Log.trace<T>(message: T)
+    baselib.trace(tostring(message))
+end
+
+function Log.debug<T>(message: T)
+    baselib.debug(tostring(message))
+end
+
+function Log.info<T>(message: T)
+    baselib.info(tostring(message))
+end
+
+function Log.warn<T>(message: T)
+    baselib.warn(tostring(message))
+end
+
+function Log.error<T>(message: T)
+    baselib.error(tostring(message))
+end
+
 -- TODO: Log module
 
 -- TODO: JSON module
@@ -94,8 +118,6 @@ end
 -- TODO: CSV module
 
 -- TODO: Date module
-
--- TODO: Digest module
 
 -- Function definitions for the `Table` module
 local Table = _G.Table or {}
@@ -279,16 +301,16 @@ end
 local Value = _G.Value or {}
 _G.Value = Value
 
-function Value.repr(value: any?): string
+function Value.repr<T>(value: T): string
     local str = builtin_funcs.repr(value)
     return str
 end
 
-function Value.is_nil(value: any?): boolean
+function Value.is_nil<T>(value: T): boolean
     return value == nil
 end
 
-function Value.is_int(value: any?): boolean
+function Value.is_int<T>(value: T): boolean
     if type(value) == "number" then
         return math.isfinite(value) and math.round(value) == value
     else
@@ -296,19 +318,19 @@ function Value.is_int(value: any?): boolean
     end
 end
 
-function Value.is_float(value: any?): boolean
+function Value.is_float<T>(value: T): boolean
     return type(value) == "number"
 end
 
-function Value.is_string(value: any?): boolean
+function Value.is_string<T>(value: T): boolean
     return type(value) == "string"
 end
 
-function Value.is_table(value: any?): boolean
+function Value.is_table<T>(value: T): boolean
     return type(value) == "table"
 end
 
-function Value.is_list(value: any?): boolean
+function Value.is_list<T>(value: T): boolean
     if not value or type(value) ~= "table" then
         return false
     else
@@ -321,6 +343,6 @@ function Value.is_list(value: any?): boolean
     end
 end
 
-function Value.is_html(value: any?): boolean
+function Value.is_html<T>(value: T): boolean
     return typeof(value) == "NodeRef"
 end

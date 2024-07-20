@@ -1,6 +1,7 @@
 use mlua::{prelude::LuaFunction, ChunkMode, Lua, LuaOptions, Result, StdLib, Table, Thread};
 
 mod baselib;
+mod digestlib;
 mod htmllib;
 mod utils;
 
@@ -41,6 +42,7 @@ impl CrabsoupLuaContext {
             let global = lua.globals();
             envs_table.set("global", &global)?;
             global.set("HTML", htmllib::create_html_table(&lua)?)?;
+            global.set("Digest", digestlib::create_digest_table(&lua)?)?;
             include_call!(lua, "global_env/baselib.luau", table, global);
             include_call!(lua, "global_env/htmllib.luau", table, global);
             utils::sandbox_global_environment(&lua)?; // intentionally early, allows optimizations

@@ -20,7 +20,15 @@ mlua = { version = "0.9", features = ["luau-jit"] }
 regex = "1.10"
 rustyline = { version = "14.0", default-features = false }
 tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 wyrand = { version = "0.2", features = ["wyhash"] }
+
+# Cryptography
+digest = "0.10"
+md-5 = "0.10"
+sha1 = "0.10"
+sha2 = "0.10"
+blake2 = "0.10"
 
 # Internal libraries
 crabsoup-kuchikiki = { version = "0.8.2-crabsoup", path = "../crabsoup-kuchikiki" }
