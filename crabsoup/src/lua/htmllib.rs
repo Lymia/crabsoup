@@ -267,7 +267,22 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
             Ok(table)
         })?,
     )?;
-    // TODO: HTML.siblings after figuring out what EXACTLY it does
+    table.set(
+        "siblings",
+        lua.create_function(|lua, root: UserDataRef<LuaNodeRef>| {
+            if let Some(parent) = root.0.parent() {
+                let table = lua.create_table()?;
+                for node in parent.children() {
+                    if &node != &root.0 {
+                        table.push(LuaNodeRef(node))?;
+                    }
+                }
+                Ok(table)
+            } else {
+                Err(Error::runtime("Cannot call `siblings` on node without a parent."))
+            }
+        })?,
+    )?;
     table.set(
         "child_count",
         lua.create_function(|_, node: UserDataRef<LuaNodeRef>| Ok(node.0.children().count()))?,

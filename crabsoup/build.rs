@@ -13,7 +13,7 @@ pub fn main() -> Result<()> {
     let mut out_path = PathBuf::from(std::env::var("OUT_DIR")?);
     out_path.push("luau_compiled");
     std::fs::create_dir_all(&out_path)?;
-
+    
     for path in glob::glob("lua/**/*")? {
         let path = path?;
         if path.is_file() {
