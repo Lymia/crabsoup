@@ -1,7 +1,7 @@
 --!strict
 
 local builtin_funcs, _G = ...
-local crabsoup = builtin_funcs.crabsoup
+local baselib = builtin_funcs.baselib
 
 -- Reimplement base library functions
 local function loadstring(chunk: string, chunkname: string?, mode: string?, env: any?): (((...any) -> any)?, string?)
@@ -16,14 +16,14 @@ local function loadstring(chunk: string, chunkname: string?, mode: string?, env:
     end
 
     if mode then
-       crabsoup.warn("`mode` is ignored on `loadstring` and `load`")
+       baselib.warn("`mode` is ignored on `loadstring` and `load`")
     end
 
     if not env then
        env = getfenv(2)
     end
     builtin_funcs.low_level.deoptimize_env(env)
-    return crabsoup.loadstring(chunk, chunkname, env)
+    return baselib.loadstring(chunk, chunkname, env)
 end
 
 function _G.load(chunk: () -> string? | string, chunkname: string?, mode: string?, env: any?): (((...any) -> any)?, string?)

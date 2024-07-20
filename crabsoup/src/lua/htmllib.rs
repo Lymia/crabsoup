@@ -1,11 +1,11 @@
-use crate::html_is_root::is_document;
+use crate::{html_is_root::is_document, wyhash::WyHashSet};
 use encoding_rs::{Encoding, UTF_8};
 use html5ever::{namespace_url, ns, LocalName, QualName};
 use kuchikiki::{
     parse_fragment, parse_html, traits::TendrilSink, ElementData, NodeDataRef, NodeRef, Selectors,
 };
 use mlua::{prelude::LuaString, Error, Lua, Result, Table, UserData, UserDataFields, UserDataRef};
-use std::{cell::RefCell, io::Cursor, rc::Rc};
+use std::{cell::RefCell, io::Cursor, rc::Rc, str::Split};
 use tracing::warn;
 
 fn qual_name(name: &str) -> QualName {
@@ -65,6 +65,38 @@ fn element(node: &NodeRef) -> Result<NodeDataRef<ElementData>> {
     match node.clone().into_element_ref() {
         None => Err(Error::runtime("This function may only be called on HTML elements.")),
         Some(elem) => Ok(elem),
+    }
+}
+
+static SELECTOR_WHITESPACE: &[char] = &[' ', '\t', '\n', '\r', '\x0C'];
+fn split_classes<'a>(input: &'a str) -> impl Iterator<Item = &'a str> {
+    struct SplitClasses<'a> {
+        underlying: Split<'a, &'static [char]>,
+        found: WyHashSet<&'a str>,
+    }
+    impl<'a> Iterator for SplitClasses<'a> {
+        type Item = &'a str;
+        fn next(&mut self) -> Option<Self::Item> {
+            if let Some(next) = self.underlying.next() {
+                let next = next.trim();
+                if !next.is_empty() && self.found.insert(next) {
+                    Some(next)
+                } else {
+                    self.next()
+                }
+            } else {
+                None
+            }
+        }
+    }
+
+    SplitClasses { underlying: input.split(SELECTOR_WHITESPACE), found: Default::default() }
+}
+fn check_class_name(name: &str) -> Result<()> {
+    if name.contains(SELECTOR_WHITESPACE) || name.trim() != name {
+        Err(Error::runtime("Invalid class name."))
+    } else {
+        Ok(())
     }
 }
 
@@ -311,11 +343,90 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
             Ok(())
         })?,
     )?;
-    // TODO: HTML.get_classes
-    // TODO: HTML.has_class
-    // TODO: HTML.add_class
-    // TODO: HTML.remove_class
-    // TODO: HTML.inner_html
+    table.set(
+        "get_classes",
+        lua.create_function(|lua, node: UserDataRef<LuaNodeRef>| {
+            let elem = element(&node.0)?;
+            let attrs = elem.attributes.borrow();
+            let classes = attrs.get("class");
+            if let Some(classes) = classes {
+                let table = lua.create_table()?;
+                for class in split_classes(classes) {
+                    table.push(lua.create_string(class)?)?;
+                }
+                Ok(table)
+            } else {
+                Ok(lua.create_table()?)
+            }
+        })?,
+    )?;
+    table.set(
+        "has_class",
+        lua.create_function(|_, (node, name): (UserDataRef<LuaNodeRef>, LuaString)| {
+            let elem = element(&node.0)?;
+            let attrs = elem.attributes.borrow();
+            let classes = attrs.get("class");
+            if let Some(classes) = classes {
+                let name = name.to_str()?;
+                check_class_name(&name)?;
+                Ok(split_classes(classes).any(|x| x == name))
+            } else {
+                Ok(false)
+            }
+        })?,
+    )?;
+    table.set(
+        "add_class",
+        lua.create_function(|_, (node, name): (UserDataRef<LuaNodeRef>, LuaString)| {
+            let elem = element(&node.0)?;
+            let mut attrs = elem.attributes.borrow_mut();
+            let classes = attrs.get("class");
+            if let Some(classes) = classes {
+                let name = name.to_str()?;
+                check_class_name(name)?;
+                if !split_classes(classes).any(|x| x == name) {
+                    let new = format!("{classes} {name}");
+                    attrs.insert("class", new);
+                }
+            } else {
+                let name = name.to_string_lossy().to_string();
+                check_class_name(&name)?;
+                attrs.insert("class", name);
+            }
+            Ok(())
+        })?,
+    )?;
+    table.set(
+        "remove_class",
+        lua.create_function(|_, (node, name): (UserDataRef<LuaNodeRef>, LuaString)| {
+            let elem = element(&node.0)?;
+            let mut attrs = elem.attributes.borrow_mut();
+            let classes = attrs.get("class");
+            if let Some(classes) = classes {
+                let name = name.to_str()?;
+                check_class_name(name)?;
+                let mut new = String::new();
+                for class in split_classes(classes).filter(|x| *x != name) {
+                    if !new.is_empty() {
+                        new.push(' ');
+                    }
+                    new.push_str(class);
+                }
+                attrs.insert("class", new);
+            }
+            Ok(())
+        })?,
+    )?;
+    table.set(
+        "inner_html",
+        lua.create_function(|_, node: UserDataRef<LuaNodeRef>| {
+            let mut data = Vec::new();
+            for child in node.0.children() {
+                child.serialize(&mut Cursor::new(&mut data))?;
+            }
+            Ok(String::from_utf8(data).expect("Non UTF-8 text in DOM??"))
+        })?,
+    )?;
     // TODO: HTML.inner_text
     // TODO: HTML.strip_tags
 

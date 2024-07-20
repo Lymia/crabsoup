@@ -12,19 +12,19 @@
 
 -- imported global functions
 local builtin_funcs = ...
-local safe_loadstring = builtin_funcs.crabsoup.loadstring
+local safe_loadstring = builtin_funcs.baselib.loadstring
 
 -- ILUA implementation
 local function repl_main()
     local env = getfenv(0)
 
-    print('ILUA: ' .. _VERSION .. ' + ' .. builtin_funcs.crabsoup._VERSION)
+    print('ILUA: ' .. _VERSION .. ' + ' .. _CRABSOUP_VERSION)
     local chunkname = "@<stdin>"
 
     -- readline support
     local readline, saveline
     do
-        local rustyline_editor = builtin_funcs.crabsoup.open_rustyline()
+        local rustyline_editor = builtin_funcs.baselib.open_rustyline()
         function readline(prompt)
             return rustyline_editor:readline(prompt)
         end

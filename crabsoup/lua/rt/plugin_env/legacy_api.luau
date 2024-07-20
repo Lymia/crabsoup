@@ -33,3 +33,15 @@ end
 
 String.ends_with = string.endswith
 String.starts_with = string.startswith
+
+-- Function definitions for `Table` module
+local Table = _G.Table or {}
+_G.Table = Table
+
+function Table.has_key(table, key)
+    if table[key] == nil then
+        return nil
+    else
+        return true
+    end
+end

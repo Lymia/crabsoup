@@ -280,3 +280,4 @@ The following functions are not redundant, but are not very useful.
 Returns the count of UTF-8 characters in a string. For strings that contain invalid Unicode characters, it behaves like String.length_ascii() and measures their length in bytes instead.
 
 This is rarely more useful than `#str` in practice, as string lengths are rarely essential.
+  

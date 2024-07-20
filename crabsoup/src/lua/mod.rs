@@ -1,4 +1,3 @@
-use crate::lua::baselib::CrabSoupLib;
 use mlua::{prelude::LuaFunction, ChunkMode, Lua, LuaOptions, Result, StdLib, Table, Thread};
 
 mod baselib;
@@ -31,7 +30,7 @@ impl CrabsoupLuaContext {
             let table = lua.create_table()?;
 
             // internal libraries
-            table.set("crabsoup", CrabSoupLib)?;
+            table.set("baselib", baselib::create_base_table(&lua)?)?;
             table.set("low_level", utils::load_unsafe_functions(&lua)?)?;
 
             // environments table store
@@ -53,7 +52,6 @@ impl CrabsoupLuaContext {
             envs_table.set("standalone", &standalone_env)?;
             include_call!(lua, "shared_env/lua5x_stdlib.luau", table, standalone_env);
             include_call!(lua, "shared_env/soupault_api.luau", table, standalone_env);
-            include_call!(lua, "shared_env/crabsoup_ext_api.luau", table, standalone_env);
             utils::create_sandbox_environment(&lua, standalone_env)?;
 
             // Plugin environment
@@ -61,7 +59,6 @@ impl CrabsoupLuaContext {
             envs_table.set("plugin", &plugin_env)?;
             include_call!(lua, "shared_env/lua5x_stdlib.luau", table, plugin_env);
             include_call!(lua, "shared_env/soupault_api.luau", table, plugin_env);
-            include_call!(lua, "shared_env/crabsoup_ext_api.luau", table, plugin_env);
             include_call!(lua, "plugin_env/lua25_stdlib.luau", table, plugin_env);
             include_call!(lua, "plugin_env/legacy_api.luau", table, plugin_env);
             include_call!(lua, "plugin_env/legacy_htmllib.luau", table, plugin_env);

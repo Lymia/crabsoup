@@ -1,25 +1,30 @@
-use mlua::{prelude::LuaString, Error, UserData, UserDataFields, UserDataMethods, Value};
+use mlua::{
+    prelude::LuaString, Error, Lua, Result, Table, UserData, UserDataFields, UserDataMethods, Value,
+};
 use rustyline::{error::ReadlineError, DefaultEditor};
 use std::borrow::Cow;
 use tracing::{debug, error, info, trace, warn};
 
-pub struct CrabSoupLib;
-impl UserData for CrabSoupLib {
-    fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {
-        fields.add_meta_field("__type", "CrabSoupLib");
+pub fn create_base_table(lua: &Lua) -> Result<Table> {
+    let table = lua.create_table()?;
+
+    {
         let version = concat!(env!("CARGO_PKG_NAME"), " ", env!("CARGO_PKG_VERSION"));
-        fields.add_field("_VERSION", version);
-        fields.add_field("VERSION_ONLY", env!("CARGO_PKG_VERSION"));
+        table.set("_VERSION", version)?;
+        table.set("VERSION_ONLY", env!("CARGO_PKG_VERSION"))?;
     }
 
-    fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
-        methods.add_function("open_rustyline", |_, ()| {
+    table.set(
+        "open_rustyline",
+        lua.create_function(|_, ()| {
             let editor = DefaultEditor::new().map_err(Error::runtime)?;
             Ok(RustyLineEditor { editor })
-        });
+        })?,
+    )?;
 
-        methods.add_function(
-            "loadstring",
+    table.set(
+        "loadstring",
+        lua.create_function(
             |lua, (code, chunkname, env): (LuaString, Option<LuaString>, Option<Value>)| {
                 let mut chunk = lua.load(code.to_str()?);
                 if let Some(chunkname) = chunkname {
@@ -44,40 +49,63 @@ impl UserData for CrabSoupLib {
                     Err(e) => Ok((None, Some(e.to_string()))),
                 }
             },
-        );
+        )?,
+    )?;
 
-        methods.add_function("is_nan", |_, f: f64| Ok(f.is_nan()));
-        methods.add_function("is_inf", |_, f: f64| Ok(f.is_infinite()));
-        methods.add_function("is_finite", |_, f: f64| Ok(f.is_finite()));
+    table.set("is_nan", lua.create_function(|_, f: f64| Ok(f.is_nan()))?)?;
+    table.set("is_inf", lua.create_function(|_, f: f64| Ok(f.is_infinite()))?)?;
+    table.set("is_finite", lua.create_function(|_, f: f64| Ok(f.is_finite()))?)?;
 
-        methods.add_function("error", |_, str: LuaString| {
+    table.set(
+        "error",
+        lua.create_function(|_, str: LuaString| {
             error!("{}", str.to_str()?);
             Ok(())
-        });
-        methods.add_function("warn", |_, str: LuaString| {
+        })?,
+    )?;
+    table.set(
+        "warn",
+        lua.create_function(|_, str: LuaString| {
             warn!("{}", str.to_str()?);
             Ok(())
-        });
-        methods.add_function("info", |_, str: LuaString| {
+        })?,
+    )?;
+    table.set(
+        "info",
+        lua.create_function(|_, str: LuaString| {
             info!("{}", str.to_str()?);
             Ok(())
-        });
-        methods.add_function("debug", |_, str: LuaString| {
+        })?,
+    )?;
+    table.set(
+        "debug",
+        lua.create_function(|_, str: LuaString| {
             debug!("{}", str.to_str()?);
             Ok(())
-        });
-        methods.add_function("trace", |_, str: LuaString| {
+        })?,
+    )?;
+    table.set(
+        "trace",
+        lua.create_function(|_, str: LuaString| {
             trace!("{}", str.to_str()?);
             Ok(())
-        });
+        })?,
+    )?;
 
-        methods.add_function("plugin_fail", |_, str: LuaString| {
+    table.set(
+        "plugin_fail",
+        lua.create_function(|_, str: LuaString| {
             Ok(PluginInstruction::Fail(str.to_str()?.to_string()))
-        });
-        methods.add_function("plugin_exit", |_, str: LuaString| {
+        })?,
+    )?;
+    table.set(
+        "plugin_exit",
+        lua.create_function(|_, str: LuaString| {
             Ok(PluginInstruction::Exit(str.to_str()?.to_string()))
-        });
-    }
+        })?,
+    )?;
+
+    Ok(table)
 }
 
 enum PluginInstruction {

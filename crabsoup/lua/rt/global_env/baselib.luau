@@ -10,6 +10,9 @@ local math_round = math.round
 local string_gsub = string.gsub
 local string_sub = string.sub
 
+-- Globals
+_G._CRABSOUP_VERSION = builtin_funcs.baselib._VERSION
+
 -- Extensions to the standard string API
 function _G.string.trim(str)
     return string_gsub(str, "^%s*(.-)%s*$", "%1")
@@ -27,16 +30,16 @@ end
 function builtin_funcs.run_standalone(string, chunk_name)
     local env = builtin_funcs.envs.standalone
     local function loader(...)
-        local chunk = builtin_funcs.crabsoup.loadstring(string, chunk_name)
+        local chunk = builtin_funcs.baselib.loadstring(string, chunk_name)
         return chunk(...)
     end
     return builtin_funcs.low_level.load_in_new_thread(loader, env)
 end
 
 -- Extensions to the standard math API
-_G.math.isnan = builtin_funcs.crabsoup.is_nan
-_G.math.isinf = builtin_funcs.crabsoup.is_inf
-_G.math.isfinite = builtin_funcs.crabsoup.is_finite
+_G.math.isnan = builtin_funcs.baselib.is_nan
+_G.math.isinf = builtin_funcs.baselib.is_inf
+_G.math.isfinite = builtin_funcs.baselib.is_finite
 
 -- Sandboxed versions of setfenv and getfenv
 builtin_funcs.orig_setfenv = _G.setfenv
