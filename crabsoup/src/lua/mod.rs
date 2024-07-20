@@ -3,6 +3,7 @@ use mlua::{prelude::LuaFunction, ChunkMode, Lua, LuaOptions, Result, StdLib, Tab
 mod baselib;
 mod digestlib;
 mod htmllib;
+mod syslib;
 mod utils;
 
 const SHARED_TABLE_LOC: &str = "crabsoup-shared";
@@ -41,8 +42,9 @@ impl CrabsoupLuaContext {
             // Global operating environment
             let global = lua.globals();
             envs_table.set("global", &global)?;
-            global.set("HTML", htmllib::create_html_table(&lua)?)?;
             global.set("Digest", digestlib::create_digest_table(&lua)?)?;
+            global.set("HTML", htmllib::create_html_table(&lua)?)?;
+            global.set("Sys", syslib::create_sys_table(&lua)?)?;
             include_call!(lua, "global_env/baselib.luau", shared_table, global);
             utils::sandbox_global_environment(&lua)?; // allows optimizations
 
