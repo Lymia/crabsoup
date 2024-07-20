@@ -18,7 +18,15 @@ local function register_builtins_for_env(path: string, value: any, seen)
     end
 end
 
-for _, v in builtin_funcs.envs do
+local function for_env(v)
     register_builtins_for_env("", v, {})
     builtin_funcs.mark_system_fenv(v)
 end
+
+-- A few specific overrides in special cases
+builtin_funcs.register_builtin_name(HTML.delete, "HTML.delete")
+
+-- Register the various envs properly
+for_env(builtin_funcs.envs.global)
+for_env(builtin_funcs.envs.standalone)
+for_env(builtin_funcs.envs.plugin)

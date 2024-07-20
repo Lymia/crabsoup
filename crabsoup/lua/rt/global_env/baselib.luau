@@ -3,6 +3,10 @@
 local builtin_funcs, _G = ...
 
 -- imported global functions
+local debug_info = debug.info
+local error = error
+local math_isfinite = math.isfinite
+local math_round = math.round
 local string_gsub = string.gsub
 local string_sub = string.sub
 
@@ -47,13 +51,13 @@ function builtin_funcs.mark_system_fenv(env)
 end
 
 local function get_function_for_level(level: number): (...any) -> any
-    if not math.isfinite(level) or math.round(level) ~= level then
+    if not math_isfinite(level) or math_round(level) ~= level then
         return error("numeric level must be an integer", 3)
     elseif level < 1 then
         return error("numeric level must be a positive integer", 4)
     else
         local real_level = level + 3
-        local func = debug.info(real_level, "f")
+        local func = debug_info(real_level, "f")
         if not func then
             return error(`could not retrieve function for stack frame {level}`, 4)
         end

@@ -157,6 +157,9 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
     )?;
 
     // Selection and selector match checking
+    // - Implemented in Lua: HTML.select_any_of - note: crabsoup uses selector lists
+    // - Implemented in Lua: HTML.select_all_of - note: crabsoup uses selector lists
+    // - Implemented in Lua: HTML.matches_any_of_selectors - note: crabsoup uses selector lists
     table.set(
         "select",
         lua.create_function(|lua, (html, selector): (UserDataRef<LuaNodeRef>, LuaString)| {
@@ -194,9 +197,6 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
             }
         })?,
     )?;
-    // Implemented in Lua: HTML.select_any_of - note: crabsoup uses selector lists
-    // Implemented in Lua: HTML.select_all_of - note: crabsoup uses selector lists
-    // Implemented in Lua: HTML.matches_any_of_selectors - note: crabsoup uses selector lists
 
     // Access to element tree surroundings
     table.set(
@@ -248,6 +248,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
     )?;
 
     // Element property access and manipulation
+    // - Implemented in Lua: HTML.append_attribute
     table.set(
         "get_tag_name",
         lua.create_function(|_, node: UserDataRef<LuaNodeRef>| {
@@ -260,6 +261,167 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
             element(&node.0)?.name.borrow_mut().local = LocalName::from(name.to_str()?);
             Ok(())
         })?,
+    )?;
+    table.set(
+        "get_attribute",
+        lua.create_function(|lua, (node, name): (UserDataRef<LuaNodeRef>, LuaString)| {
+            if let Some(attr) = element(&node.0)?.attributes.borrow().get(name.to_str()?) {
+                Ok(Some(lua.create_string(attr)?))
+            } else {
+                Ok(None)
+            }
+        })?,
+    )?;
+    table.set(
+        "set_attribute",
+        lua.create_function(
+            |_, (node, name, value): (UserDataRef<LuaNodeRef>, LuaString, LuaString)| {
+                element(&node.0)?
+                    .attributes
+                    .borrow_mut()
+                    .insert(name.to_str()?, value.to_string_lossy().to_string());
+                Ok(())
+            },
+        )?,
+    )?;
+    table.set(
+        "delete_attribute",
+        lua.create_function(|_, (node, name): (UserDataRef<LuaNodeRef>, LuaString)| {
+            element(&node.0)?
+                .attributes
+                .borrow_mut()
+                .remove(name.to_str()?);
+            Ok(())
+        })?,
+    )?;
+    table.set(
+        "list_attributes",
+        lua.create_function(|lua, node: UserDataRef<LuaNodeRef>| {
+            let table = lua.create_table()?;
+            for (attr, _) in element(&node.0)?.attributes.borrow().map.iter() {
+                table.push(lua.create_string(attr.local.to_string())?)?;
+            }
+            Ok(table)
+        })?,
+    )?;
+    table.set(
+        "clear_attributes",
+        lua.create_function(|_, node: UserDataRef<LuaNodeRef>| {
+            element(&node.0)?.attributes.borrow_mut().map.clear();
+            Ok(())
+        })?,
+    )?;
+    // TODO: HTML.get_classes
+    // TODO: HTML.has_class
+    // TODO: HTML.add_class
+    // TODO: HTML.remove_class
+    // TODO: HTML.inner_html
+    // TODO: HTML.inner_text
+    // TODO: HTML.strip_tags
+
+    // Element tree manipulation
+    // - Implemented in lua: HTML.append_root
+    // - Implemented in lua: HTML.prepend_root
+    // - Implemented in lua: HTML.replace
+    // - Implemented in lua: HTML.replace_element
+    // - Implemented in lua: HTML.replace_content
+    // - Implemented in lua: HTML.delete
+    // - Implemented in lua: HTML.wrap
+    // - Implemented in lua: HTML.swap
+    table.set(
+        "append_child",
+        lua.create_function(
+            |_, (parent, child): (UserDataRef<LuaNodeRef>, UserDataRef<LuaNodeRef>)| {
+                parent.0.append(child.0.clone());
+                Ok(())
+            },
+        )?,
+    )?;
+    table.set(
+        "prepend_child",
+        lua.create_function(
+            |_, (parent, child): (UserDataRef<LuaNodeRef>, UserDataRef<LuaNodeRef>)| {
+                parent.0.prepend(child.0.clone());
+                Ok(())
+            },
+        )?,
+    )?;
+    table.set(
+        "insert_before",
+        lua.create_function(
+            |_, (parent, child): (UserDataRef<LuaNodeRef>, UserDataRef<LuaNodeRef>)| {
+                parent.0.insert_before(child.0.clone());
+                Ok(())
+            },
+        )?,
+    )?;
+    table.set(
+        "insert_after",
+        lua.create_function(
+            |_, (parent, child): (UserDataRef<LuaNodeRef>, UserDataRef<LuaNodeRef>)| {
+                parent.0.insert_after(child.0.clone());
+                Ok(())
+            },
+        )?,
+    )?;
+    table.set(
+        "delete_element",
+        lua.create_function(|_, elem: UserDataRef<LuaNodeRef>| {
+            elem.0.detach();
+            Ok(())
+        })?,
+    )?;
+    table.set(
+        "delete_content",
+        lua.create_function(|_, elem: UserDataRef<LuaNodeRef>| {
+            for child in elem.0.children() {
+                child.detach();
+            }
+            Ok(())
+        })?,
+    )?;
+    table.set(
+        "unwrap",
+        lua.create_function(|_, elem: UserDataRef<LuaNodeRef>| {
+            for child in elem.0.children().rev() {
+                elem.0.insert_after(child);
+            }
+            Ok(())
+        })?,
+    )?;
+
+    // High-level convenience functions
+    // - Implemented in lua: HTML.get_heading_level
+    // - Implemented in lua: HTML.get_headings_tree
+
+    // Node tests
+    table.set(
+        "is_comment",
+        lua.create_function(|_, elem: UserDataRef<LuaNodeRef>| {
+            Ok(elem.0 .0.as_comment().is_some())
+        })?,
+    )?;
+    table.set(
+        "is_doctype",
+        lua.create_function(|_, elem: UserDataRef<LuaNodeRef>| {
+            Ok(elem.0 .0.as_doctype().is_some())
+        })?,
+    )?;
+    table.set(
+        "is_document",
+        lua.create_function(|_, elem: UserDataRef<LuaNodeRef>| {
+            Ok(elem.0 .0.as_document().is_some())
+        })?,
+    )?;
+    table.set(
+        "is_element",
+        lua.create_function(|_, elem: UserDataRef<LuaNodeRef>| {
+            Ok(elem.0 .0.as_element().is_some())
+        })?,
+    )?;
+    table.set(
+        "is_text",
+        lua.create_function(|_, elem: UserDataRef<LuaNodeRef>| Ok(elem.0 .0.as_text().is_some()))?,
     )?;
 
     Ok(table)

@@ -43,6 +43,7 @@ impl CrabsoupLuaContext {
             envs_table.set("global", &global)?;
             global.set("HTML", htmllib::create_html_table(&lua)?)?;
             include_call!(lua, "global_env/baselib.luau", table, global);
+            include_call!(lua, "global_env/htmllib.luau", table, global);
             utils::sandbox_global_environment(&lua)?; // intentionally early, allows optimizations
             include_call!(lua, "global_env/ilua_pretty.lua", table, global);
             include_call!(lua, "global_env/ilua_repl.lua", table, global);
@@ -52,7 +53,6 @@ impl CrabsoupLuaContext {
             envs_table.set("standalone", &standalone_env)?;
             include_call!(lua, "shared_env/lua5x_stdlib.luau", table, standalone_env);
             include_call!(lua, "shared_env/soupault_api.luau", table, standalone_env);
-            include_call!(lua, "shared_env/html_api.luau", table, standalone_env);
             include_call!(lua, "shared_env/crabsoup_ext_api.luau", table, standalone_env);
             utils::create_sandbox_environment(&lua, standalone_env)?;
 
@@ -61,10 +61,10 @@ impl CrabsoupLuaContext {
             envs_table.set("plugin", &plugin_env)?;
             include_call!(lua, "shared_env/lua5x_stdlib.luau", table, plugin_env);
             include_call!(lua, "shared_env/soupault_api.luau", table, plugin_env);
-            include_call!(lua, "shared_env/html_api.luau", table, plugin_env);
             include_call!(lua, "shared_env/crabsoup_ext_api.luau", table, plugin_env);
             include_call!(lua, "plugin_env/lua25_stdlib.luau", table, plugin_env);
             include_call!(lua, "plugin_env/legacy_api.luau", table, plugin_env);
+            include_call!(lua, "plugin_env/legacy_htmllib.luau", table, plugin_env);
             utils::create_sandbox_environment(&lua, plugin_env)?;
 
             // Finalize
@@ -92,6 +92,14 @@ impl CrabsoupLuaContext {
         let shared_table = self.lua.named_registry_value::<Table>(SHARED_TABLE_LOC)?;
         shared_table
             .get::<_, LuaFunction>("run_repl_from_console")?
+            .call::<_, ()>(())?;
+        Ok(())
+    }
+
+    pub fn repl_in_plugin_env(&self) -> Result<()> {
+        let shared_table = self.lua.named_registry_value::<Table>(SHARED_TABLE_LOC)?;
+        shared_table
+            .get::<_, LuaFunction>("run_repl_from_console_plugin")?
             .call::<_, ()>(())?;
         Ok(())
     }

@@ -134,6 +134,10 @@ function builtin_funcs.run_repl_from_console()
     run_repl(builtin_funcs.envs.standalone)
 end
 
+function builtin_funcs.run_repl_from_console_plugin()
+    run_repl(builtin_funcs.envs.plugin)
+end
+
 function builtin_funcs.run_repl_in_env(env)
     run_repl(env)
 end
