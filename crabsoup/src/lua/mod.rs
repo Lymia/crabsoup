@@ -27,52 +27,51 @@ impl CrabsoupLuaContext {
         let lua = Lua::new_with(libs, LuaOptions::new())?;
 
         // setup operating environment
-        let shared_table = {
-            let table = lua.create_table()?;
-
-            // internal libraries
-            table.set("baselib", baselib::create_base_table(&lua)?)?;
-            table.set("low_level", utils::load_unsafe_functions(&lua)?)?;
+        {
+            // Create the shared table
+            let shared_table = lua.create_table()?;
+            lua.set_named_registry_value(SHARED_TABLE_LOC, &shared_table)?;
+            shared_table.set("baselib", baselib::create_base_table(&lua)?)?;
+            shared_table.set("low_level", utils::load_unsafe_functions(&lua)?)?;
 
             // environments table store
             let envs_table = lua.create_table()?;
-            table.set("envs", &envs_table)?;
+            shared_table.set("envs", &envs_table)?;
 
             // Global operating environment
             let global = lua.globals();
             envs_table.set("global", &global)?;
             global.set("HTML", htmllib::create_html_table(&lua)?)?;
             global.set("Digest", digestlib::create_digest_table(&lua)?)?;
-            include_call!(lua, "global_env/baselib.luau", table, global);
-            include_call!(lua, "global_env/htmllib.luau", table, global);
-            utils::sandbox_global_environment(&lua)?; // intentionally early, allows optimizations
-            include_call!(lua, "global_env/ilua_pretty.lua", table, global);
-            include_call!(lua, "global_env/ilua_repl.lua", table, global);
+            include_call!(lua, "global_env/baselib.luau", shared_table, global);
+            utils::sandbox_global_environment(&lua)?; // allows optimizations
+
+            // Load shared environment (used to derive standalone + plugin envs)
+            let shared_env = utils::clone_env_table(&lua, &lua.globals())?;
+            shared_table.set("shared_env_base", &shared_env)?;
+            include_call!(lua, "shared_env/htmllib.luau", shared_table, shared_env);
+            include_call!(lua, "shared_env/lua5x_stdlib.luau", shared_table, shared_env);
+            include_call!(lua, "shared_env/soupault_api.luau", shared_table, shared_env);
+            include_call!(lua, "shared_env/ilua_pretty.lua", shared_table, shared_env);
+            include_call!(lua, "shared_env/ilua_repl.lua", shared_table, shared_env);
 
             // Standalone environment
-            let standalone_env = utils::clone_env_table(&lua, lua.globals())?;
+            let standalone_env = utils::clone_env_table(&lua, &shared_env)?;
             envs_table.set("standalone", &standalone_env)?;
-            include_call!(lua, "shared_env/lua5x_stdlib.luau", table, standalone_env);
-            include_call!(lua, "shared_env/soupault_api.luau", table, standalone_env);
+            // TODO: Standalone-exclusive functions
             utils::create_sandbox_environment(&lua, standalone_env)?;
 
             // Plugin environment
-            let plugin_env = utils::clone_env_table(&lua, lua.globals())?;
+            let plugin_env = utils::clone_env_table(&lua, &shared_env)?;
             envs_table.set("plugin", &plugin_env)?;
-            include_call!(lua, "shared_env/lua5x_stdlib.luau", table, plugin_env);
-            include_call!(lua, "shared_env/soupault_api.luau", table, plugin_env);
-            include_call!(lua, "plugin_env/lua25_stdlib.luau", table, plugin_env);
-            include_call!(lua, "plugin_env/legacy_api.luau", table, plugin_env);
-            include_call!(lua, "plugin_env/legacy_htmllib.luau", table, plugin_env);
+            include_call!(lua, "plugin_env/lua25_stdlib.luau", shared_table, plugin_env);
+            include_call!(lua, "plugin_env/legacy_api.luau", shared_table, plugin_env);
+            include_call!(lua, "plugin_env/legacy_htmllib.luau", shared_table, plugin_env);
             utils::create_sandbox_environment(&lua, plugin_env)?;
 
             // Finalize
-            include_call!(lua, "finalize.luau", table, global);
-
-            // Returns the shared table
-            table
-        };
-        lua.set_named_registry_value(SHARED_TABLE_LOC, shared_table)?;
+            include_call!(lua, "finalize.luau", shared_table, global);
+        }
 
         // finish initialization
         lua.sandbox(true)?;

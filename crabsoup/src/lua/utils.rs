@@ -1,5 +1,6 @@
 //! Contains raw Lua API invocations.
 
+use crate::lua::SHARED_TABLE_LOC;
 use mlua::{ffi::*, lua_State, Function, Lua, Result, Table, Value};
 
 pub fn sandbox_global_environment(lua: &Lua) -> Result<()> {
@@ -14,11 +15,10 @@ pub fn sandbox_global_environment(lua: &Lua) -> Result<()> {
     }
 }
 
-pub fn clone_env_table<'lua>(lua: &'lua Lua, old_table: Table<'lua>) -> Result<Table<'lua>> {
+pub fn clone_env_table<'lua>(lua: &'lua Lua, old_table: &Table<'lua>) -> Result<Table<'lua>> {
     let new_table = lua
-        .globals()
-        .get::<_, Table>("table")?
-        .get::<_, Function>("clone")?
+        .named_registry_value::<Table>(SHARED_TABLE_LOC)?
+        .get::<_, Function>("deep_copy")?
         .call::<_, Table>(old_table)?;
     new_table.set("_G", &new_table)?;
     Ok(new_table)

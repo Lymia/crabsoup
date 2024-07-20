@@ -36,6 +36,20 @@ function builtin_funcs.run_standalone(string, chunk_name)
     return builtin_funcs.low_level.load_in_new_thread(loader, env)
 end
 
+function builtin_funcs.deep_copy(env)
+    if type(env) == "table" then
+        local new = {}
+        for k, v in env do
+            if k ~= "_G" then
+                new[k] = builtin_funcs.deep_copy(v)
+            end
+        end
+        return new
+    else
+        return env
+    end
+end
+
 -- Extensions to the standard math API
 _G.math.isnan = builtin_funcs.baselib.is_nan
 _G.math.isinf = builtin_funcs.baselib.is_inf

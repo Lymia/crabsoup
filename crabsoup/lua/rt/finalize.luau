@@ -24,7 +24,7 @@ local function for_env(v)
 end
 
 -- A few specific overrides in special cases
-builtin_funcs.register_builtin_name(HTML.delete, "HTML.delete")
+builtin_funcs.register_builtin_name(builtin_funcs.envs.standalone.HTML.delete, "HTML.delete")
 
 -- Register the various envs properly
 for_env(builtin_funcs.envs.global)
