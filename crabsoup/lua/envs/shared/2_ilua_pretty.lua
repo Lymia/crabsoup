@@ -8,7 +8,7 @@
 -- Alissa Rao, 2024
 --
 
-local builtin_funcs = ...
+local shared = ...
 
 -- local vars
 local identifier = "^[_%a][_%w]*$"
@@ -114,8 +114,8 @@ local function fn2str(func)
 
     return tostring(func)
 end
-builtin_funcs.fn2str = fn2str
-function builtin_funcs.register_builtin_name(func, name)
+shared.fn2str = fn2str
+function shared.register_builtin_name(func, name)
     if not builtin_function_names[func] then
         builtin_function_names[func] = name
     end
@@ -302,6 +302,6 @@ local function format(multiline, ...)
     return result
 end
 
-function builtin_funcs.repr(...)
+function shared.repr(...)
     return format(true, ...)
 end

@@ -1,6 +1,6 @@
 --!strict
 
-local builtin_funcs, _G = ...
+local shared, _G = ...
 
 -- Function definitions for `String` module
 local String = _G.String or {}

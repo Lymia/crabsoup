@@ -1,7 +1,7 @@
 --!strict
 
-local builtin_funcs, _G = ...
-local baselib = builtin_funcs.baselib
+local shared, _G = ...
+local baselib = shared.baselib
 
 -- Reimplement base library functions
 local function loadstring(chunk: string, chunkname: string?, mode: string?, env: any?): (((...any) -> any)?, string?)
@@ -22,7 +22,7 @@ local function loadstring(chunk: string, chunkname: string?, mode: string?, env:
     if not env then
        env = getfenv(2)
     end
-    builtin_funcs.low_level.deoptimize_env(env)
+    baselib.deoptimize_env(env)
     return baselib.loadstring(chunk, chunkname, env)
 end
 

@@ -1,6 +1,6 @@
 --!strict
 
-local builtin_funcs, _G = ...
+local shared, _G = ...
 
 function _G.HTML.append_attribute(node, attr, value)
     HTML.set_attribute(node, HTML.get_attribute(node, attr) .. value)

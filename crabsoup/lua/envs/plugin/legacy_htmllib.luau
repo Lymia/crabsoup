@@ -1,6 +1,6 @@
 --!strict
 
-local builtin_funcs, _G = ...
+local shared, _G = ...
 
 local function join_selectors(selectors: any?): string
     if type(selectors) == "table" then
@@ -22,4 +22,4 @@ end
 
 _G.HTML.append_root = HTML.append_child
 _G.HTML.prepend_root = HTML.prepend_child
-_G. HTML.replace = HTML.replace_element
+_G.HTML.replace = HTML.replace_element

@@ -1,7 +1,7 @@
 --!strict
 
-local builtin_funcs, _G = ...
-local baselib = builtin_funcs.baselib
+local shared, _G = ...
+local baselib = shared.baselib
 
 -- Function definitions for `String` module
 local String = _G.String or {}
@@ -87,25 +87,11 @@ end
 local Log = _G.Log or {}
 _G.Log = Log
 
-function Log.trace<T>(message: T)
-    baselib.trace(tostring(message))
-end
-
-function Log.debug<T>(message: T)
-    baselib.debug(tostring(message))
-end
-
-function Log.info<T>(message: T)
-    baselib.info(tostring(message))
-end
-
-function Log.warn<T>(message: T)
-    baselib.warn(tostring(message))
-end
-
-function Log.error<T>(message: T)
-    baselib.error(tostring(message))
-end
+Log.trace = baselib.trace
+Log.debug = baselib.debug
+Log.info = baselib.info
+Log.warn = baselib.warn
+Log.error = baselib.error
 
 -- TODO: Log module
 
@@ -302,7 +288,7 @@ local Value = _G.Value or {}
 _G.Value = Value
 
 function Value.repr<T>(value: T): string
-    local str = builtin_funcs.repr(value)
+    local str = shared.repr(value)
     return str
 end
 

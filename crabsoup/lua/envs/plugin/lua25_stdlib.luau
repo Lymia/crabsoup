@@ -1,6 +1,6 @@
 --!strict
 
-local builtin_funcs, _G = ...
+local shared, _G = ...
 
 -- Function definitions for Lua 2.5 API
 local function return_helper(success: boolean, ...: unknown): ...unknown

@@ -11,12 +11,12 @@
 --
 
 -- imported global functions
-local builtin_funcs = ...
-local safe_loadstring = builtin_funcs.baselib.loadstring
+local shared = ...
+local safe_loadstring = shared.baselib.loadstring
 
 -- ILUA implementation
 local function repl_main()
-    local env = getfenv(0)
+    local env = getfenv(0) -- implicitly optimizes
 
     print('ILUA: ' .. _VERSION .. ' + ' .. _CRABSOUP_VERSION)
     local chunkname = "@<stdin>"
@@ -24,7 +24,7 @@ local function repl_main()
     -- readline support
     local readline, saveline
     do
-        local rustyline_editor = builtin_funcs.baselib.open_rustyline()
+        local rustyline_editor = shared.baselib.open_rustyline()
         function readline(prompt)
             return rustyline_editor:readline(prompt)
         end
@@ -57,7 +57,7 @@ local function repl_main()
     end
 
     local function wrap_output(...)
-        print(builtin_funcs.repr(...))
+        print(shared.repr(...))
         env._ = select(1, ...)
     end
 
@@ -105,11 +105,11 @@ local function run_repl(env)
         is_repl_running = false
 
         if not success then
-            error("REPL encountered an error: " .. err, 3)
+            error("REPL encountered an error: " .. tostring(err), 3)
         end
     end
 
-    local thread = builtin_funcs.low_level.load_in_new_thread(do_repl, env)
+    local thread = shared.baselib.load_in_new_thread(do_repl, env)
     while coroutine.status(thread) == "suspended" do
         local status, result = coroutine.resume(thread)
         if not status then
@@ -130,14 +130,6 @@ local function run_repl(env)
     end
 end
 
-function builtin_funcs.run_repl_from_console()
-    run_repl(builtin_funcs.envs.standalone)
-end
-
-function builtin_funcs.run_repl_from_console_plugin()
-    run_repl(builtin_funcs.envs.plugin)
-end
-
-function builtin_funcs.run_repl_in_env(env)
+function shared.run_repl_in_env(env)
     run_repl(env)
 end
