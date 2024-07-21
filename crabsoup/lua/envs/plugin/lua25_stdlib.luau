@@ -1,6 +1,6 @@
 --!strict
 
-local shared, _G = ...
+local _, _G = ...
 
 -- Function definitions for Lua 2.5 API
 local function return_helper(success: boolean, ...: unknown): ...unknown
@@ -18,7 +18,12 @@ function _G.dostring(chunk, chunkname, mode, env)
     if not env then
        env = getfenv(2)
     end
-    return return_helper(pcall(loadstring(chunk, chunkname, mode, env)))
+    local func, err = loadstring(chunk, chunkname, mode, env)
+    if func then
+        return return_helper(pcall(func))
+    else
+        error(err)
+    end
 end
 
 function _G.nextvar(name: any): (any, any)

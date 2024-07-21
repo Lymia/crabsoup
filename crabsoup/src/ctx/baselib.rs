@@ -1,8 +1,14 @@
-use mlua::{ffi::{
-    luaL_checktype, luaL_sandbox, luaL_sandboxthread, lua_getfenv, lua_mainthread,
-    lua_newthread, lua_pushglobaltable, lua_replace, lua_rotate, lua_setfenv, lua_setsafeenv,
-    lua_xmove, LUA_GLOBALSINDEX, LUA_TFUNCTION, LUA_TTABLE,
-}, lua_State, prelude::LuaString, ChunkMode, Error, Lua, Result, Table, UserData, UserDataFields, UserDataMethods, Value, MultiValue};
+use mlua::{
+    ffi::{
+        luaL_checktype, luaL_sandbox, luaL_sandboxthread, lua_getfenv, lua_mainthread,
+        lua_newthread, lua_pushglobaltable, lua_replace, lua_rotate, lua_setfenv, lua_setsafeenv,
+        lua_xmove, LUA_GLOBALSINDEX, LUA_TFUNCTION, LUA_TTABLE,
+    },
+    lua_State,
+    prelude::LuaString,
+    ChunkMode, Error, Lua, MultiValue, Result, Table, UserData, UserDataFields, UserDataMethods,
+    Value,
+};
 use rustyline::{error::ReadlineError, DefaultEditor};
 use std::borrow::Cow;
 use tracing::{debug, error, info, trace, warn};

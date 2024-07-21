@@ -1,0 +1,195 @@
+declare _CRABSOUP_VERSION: string
+
+-- Crabsoup Classes
+declare class NodeRef end
+
+-- Crabsoup APIs
+declare String: {
+    truncate: (str: string, length: number, trailer: string?) -> string,
+    slugify_soft: (string) -> string,
+    slugify_ascii: (string) -> string,
+    render_template: (template: string, env: any) -> string,
+    base64_encode: (string) -> string,
+    base64_decode: (string) -> string,
+    url_encode: (str: string, exclude: {string}?) -> string,
+    url_decode: (string) -> string,
+}
+declare Plugin: {
+    fail: <T>(T) -> never,
+    exit: <T>(T) -> never,
+    require_version: (version: string) -> (),
+    soupault_version: () -> string,
+    crabsoup_version: () -> string,
+}
+declare Log: {
+    error: <T>(...T) -> (),
+    warn: <T>(...T) -> (),
+    info: <T>(...T) -> (),
+    debug: <T>(...T) -> (),
+    trace: <T>(...T) -> (),
+}
+declare Table: {
+    get_key_default: <K, V>(table: { [K]: V }, key: K, default_value: V) -> V,
+    keys: <K, V>(value: { [K]: V }) -> {K},
+    has_value: <K, V>(table: { [K]: V }, value: V) -> boolean,
+    iter: <K, V>(func: (K, V) -> (), table: { [K]: V }) -> (),
+    iter_values: <K, V>(func: (V) -> (), table: { [K]: V }) -> (),
+    iter_ordered: <K, V>(func: (K, V) -> (), value: { [K]: V }) -> (),
+    iter_values_ordered: <K, V>(func: (V) -> (), value: { [K]: V }) -> (),
+    fold: <K, V, A>(func: (K, V, A) -> A, value: { [K]: V }, initial_value: A) -> A,
+    fold_values: <K, V, A>(func: (V, A) -> A, value: { [K]: V }, initial_value: A) -> A,
+    map: <K, V, R>(func: (K, V) -> R, value: { [K]: V }) -> { [K]: R },
+    map_values: <K, V, R>(func: (V) -> R, value: { [K]: V }) -> { [K]: R },
+    apply: <K, V>(func: (K, V) -> V, value: { [K]: V }) -> (),
+    apply_to_values: <K, V>(func: (V) -> V, value: { [K]: V }) -> (),
+    for_all: <K, V>(func: (V) -> boolean, table: { [K]: V }) -> boolean,
+    for_any: <K, V>(func: (V) -> boolean, table: { [K]: V }) -> boolean,
+    take: <T>(value: {T}, count: number) -> {T},
+    chunks: <T>(value: {T}, size: number) -> {{T}},
+    length: <K, V>(value: { [K]: V }) -> number,
+    is_empty: <K, V>(value: { [K]: V }) -> boolean,
+    copy: <K, V>(value: { [K]: V }) -> { [K]: V },
+}
+declare Value: {
+    repr: <T>(value: T) -> string,
+    is_nil: <T>(value: T) -> boolean,
+    is_int: <T>(value: T) -> boolean,
+    is_float: <T>(value: T) -> boolean,
+    is_string: <T>(value: T) -> boolean,
+    is_table: <T>(value: T) -> boolean,
+    is_list: <T>(value: T) -> boolean,
+    is_html: <T>(value: T) -> boolean,
+}
+
+type HeadingsTreeADT = { heading: NodeRef, children: {HeadingsTreeAST} }
+declare HTML: {
+    parse: (text: string, encoding: string) -> NodeRef,
+    set_default_encoding: (string) -> (),
+    to_string: (node: NodeRef, encoding: string?) -> string,
+    pretty_print: (node: NodeRef, encoding: string?) -> string,
+    create_document: () -> NodeRef,
+    create_element: (name: string, text: string?) -> NodeRef,
+    create_text: (string) -> NodeRef,
+    select: (node: NodeRef, selector: string) -> {NodeRef},
+    select_one: (node: NodeRef, selector: string) -> NodeRef?,
+    matches_selector: (node: NodeRef, selector: string) -> boolean,
+    parent: (NodeRef) -> NodeRef?,
+    children: (NodeRef) -> {NodeRef},
+    ancestors: (NodeRef) -> {NodeRef},
+    descendants: (NodeRef) -> {NodeRef},
+    siblings: (NodeRef) -> {NodeRef},
+    child_count: (NodeRef) -> number,
+    is_empty: (NodeRef) -> boolean,
+    get_tag_name: (NodeRef) -> string,
+    set_tag_name: (node: NodeRef, name: string) -> (),
+    get_attribute: (node: NodeRef, name: string) -> string?,
+    set_attribute: (node: NodeRef, name: string, value: string) -> (),
+    append_attribute: (node: NodeRef, name: string, value: string) -> (),
+    delete_attribute: (node: NodeRef, name: string) -> (),
+    list_attributes: (NodeRef) -> {string},
+    clear_attributes: (NodeRef) -> (),
+    get_classes: (NodeRef) -> {string},
+    has_class: (node: NodeRef, name: string) -> boolean,
+    add_class: (node: NodeRef, name: string) -> (),
+    remove_class: (node: NodeRef, name: string) -> (),
+    inner_html: (NodeRef) -> string,
+    inner_text: (NodeRef) -> string,
+    strip_tags: (NodeRef) -> string,
+    replace_element: (from: NodeRef, with: NodeRef) -> (),
+    replace_content: (parent: NodeRef, child: NodeRef) -> (),
+    delete: (NodeRef) -> (),
+    delete_element: (NodeRef) -> (),
+    wrap: (elem: NodeRef, with: NodeRef) -> (),
+    swap: (NodeRef, NodeRef) -> (),
+    append: (parent: NodeRef, child: NodeRef) -> (),
+    append_child: (parent: NodeRef, child: NodeRef) -> (),
+    prepend: (parent: NodeRef, child: NodeRef) -> (),
+    prepend_child: (parent: NodeRef, child: NodeRef) -> (),
+    insert_before: (target: NodeRef, node: NodeRef) -> (),
+    insert_after: (target: NodeRef, node: NodeRef) -> (),
+    delete_content: (NodeRef) -> (),
+    unwrap: (NodeRef) -> (),
+    get_heading_level: (node: NodeRef) -> number,
+    get_headings_tree: (node: NodeRef) -> HeadingsTreeADT,
+}
+
+-- String loading functions
+declare function dostring(src: string): any
+declare function load<A...>(src: string | () -> string, chunkname: string?, mode: string?, env: { [string]: any }?): (((A...) -> any)?, string?)
+declare function loadstring<A...>(src: string, chunkname: string?, mode: string?, env: { [string]: any }?): (((A...) -> any)?, string?)
+
+-- Standard library extensions
+declare string: {
+    byte: (s: string, f: number?, t: number?) -> ...number,
+    char: (...number) -> string,
+    find: (s: string, p: string, init: number?, plain: boolean?) -> (number?, number?, ...string),
+    format: (s: string, ...any) -> string,
+    gmatch: (s: string, p: string) -> (() -> ...string?),
+    gsub: (s: string, p: string, f: ((...string) -> (string | number | false | nil)) | { [string]: string } | string, number?) -> (string, number),
+    len: (s: string) -> number,
+    lower: (s: string) -> string,
+    match: (s: string, p: string, init: number?) -> ...string?,
+    rep: (s: string, n: number) -> string,
+    reverse: (s: string) -> string,
+    sub: (s: string, f: number, t: number?) -> string,
+    upper: (s: string) -> string,
+    split: (s: string, sep: string?) -> {string},
+    pack: (f: string, ...any) -> string,
+    packsize: (f: string) -> number,
+    unpack: (f: string, s: string) -> ...any,
+
+    -- Extended functions
+    trim: (s: string) -> string,
+    startswith: (s: string, prefix: string) -> boolean,
+    endswith: (s: string, prefix: string) -> boolean,
+}
+
+declare math: {
+    frexp: (n: number) -> (number, number),
+    ldexp: (s: number, e: number) -> number,
+    fmod: (x: number, y: number) -> number,
+    modf: (n: number) -> (number, number),
+    pow: (x: number, y: number) -> number,
+    exp: (n: number) -> number,
+
+    ceil: (n: number) -> number,
+    floor: (n: number) -> number,
+    abs: (n: number) -> number,
+    sqrt: (n: number) -> number,
+
+    log: (n: number, base: number?) -> number,
+    log10: (n: number) -> number,
+
+    rad: (n: number) -> number,
+    deg: (n: number) -> number,
+
+    sin: (n: number) -> number,
+    cos: (n: number) -> number,
+    tan: (n: number) -> number,
+    sinh: (n: number) -> number,
+    cosh: (n: number) -> number,
+    tanh: (n: number) -> number,
+    atan: (n: number) -> number,
+    acos: (n: number) -> number,
+    asin: (n: number) -> number,
+    atan2: (y: number, x: number) -> number,
+
+    min: (number, ...number) -> number,
+    max: (number, ...number) -> number,
+
+    pi: number,
+    huge: number,
+
+    randomseed: (seed: number) -> (),
+    random: (number?, number?) -> number,
+
+    sign: (n: number) -> number,
+    clamp: (n: number, min: number, max: number) -> number,
+    noise: (x: number, y: number?, z: number?) -> number,
+    round: (n: number) -> number,
+
+    -- Extended functions
+    isnan: (n: number) -> boolean,
+    isinf: (n: number) -> boolean,
+    isfinite: (n: number) -> boolean,
+}

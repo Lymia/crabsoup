@@ -1,5 +1,5 @@
 use anyhow::Result;
-use crabsoup::lua::CrabsoupLuaContext;
+use crabsoup::ctx::CrabsoupLuaContext;
 
 fn main() -> Result<()> {
     tracing_subscriber::FmtSubscriber::builder()

@@ -18,7 +18,8 @@ pub fn main() -> Result<()> {
 
     for path in glob::glob("lua/**/*")? {
         let path = path?;
-        if path.is_file() {
+        let file_name = path.file_name().unwrap().to_string_lossy();
+        if path.is_file() && (file_name.ends_with(".lua") || file_name.ends_with(".luau")) {
             let suffix = path.strip_prefix("lua/")?;
             let mut output = out_path.clone();
             output.push(suffix);

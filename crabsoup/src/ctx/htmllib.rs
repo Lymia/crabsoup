@@ -446,9 +446,9 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
     // TODO: HTML.strip_tags
 
     // Element tree manipulation
-    // - Implemented in lua: HTML.append_root
-    // - Implemented in lua: HTML.prepend_root
-    // - Implemented in lua: HTML.replace
+    // - Implemented in lua: HTML.append_root - legacy-only
+    // - Implemented in lua: HTML.prepend_root - legacy-only
+    // - Implemented in lua: HTML.replace - legacy-only
     // - Implemented in lua: HTML.replace_element
     // - Implemented in lua: HTML.replace_content
     // - Implemented in lua: HTML.delete

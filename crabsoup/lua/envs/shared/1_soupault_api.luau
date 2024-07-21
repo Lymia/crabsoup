@@ -83,7 +83,7 @@ function Plugin.crabsoup_version(): string
     return _CRABSOUP_VERSION
 end
 
--- Function definitions for `Log` module
+    -- Function definitions for `Log` module
 local Log = _G.Log or {}
 _G.Log = Log
 

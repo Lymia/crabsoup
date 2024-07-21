@@ -1,6 +1,7 @@
 --!strict
 
 local shared, _G = ...
+local baselib = shared.baselib
 
 -- imported global functions
 local debug_info = debug.info
@@ -10,7 +11,7 @@ local string_gsub = string.gsub
 local string_sub = string.sub
 
 -- Globals
-_G._CRABSOUP_VERSION = shared.baselib._VERSION
+_G._CRABSOUP_VERSION = baselib._VERSION
 
 -- Extensions to the standard string API
 function _G.string.trim(str)
@@ -26,9 +27,9 @@ function _G.string.endswith(str: string, ending: string): boolean
 end
 
 -- Extensions to the standard math API
-_G.math.isnan = shared.baselib.is_nan
-_G.math.isinf = shared.baselib.is_inf
-_G.math.isfinite = shared.baselib.is_finite
+_G.math.isnan = baselib.is_nan
+_G.math.isinf = baselib.is_inf
+_G.math.isfinite = baselib.is_finite
 
 -- Sandboxed versions of setfenv and getfenv
 shared.orig_setfenv = _G.setfenv
@@ -43,7 +44,7 @@ function shared.mark_system_fenv(env)
 end
 
 local function get_function_for_level(level: number): (...any) -> any
-    if not shared.baselib.is_finite(level) or math_round(level) ~= level then
+    if not baselib.is_finite(level) or math_round(level) ~= level then
         return error("numeric level must be an integer", 3)
     elseif level < 1 then
         return error("numeric level must be a positive integer", 4)
@@ -59,15 +60,15 @@ end
 local function retrieve_target(target: number | (...any) -> any | nil): (any?, (...any) -> any, string?)
     local target_out, result, source
     if not target or target == 0 then
-        result = shared.baselib.get_globals()
+        result = baselib.get_globals()
     else
         if type(target) == "number" then
             target_out = get_function_for_level(target)
-            result = shared.baselib.raw_getfenv(target_out)
+            result = baselib.raw_getfenv(target_out)
             source = shared.fn2str(target_out)
         elseif type(target) == "function" then
             target_out = target
-            result = shared.baselib.raw_getfenv(target)
+            result = baselib.raw_getfenv(target)
             source = shared.fn2str(target)
         else
             return error("target must be nil, a function or a number", 3)
@@ -85,7 +86,7 @@ function _G.getfenv(target: number | (...any) -> any | nil): any
             return error(`cannot access fenv of builtin function '{source}'`, 2)
         end
     end
-    shared.baselib.deoptimize_env(result)
+    baselib.deoptimize_env(result)
     return result
 end
 function _G.setfenv(target: number | (...any) -> any | nil, table: any)
@@ -102,10 +103,63 @@ function _G.setfenv(target: number | (...any) -> any | nil, table: any)
         end
     end
 
-    shared.baselib.deoptimize_env(table)
+    baselib.deoptimize_env(table)
     if not target_out then
-        shared.baselib.set_globals(table)
+        baselib.set_globals(table)
     else
-        shared.baselib.raw_setfenv(target_out, table)
+        baselib.raw_setfenv(target_out, table)
     end
 end
+
+-- Reimplement base library functions
+local getfenv = _G.getfenv
+local function loadstring(chunk: string, chunkname: string?, mode: string?, env: any?): (((...any) -> any)?, string?)
+    if type(chunk) ~= "string" then
+        return error("chunk must be a string")
+    end
+    if chunkname and type(chunkname) ~= "string" then
+        return error("chunk name must be a string or nil")
+    end
+    if env and type(env) ~= "table" then
+        return error("function environment must be a table or nil")
+    end
+
+    if mode then
+       baselib.warn("`mode` is ignored on `loadstring` and `load`")
+    end
+
+    if not env then
+       env = getfenv(2)
+    end
+    baselib.deoptimize_env(env)
+    return baselib.loadstring(chunk, chunkname, env)
+end
+
+function _G.load(chunk: () -> string? | string, chunkname: string?, mode: string?, env: any?): (((...any) -> any)?, string?)
+    local code
+    if type(chunk) == "string" then
+        code = chunk
+    elseif type(chunk) == "function" then
+        code = ""
+        while true do
+            local section = chunk()
+            if section and #section > 0 then
+                code += section
+            else
+                break
+            end
+        end
+    else
+        return error("Chunk function given to `load` must be a function or string.", 2)
+    end
+    if not env then
+        env = getfenv(2)
+    end
+    return loadstring(code, chunkname, mode, env)
+end
+
+function _G.dofile(filename: string): any
+    return error("not yet implemented", 2)
+end
+
+_G.loadstring = loadstring
