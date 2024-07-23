@@ -4,7 +4,7 @@ local shared, _G = ...
 local baselib = shared.baselib
 
 -- Function definitions for `String` module
-local String = _G.String or {}
+local String = table.clone(String)
 _G.String = String
 
 function String.truncate(str: string, length: number, trailer: string?): string
@@ -27,33 +27,10 @@ function String.truncate(str: string, length: number, trailer: string?): string
     end
 end
 
-function String.slugify_soft(str: string): string
-    return error("not yet implemented")
-end
-
-function String.slugify_ascii(str: string): string
-    return error("not yet implemented")
-end
-
-function String.render_template(template_string: string, env: any): string
-    return error("not yet implemented")
-end
-
-function String.base64_encode(string: string): string
-    return error("not yet implemented")
-end
-
-function String.base64_decode(string: string): string
-    return error("not yet implemented")
-end
-
-function String.url_encode(string: string, exclude: {string}?): string
-    return error("not yet implemented")
-end
-
-function String.url_decode(string: string): string
-    return error("not yet implemented")
-end
+String.slugify = shared.nyi
+String.slugify_soft = shared.nyi
+String.slugify_ascii = shared.nyi
+String.render_template = shared.nyi
 
 -- TODO: Sys module
 
@@ -71,9 +48,7 @@ function Plugin.exit<T>(message: T): never
     return error("unreachable")
 end
 
-function Plugin.require_version(version: any?)
-    error("not yet implemented")
-end
+Plugin.require_version = shared.nyi
 
 function Plugin.soupault_version(): string
     return "4.10.0" -- Newest *compatible* version of Soupault.

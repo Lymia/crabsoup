@@ -6,6 +6,7 @@ declare class NodeRef end
 -- Crabsoup APIs
 declare String: {
     truncate: (str: string, length: number, trailer: string?) -> string,
+    slugify: (string) -> string,
     slugify_soft: (string) -> string,
     slugify_ascii: (string) -> string,
     render_template: (template: string, env: any) -> string,
@@ -61,7 +62,7 @@ declare Value: {
     is_html: <T>(value: T) -> boolean,
 }
 
-type HeadingsTreeADT = { heading: NodeRef, children: {HeadingsTreeAST} }
+type HeadingsTreeADT = { heading: NodeRef, children: {HeadingsTreeADT} }
 declare HTML: {
     parse: (text: string, encoding: string) -> NodeRef,
     set_default_encoding: (string) -> (),

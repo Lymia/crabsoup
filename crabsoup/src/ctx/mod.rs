@@ -3,6 +3,7 @@ use mlua::{prelude::LuaFunction, ChunkMode, Lua, LuaOptions, Result, StdLib, Tab
 mod baselib;
 mod digestlib;
 mod htmllib;
+mod stringlib;
 mod syslib;
 
 const SHARED_TABLE_LOC: &str = "crabsoup-shared";
@@ -23,6 +24,7 @@ impl CrabsoupLuaContext {
             let shared_table = lua.create_table()?;
             lua.set_named_registry_value(SHARED_TABLE_LOC, &shared_table)?;
             shared_table.set("baselib", baselib::create_base_table(&lua)?)?;
+            shared_table.set("String", stringlib::create_string_table(&lua)?)?;
             shared_table.set("Digest", digestlib::create_digest_table(&lua)?)?;
             shared_table.set("HTML", htmllib::create_html_table(&lua)?)?;
             shared_table.set("Sys", syslib::create_sys_table(&lua)?)?;

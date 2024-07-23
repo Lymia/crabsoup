@@ -1,11 +1,17 @@
-use crate::{html_is_root::is_document, wyhash::WyHashSet};
+use crate::{
+    html::{
+        extract_text::{inner_text, strip_tags},
+        is_document::is_document,
+    },
+    wyhash::WyHashSet,
+};
 use encoding_rs::{Encoding, UTF_8};
 use html5ever::{namespace_url, ns, LocalName, QualName};
 use kuchikiki::{
     parse_fragment, parse_html, traits::TendrilSink, ElementData, NodeDataRef, NodeRef, Selectors,
 };
 use mlua::{prelude::LuaString, Error, Lua, Result, Table, UserData, UserDataFields, UserDataRef};
-use std::{cell::RefCell, io::Cursor, rc::Rc, str::Split};
+use std::{borrow::Cow, cell::RefCell, io::Cursor, rc::Rc, str::Split};
 use tracing::warn;
 
 fn qual_name(name: &str) -> QualName {
@@ -50,12 +56,12 @@ fn html_to_string<'lua>(
     let mut data = Vec::new();
     node.serialize(&mut Cursor::new(&mut data))?;
     let rust_str = std::str::from_utf8(&data)?;
-    let (text, encoding, errors) = encoding.encode(if pretty_print {
-        warn!("Pretty printing is not currently implemented.");
-        rust_str
+    let processed = if pretty_print {
+        Cow::Owned(crate::html::pretty_print(rust_str).map_err(Error::runtime)?)
     } else {
-        rust_str
-    });
+        Cow::Borrowed(rust_str)
+    };
+    let (text, encoding, errors) = encoding.encode(&processed);
     if errors {
         encoding_warning(lua, encoding, true);
     }
@@ -69,7 +75,7 @@ fn element(node: &NodeRef) -> Result<NodeDataRef<ElementData>> {
 }
 
 static SELECTOR_WHITESPACE: &[char] = &[' ', '\t', '\n', '\r', '\x0C'];
-fn split_classes<'a>(input: &'a str) -> impl Iterator<Item = &'a str> {
+fn split_classes(input: &str) -> impl Iterator<Item = &str> {
     struct SplitClasses<'a> {
         underlying: Split<'a, &'static [char]>,
         found: WyHashSet<&'a str>,
@@ -161,6 +167,32 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
             lua.create_function(
                 move |lua, (node_ref, encoding): (UserDataRef<LuaNodeRef>, Option<LuaString>)| {
                     html_to_string(lua, &node_ref.0, &encoding, &active_encoding_ref, true)
+                },
+            )?,
+        )?;
+    }
+    {
+        let active_encoding_ref = active_encoding.clone();
+        table.set(
+            "inner_html",
+            lua.create_function(
+                move |lua, (node_ref, encoding): (UserDataRef<LuaNodeRef>, Option<LuaString>)| {
+                    let encoding = match encoding {
+                        None => *active_encoding_ref.borrow(),
+                        Some(encoding) => decode_encoding(&encoding)?,
+                    };
+
+                    let mut data = Vec::new();
+                    for child in node_ref.0.children() {
+                        child.serialize(&mut Cursor::new(&mut data))?;
+                    }
+                    let rust_str = std::str::from_utf8(&data)?;
+
+                    let (text, encoding, errors) = encoding.encode(&rust_str);
+                    if errors {
+                        encoding_warning(lua, encoding, true);
+                    }
+                    Ok(lua.create_string(&text)?)
                 },
             )?,
         )?;
@@ -433,17 +465,17 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
         })?,
     )?;
     table.set(
-        "inner_html",
-        lua.create_function(|_, node: UserDataRef<LuaNodeRef>| {
-            let mut data = Vec::new();
-            for child in node.0.children() {
-                child.serialize(&mut Cursor::new(&mut data))?;
-            }
-            Ok(String::from_utf8(data).expect("Non UTF-8 text in DOM??"))
+        "inner_text",
+        lua.create_function(|lua, node: UserDataRef<LuaNodeRef>| {
+            lua.create_string(inner_text(&node.0))
         })?,
     )?;
-    // TODO: HTML.inner_text
-    // TODO: HTML.strip_tags
+    table.set(
+        "strip_tags",
+        lua.create_function(|lua, node: UserDataRef<LuaNodeRef>| {
+            lua.create_string(strip_tags(&node.0))
+        })?,
+    )?;
 
     // Element tree manipulation
     // - Implemented in lua: HTML.append_root - legacy-only

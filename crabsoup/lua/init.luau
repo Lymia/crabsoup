@@ -81,6 +81,11 @@ local function for_env(v)
 end
 
 -- Setup global environment
+function shared.nyi(...)
+    return error("not yet implemented", 2)
+end
+
+_G.String = shared.String
 _G.Digest = shared.Digest
 _G.HTML = shared.HTML
 _G.Sys = shared.Sys
@@ -96,6 +101,7 @@ freeze_env(shared_env)
 shared.register_builtin_name(shared_env.HTML.append, "HTML.append")
 shared.register_builtin_name(shared_env.HTML.delete, "HTML.delete")
 shared.register_builtin_name(shared_env.HTML.prepend, "HTML.prepend")
+shared.register_builtin_name(shared.nyi, "nyi")
 
 -- Setup each specific environment
 shared.envs = { global = _G, shared = shared_env }
