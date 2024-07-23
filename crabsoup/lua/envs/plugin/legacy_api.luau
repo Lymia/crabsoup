@@ -2,6 +2,18 @@
 
 local shared, _G = ...
 
+-- Helper functions
+local function create_unsafe_from_string<T>(func: (string) -> T): (string) -> T?
+    return function(str)
+        local status, result = pcall(func, str)
+        if status then
+            return result
+        else
+            return nil
+        end
+    end
+end
+
 -- Function definitions for `String` module
 local String = _G.String or {}
 _G.String = String
@@ -34,6 +46,30 @@ end
 String.ends_with = string.endswith
 String.starts_with = string.startswith
 
+-- Function definitions for 'JSON' module
+local JSON = _G.JSON or {}
+_G.JSON = JSON
+
+JSON.unsafe_from_string = create_unsafe_from_string(JSON.from_string)
+
+-- Function definitions for 'TOML' module
+local TOML = _G.TOML or {}
+_G.TOML = TOML
+
+TOML.unsafe_from_string = create_unsafe_from_string(TOML.from_string)
+
+-- Function definitions for 'YAML' module
+local YAML = _G.YAML or {}
+_G.YAML = YAML
+
+YAML.unsafe_from_string = create_unsafe_from_string(YAML.from_string)
+
+-- Function definitions for 'YAML' module
+local CSV = _G.CSV or {}
+_G.CSV = CSV
+
+CSV.unsafe_from_string = create_unsafe_from_string(CSV.from_string)
+
 -- Function definitions for `Table` module
 local Table = _G.Table or {}
 _G.Table = Table
@@ -45,6 +81,9 @@ function Table.has_key(table, key)
         return true
     end
 end
+
+-- Function definitions for 'Sys' module
+_G.Sys.get_file_modification_date = _G.Sys.get_file_modification_time
 
 -- Function definitions for 'HTML' module
 local function join_selectors(selectors: any?): string

@@ -4,7 +4,7 @@ local shared, _G = ...
 local baselib = shared.baselib
 
 -- Function definitions for `String` module
-local String = table.clone(String)
+local String = _G.String or {}
 _G.String = String
 
 function String.truncate(str: string, length: number, trailer: string?): string
@@ -27,12 +27,12 @@ function String.truncate(str: string, length: number, trailer: string?): string
     end
 end
 
-String.slugify = shared.nyi
-String.slugify_soft = shared.nyi
-String.slugify_ascii = shared.nyi
-String.render_template = shared.nyi
+-- Function definitions for `Sys` module
+local Sys = _G.Sys or {}
+_G.Sys = Sys
 
--- TODO: Sys module
+_G.Sys.basename_url = _G.Sys.basename_unix
+_G.Sys.dirname_url = _G.Sys.dirname_unix
 
 -- Function definitions for `Plugin` module
 local Plugin = _G.Plugin or {}
@@ -58,7 +58,7 @@ function Plugin.crabsoup_version(): string
     return _CRABSOUP_VERSION
 end
 
-    -- Function definitions for `Log` module
+-- Function definitions for `Log` module
 local Log = _G.Log or {}
 _G.Log = Log
 
@@ -67,16 +67,6 @@ Log.debug = baselib.debug
 Log.info = baselib.info
 Log.warn = baselib.warn
 Log.error = baselib.error
-
--- TODO: Log module
-
--- TODO: JSON module
-
--- TODO: TOML module
-
--- TODO: YAML module
-
--- TODO: CSV module
 
 -- TODO: Date module
 
@@ -255,8 +245,6 @@ function Table.copy<K, V>(value: { [K]: V }): { [K]: V }
     end
     return new
 end
-
--- TODO: Table.chunks
 
 -- Function definitions for `Value` module
 local Value = _G.Value or {}

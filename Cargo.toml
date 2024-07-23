@@ -11,3 +11,8 @@ opt-level = 's'
 [profile.release]
 opt-level = 3
 lto = true
+
+[workspace.dependencies]
+anyhow = "1.0"
+glob = "0.3"
+mlua = { version = "0.9", features = ["luau-jit", "serialize"] }

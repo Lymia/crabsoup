@@ -22,7 +22,7 @@ pub fn inner_text(node: &NodeRef) -> String {
             let text = text.borrow();
             let text = text.as_str();
 
-            let processed = REGEX.replace(text, " ");
+            let processed = REGEX.replace_all(text, " ");
             let start_stripped = processed.trim_start();
             let has_start = processed != start_stripped;
             let end_stripped = start_stripped.trim_end();

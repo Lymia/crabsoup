@@ -1,6 +1,7 @@
 use mlua::{prelude::LuaFunction, ChunkMode, Lua, LuaOptions, Result, StdLib, Table, Thread};
 
 mod baselib;
+mod codeclib;
 mod digestlib;
 mod htmllib;
 mod stringlib;
@@ -24,9 +25,10 @@ impl CrabsoupLuaContext {
             let shared_table = lua.create_table()?;
             lua.set_named_registry_value(SHARED_TABLE_LOC, &shared_table)?;
             shared_table.set("baselib", baselib::create_base_table(&lua)?)?;
-            shared_table.set("String", stringlib::create_string_table(&lua)?)?;
+            shared_table.set("codecs", codeclib::create_codec_table(&lua)?)?;
             shared_table.set("Digest", digestlib::create_digest_table(&lua)?)?;
             shared_table.set("HTML", htmllib::create_html_table(&lua)?)?;
+            shared_table.set("String", stringlib::create_string_table(&lua)?)?;
             shared_table.set("Sys", syslib::create_sys_table(&lua)?)?;
 
             // Create the lua data table
