@@ -68,7 +68,16 @@ Log.info = baselib.info
 Log.warn = baselib.warn
 Log.error = baselib.error
 
--- TODO: Date module
+-- Function definitions for `Date` module
+local Date = _G.Date or {}
+_G.Date = Date
+
+function _G.Date.now_format(fmt, tz)
+    return Date.format(Date.now_timestamp(), fmt, tz)
+end
+function _G.Date.reformat(date, inputs, fmt, tz)
+    return Date.format(Date.to_timestamp(date, inputs, tz), fmt)
+end
 
 -- Function definitions for the `Table` module
 local Table = _G.Table or {}

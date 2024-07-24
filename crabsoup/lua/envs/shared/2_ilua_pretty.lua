@@ -83,7 +83,7 @@ local function pairs_by_keys(tbl, func)
     return function()
         -- iterator function
         i = i + 1
-        return a[i], tbl[a[i]]
+        return a[i], a[i] and tbl[a[i]]
     end
 end
 
@@ -124,7 +124,7 @@ end
 --
 -- Pretty printer configuration
 --
-local max_items = 100 -- max number of items to list in one table
+local max_items = 1000 -- max number of items to list in one table
 local max_depth = 7 -- max recursion depth when printing tables
 local line_len = 120 -- max line length hint
 local indent_len = 4 -- number of spaces to indent with

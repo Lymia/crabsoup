@@ -156,6 +156,25 @@ pub fn create_base_table(lua: &Lua) -> Result<Table> {
         })?,
     )?;
 
+    table.set(
+        "raw_setmetatable",
+        lua.create_function(|_, (table, metatable): (Table, Option<Table>)| {
+            table.set_metatable(metatable);
+            Ok(())
+        })?,
+    )?;
+    table.set(
+        "raw_getmetatable",
+        lua.create_function(|_, table: Table| Ok(table.get_metatable()))?,
+    )?;
+    table.set(
+        "raw_freeze",
+        lua.create_function(|_, table: Table| {
+            table.set_readonly(true);
+            Ok(())
+        })?,
+    )?;
+
     load_unsafe_functions(lua, &table)?;
 
     Ok(table)

@@ -13,6 +13,8 @@ license = "Apache-2.0"
 
 [dependencies]
 base64 = "0.22.1"
+chrono = "0.4"
+chrono-tz = { version = "0.9", features = ["case-insensitive"] }
 encoding_rs = { version = "0.8.34", features = ["fast-legacy-encode"] }
 html5ever = "0.27"
 minijinja = "2.1"

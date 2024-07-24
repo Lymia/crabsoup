@@ -13,6 +13,7 @@ local function deep_copy(env)
                 new[k] = deep_copy(v)
             end
         end
+        shared.baselib.raw_setmetatable(new, shared.baselib.raw_getmetatable(env))
         return new
     else
         return env
@@ -49,7 +50,7 @@ local function freeze_env(env)
             for k, v in env do
                 iter(v, seen)
             end
-            table.freeze(env)
+            shared.baselib.raw_freeze(env)
         end
     end
     env._G = env
@@ -86,6 +87,7 @@ function shared.nyi(...)
 end
 
 _G.CSV = shared.codecs.CSV
+_G.Date = shared.Date
 _G.Digest = shared.Digest
 _G.HTML = shared.HTML
 _G.JSON = shared.codecs.JSON
