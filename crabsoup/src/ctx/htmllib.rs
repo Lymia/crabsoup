@@ -114,7 +114,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
     // Parsing and rendering
     {
         let active_encoding_ref = active_encoding.clone();
-        table.set(
+        table.raw_set(
             "parse",
             lua.create_function(move |lua, (text, encoding): (LuaString, Option<LuaString>)| {
                 let encoding = match encoding {
@@ -141,7 +141,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
     }
     {
         let active_encoding_ref = active_encoding.clone();
-        table.set(
+        table.raw_set(
             "set_default_encoding",
             lua.create_function(move |_, encoding: LuaString| {
                 *active_encoding_ref.borrow_mut() = decode_encoding(&encoding)?;
@@ -151,7 +151,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
     }
     {
         let active_encoding_ref = active_encoding.clone();
-        table.set(
+        table.raw_set(
             "to_string",
             lua.create_function(
                 move |lua, (node_ref, encoding): (UserDataRef<LuaNodeRef>, Option<LuaString>)| {
@@ -162,7 +162,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
     }
     {
         let active_encoding_ref = active_encoding.clone();
-        table.set(
+        table.raw_set(
             "pretty_print",
             lua.create_function(
                 move |lua, (node_ref, encoding): (UserDataRef<LuaNodeRef>, Option<LuaString>)| {
@@ -173,7 +173,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
     }
     {
         let active_encoding_ref = active_encoding.clone();
-        table.set(
+        table.raw_set(
             "inner_html",
             lua.create_function(
                 move |lua, (node_ref, encoding): (UserDataRef<LuaNodeRef>, Option<LuaString>)| {
@@ -199,11 +199,11 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
     }
 
     // Node creation
-    table.set(
+    table.raw_set(
         "create_document",
         lua.create_function(|_, ()| Ok(LuaNodeRef(NodeRef::new_document())))?,
     )?;
-    table.set(
+    table.raw_set(
         "create_element",
         lua.create_function(|_, (name, text): (LuaString, Option<LuaString>)| {
             let elem = NodeRef::new_element(qual_name(name.to_str()?), vec![]);
@@ -213,7 +213,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
             Ok(LuaNodeRef(elem))
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "create_text",
         lua.create_function(|_, text: LuaString| {
             Ok(LuaNodeRef(NodeRef::new_text(text.to_str()?)))
@@ -224,7 +224,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
     // - Implemented in Lua: HTML.select_any_of - note: crabsoup uses selector lists
     // - Implemented in Lua: HTML.select_all_of - note: crabsoup uses selector lists
     // - Implemented in Lua: HTML.matches_any_of_selectors - note: crabsoup uses selector lists
-    table.set(
+    table.raw_set(
         "select",
         lua.create_function(|lua, (html, selector): (UserDataRef<LuaNodeRef>, LuaString)| {
             let table = lua.create_table()?;
@@ -233,12 +233,12 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
                 .select(selector.to_str()?)
                 .map_err(|()| Error::runtime("Could not parse selector."))?
             {
-                table.push(LuaNodeRef(elem.as_node().clone()))?;
+                table.raw_push(LuaNodeRef(elem.as_node().clone()))?;
             }
             Ok(table)
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "select_one",
         lua.create_function(|_, (html, selector): (UserDataRef<LuaNodeRef>, LuaString)| {
             Ok(html
@@ -249,7 +249,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
                 .map(|x| LuaNodeRef(x.as_node().clone())))
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "matches_selector",
         lua.create_function(|_, (node, selector): (UserDataRef<LuaNodeRef>, LuaString)| {
             let selectors = Selectors::compile(selector.to_str()?)
@@ -263,50 +263,50 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
     )?;
 
     // Access to element tree surroundings
-    table.set(
+    table.raw_set(
         "parent",
         lua.create_function(|_, node: UserDataRef<LuaNodeRef>| {
             Ok(node.0.parent().map(LuaNodeRef))
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "children",
         lua.create_function(|lua, node: UserDataRef<LuaNodeRef>| {
             let table = lua.create_table()?;
             for node in node.0.children() {
-                table.push(LuaNodeRef(node))?;
+                table.raw_push(LuaNodeRef(node))?;
             }
             Ok(table)
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "ancestors",
         lua.create_function(|lua, node: UserDataRef<LuaNodeRef>| {
             let table = lua.create_table()?;
             for node in node.0.ancestors() {
-                table.push(LuaNodeRef(node))?;
+                table.raw_push(LuaNodeRef(node))?;
             }
             Ok(table)
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "descendants",
         lua.create_function(|lua, node: UserDataRef<LuaNodeRef>| {
             let table = lua.create_table()?;
             for node in node.0.descendants() {
-                table.push(LuaNodeRef(node))?;
+                table.raw_push(LuaNodeRef(node))?;
             }
             Ok(table)
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "siblings",
         lua.create_function(|lua, root: UserDataRef<LuaNodeRef>| {
             if let Some(parent) = root.0.parent() {
                 let table = lua.create_table()?;
                 for node in parent.children() {
                     if &node != &root.0 {
-                        table.push(LuaNodeRef(node))?;
+                        table.raw_push(LuaNodeRef(node))?;
                     }
                 }
                 Ok(table)
@@ -315,11 +315,11 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
             }
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "child_count",
         lua.create_function(|_, node: UserDataRef<LuaNodeRef>| Ok(node.0.children().count()))?,
     )?;
-    table.set(
+    table.raw_set(
         "is_empty",
         lua.create_function(|_, node: UserDataRef<LuaNodeRef>| {
             Ok(node.0.children().next().is_none())
@@ -328,20 +328,20 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
 
     // Element property access and manipulation
     // - Implemented in Lua: HTML.append_attribute
-    table.set(
+    table.raw_set(
         "get_tag_name",
         lua.create_function(|_, node: UserDataRef<LuaNodeRef>| {
             Ok(element(&node.0)?.name.borrow().local.to_string())
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "set_tag_name",
         lua.create_function(|_, (node, name): (UserDataRef<LuaNodeRef>, LuaString)| {
             element(&node.0)?.name.borrow_mut().local = LocalName::from(name.to_str()?);
             Ok(())
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "get_attribute",
         lua.create_function(|lua, (node, name): (UserDataRef<LuaNodeRef>, LuaString)| {
             if let Some(attr) = element(&node.0)?.attributes.borrow().get(name.to_str()?) {
@@ -351,7 +351,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
             }
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "set_attribute",
         lua.create_function(
             |_, (node, name, value): (UserDataRef<LuaNodeRef>, LuaString, LuaString)| {
@@ -363,7 +363,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
             },
         )?,
     )?;
-    table.set(
+    table.raw_set(
         "delete_attribute",
         lua.create_function(|_, (node, name): (UserDataRef<LuaNodeRef>, LuaString)| {
             element(&node.0)?
@@ -373,24 +373,24 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
             Ok(())
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "list_attributes",
         lua.create_function(|lua, node: UserDataRef<LuaNodeRef>| {
             let table = lua.create_table()?;
             for (attr, _) in element(&node.0)?.attributes.borrow().map.iter() {
-                table.push(lua.create_string(attr.local.to_string())?)?;
+                table.raw_push(lua.create_string(attr.local.to_string())?)?;
             }
             Ok(table)
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "clear_attributes",
         lua.create_function(|_, node: UserDataRef<LuaNodeRef>| {
             element(&node.0)?.attributes.borrow_mut().map.clear();
             Ok(())
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "get_classes",
         lua.create_function(|lua, node: UserDataRef<LuaNodeRef>| {
             let elem = element(&node.0)?;
@@ -399,7 +399,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
             if let Some(classes) = classes {
                 let table = lua.create_table()?;
                 for class in split_classes(classes) {
-                    table.push(lua.create_string(class)?)?;
+                    table.raw_push(lua.create_string(class)?)?;
                 }
                 Ok(table)
             } else {
@@ -407,7 +407,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
             }
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "has_class",
         lua.create_function(|_, (node, name): (UserDataRef<LuaNodeRef>, LuaString)| {
             let elem = element(&node.0)?;
@@ -422,7 +422,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
             }
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "add_class",
         lua.create_function(|_, (node, name): (UserDataRef<LuaNodeRef>, LuaString)| {
             let elem = element(&node.0)?;
@@ -443,7 +443,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
             Ok(())
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "remove_class",
         lua.create_function(|_, (node, name): (UserDataRef<LuaNodeRef>, LuaString)| {
             let elem = element(&node.0)?;
@@ -464,13 +464,13 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
             Ok(())
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "inner_text",
         lua.create_function(|lua, node: UserDataRef<LuaNodeRef>| {
             lua.create_string(inner_text(&node.0))
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "strip_tags",
         lua.create_function(|lua, node: UserDataRef<LuaNodeRef>| {
             lua.create_string(strip_tags(&node.0))
@@ -486,7 +486,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
     // - Implemented in lua: HTML.delete
     // - Implemented in lua: HTML.wrap
     // - Implemented in lua: HTML.swap
-    table.set(
+    table.raw_set(
         "append_child",
         lua.create_function(
             |_, (parent, child): (UserDataRef<LuaNodeRef>, UserDataRef<LuaNodeRef>)| {
@@ -495,7 +495,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
             },
         )?,
     )?;
-    table.set(
+    table.raw_set(
         "prepend_child",
         lua.create_function(
             |_, (parent, child): (UserDataRef<LuaNodeRef>, UserDataRef<LuaNodeRef>)| {
@@ -504,7 +504,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
             },
         )?,
     )?;
-    table.set(
+    table.raw_set(
         "insert_before",
         lua.create_function(
             |_, (parent, child): (UserDataRef<LuaNodeRef>, UserDataRef<LuaNodeRef>)| {
@@ -513,7 +513,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
             },
         )?,
     )?;
-    table.set(
+    table.raw_set(
         "insert_after",
         lua.create_function(
             |_, (parent, child): (UserDataRef<LuaNodeRef>, UserDataRef<LuaNodeRef>)| {
@@ -522,14 +522,14 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
             },
         )?,
     )?;
-    table.set(
+    table.raw_set(
         "delete_element",
         lua.create_function(|_, elem: UserDataRef<LuaNodeRef>| {
             elem.0.detach();
             Ok(())
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "delete_content",
         lua.create_function(|_, elem: UserDataRef<LuaNodeRef>| {
             for child in elem.0.children() {
@@ -538,7 +538,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
             Ok(())
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "unwrap",
         lua.create_function(|_, elem: UserDataRef<LuaNodeRef>| {
             for child in elem.0.children().rev() {
@@ -553,31 +553,31 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
     // - Implemented in lua: HTML.get_headings_tree
 
     // Node tests
-    table.set(
+    table.raw_set(
         "is_comment",
         lua.create_function(|_, elem: UserDataRef<LuaNodeRef>| {
             Ok(elem.0 .0.as_comment().is_some())
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "is_doctype",
         lua.create_function(|_, elem: UserDataRef<LuaNodeRef>| {
             Ok(elem.0 .0.as_doctype().is_some())
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "is_document",
         lua.create_function(|_, elem: UserDataRef<LuaNodeRef>| {
             Ok(elem.0 .0.as_document().is_some())
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "is_element",
         lua.create_function(|_, elem: UserDataRef<LuaNodeRef>| {
             Ok(elem.0 .0.as_element().is_some())
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "is_text",
         lua.create_function(|_, elem: UserDataRef<LuaNodeRef>| Ok(elem.0 .0.as_text().is_some()))?,
     )?;

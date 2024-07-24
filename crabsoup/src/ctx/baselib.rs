@@ -18,11 +18,11 @@ pub fn create_base_table(lua: &Lua) -> Result<Table> {
 
     {
         let version = concat!(env!("CARGO_PKG_NAME"), " ", env!("CARGO_PKG_VERSION"));
-        table.set("_VERSION", version)?;
-        table.set("VERSION_ONLY", env!("CARGO_PKG_VERSION"))?;
+        table.raw_set("_VERSION", version)?;
+        table.raw_set("VERSION_ONLY", env!("CARGO_PKG_VERSION"))?;
     }
 
-    table.set(
+    table.raw_set(
         "open_rustyline",
         lua.create_function(|_, ()| {
             let editor = DefaultEditor::new().map_err(Error::runtime)?;
@@ -30,7 +30,7 @@ pub fn create_base_table(lua: &Lua) -> Result<Table> {
         })?,
     )?;
 
-    table.set(
+    table.raw_set(
         "loadstring_rt",
         lua.create_function(|lua, (code, chunkname): (LuaString, LuaString)| {
             Ok(lua
@@ -41,7 +41,7 @@ pub fn create_base_table(lua: &Lua) -> Result<Table> {
         })?,
     )?;
 
-    table.set(
+    table.raw_set(
         "loadstring",
         lua.create_function(
             |lua, (code, chunkname, env): (LuaString, Option<LuaString>, Option<Value>)| {
@@ -71,9 +71,9 @@ pub fn create_base_table(lua: &Lua) -> Result<Table> {
         )?,
     )?;
 
-    table.set("is_nan", lua.create_function(|_, f: f64| Ok(f.is_nan()))?)?;
-    table.set("is_inf", lua.create_function(|_, f: f64| Ok(f.is_infinite()))?)?;
-    table.set("is_finite", lua.create_function(|_, f: f64| Ok(f.is_finite()))?)?;
+    table.raw_set("is_nan", lua.create_function(|_, f: f64| Ok(f.is_nan()))?)?;
+    table.raw_set("is_inf", lua.create_function(|_, f: f64| Ok(f.is_infinite()))?)?;
+    table.raw_set("is_finite", lua.create_function(|_, f: f64| Ok(f.is_finite()))?)?;
 
     fn target(lua: &Lua) -> Result<Cow<'static, str>> {
         if let Some(debug) = lua.inspect_stack(1) {
@@ -102,7 +102,7 @@ pub fn create_base_table(lua: &Lua) -> Result<Table> {
         }
         Ok(values)
     }
-    table.set(
+    table.raw_set(
         "error",
         lua.create_function(|lua, value: MultiValue| {
             let target_str = target(lua)?;
@@ -110,7 +110,7 @@ pub fn create_base_table(lua: &Lua) -> Result<Table> {
             Ok(())
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "warn",
         lua.create_function(|lua, value: MultiValue| {
             let target_str = target(lua)?;
@@ -118,7 +118,7 @@ pub fn create_base_table(lua: &Lua) -> Result<Table> {
             Ok(())
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "info",
         lua.create_function(|lua, value: MultiValue| {
             let target_str = target(lua)?;
@@ -126,7 +126,7 @@ pub fn create_base_table(lua: &Lua) -> Result<Table> {
             Ok(())
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "debug",
         lua.create_function(|lua, value: MultiValue| {
             let target_str = target(lua)?;
@@ -134,7 +134,7 @@ pub fn create_base_table(lua: &Lua) -> Result<Table> {
             Ok(())
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "trace",
         lua.create_function(|lua, value: MultiValue| {
             let target_str = target(lua)?;
@@ -143,31 +143,31 @@ pub fn create_base_table(lua: &Lua) -> Result<Table> {
         })?,
     )?;
 
-    table.set(
+    table.raw_set(
         "plugin_fail",
         lua.create_function(|_, str: LuaString| {
             Ok(PluginInstruction::Fail(str.to_str()?.to_string()))
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "plugin_exit",
         lua.create_function(|_, str: LuaString| {
             Ok(PluginInstruction::Exit(str.to_str()?.to_string()))
         })?,
     )?;
 
-    table.set(
+    table.raw_set(
         "raw_setmetatable",
         lua.create_function(|_, (table, metatable): (Table, Option<Table>)| {
             table.set_metatable(metatable);
             Ok(())
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "raw_getmetatable",
         lua.create_function(|_, table: Table| Ok(table.get_metatable()))?,
     )?;
-    table.set(
+    table.raw_set(
         "raw_freeze",
         lua.create_function(|_, table: Table| {
             table.set_readonly(true);
@@ -251,14 +251,14 @@ fn load_unsafe_functions(lua: &Lua, table: &Table) -> Result<()> {
     }
 
     unsafe {
-        table.set("load_in_new_thread", lua.create_c_function(load_in_new_thread)?)?;
-        table.set("set_safeenv_flag", lua.create_c_function(set_safeenv_flag)?)?;
-        table.set("deoptimize_env", lua.create_c_function(deoptimize_env)?)?;
-        table.set("get_globals", lua.create_c_function(get_globals)?)?;
-        table.set("set_globals", lua.create_c_function(set_globals)?)?;
-        table.set("raw_getfenv", lua.create_c_function(raw_getfenv)?)?;
-        table.set("raw_setfenv", lua.create_c_function(raw_setfenv)?)?;
-        table.set("do_sandbox", lua.create_c_function(do_sandbox)?)?;
+        table.raw_set("load_in_new_thread", lua.create_c_function(load_in_new_thread)?)?;
+        table.raw_set("set_safeenv_flag", lua.create_c_function(set_safeenv_flag)?)?;
+        table.raw_set("deoptimize_env", lua.create_c_function(deoptimize_env)?)?;
+        table.raw_set("get_globals", lua.create_c_function(get_globals)?)?;
+        table.raw_set("set_globals", lua.create_c_function(set_globals)?)?;
+        table.raw_set("raw_getfenv", lua.create_c_function(raw_getfenv)?)?;
+        table.raw_set("raw_setfenv", lua.create_c_function(raw_setfenv)?)?;
+        table.raw_set("do_sandbox", lua.create_c_function(do_sandbox)?)?;
     }
 
     Ok(())

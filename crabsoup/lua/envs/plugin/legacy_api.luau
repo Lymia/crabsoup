@@ -107,3 +107,11 @@ end
 _G.HTML.append_root = HTML.append_child
 _G.HTML.prepend_root = HTML.prepend_child
 _G.HTML.replace = HTML.replace_element
+
+-- Function definitions for `Sys` module
+local Sys = _G.Sys or {}
+_G.Sys = Sys
+
+function Sys.random(n)
+    return math.random(0, n)
+end

@@ -33,6 +33,8 @@ _G.Sys = Sys
 
 _G.Sys.basename_url = _G.Sys.basename_unix
 _G.Sys.dirname_url = _G.Sys.dirname_unix
+_G.Sys.join_url = _G.Sys.join_path_unix
+_G.Sys.split_path_url = _G.Sys.split_path_unix
 
 -- Function definitions for `Plugin` module
 local Plugin = _G.Plugin or {}

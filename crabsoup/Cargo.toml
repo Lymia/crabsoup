@@ -20,6 +20,7 @@ html5ever = "0.27"
 minijinja = "2.1"
 regex = "1.10"
 rustyline = { version = "14.0", default-features = false }
+tokio = "1.39"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 urlencoding = "2.1.3"

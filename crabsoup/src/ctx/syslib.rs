@@ -1,28 +1,31 @@
-use mlua::{prelude::LuaString, Lua, Result, Table};
-use std::{path::Path, time::UNIX_EPOCH};
+use mlua::{prelude::LuaString, Lua, Result, Table, Value};
+use std::{
+    path::{Path, PathBuf},
+    time::UNIX_EPOCH,
+};
 
 pub fn create_sys_table(lua: &Lua) -> Result<Table> {
     let table = lua.create_table()?;
 
-    table.set(
+    table.raw_set(
         "read_file",
         lua.create_function(|_, path: LuaString| Ok(std::fs::read_to_string(path.to_str()?)?))?,
     )?;
-    table.set(
+    table.raw_set(
         "write_file",
         lua.create_function(|_, (path, data): (LuaString, LuaString)| {
             std::fs::write(path.to_str()?, data.as_bytes())?;
             Ok(())
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "delete_file",
         lua.create_function(|_, path: LuaString| {
             std::fs::remove_file(path.to_str()?)?;
             Ok(())
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "delete_recursive",
         lua.create_function(|_, path: LuaString| {
             let path = path.to_str()?;
@@ -34,21 +37,31 @@ pub fn create_sys_table(lua: &Lua) -> Result<Table> {
             Ok(())
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "get_file_size",
         lua.create_function(|_, path: LuaString| Ok(std::fs::metadata(path.to_str()?)?.len()))?,
     )?;
-    table.set(
+    table.raw_set(
         "file_exists",
         lua.create_function(|_, path: LuaString| Ok(std::fs::exists(path.to_str()?)?))?,
     )?;
-    table.set(
+    table.raw_set(
         "is_file",
         lua.create_function(|_, path: LuaString| {
             Ok(AsRef::<Path>::as_ref(path.to_str()?).is_file())
         })?,
     )?;
-    table.set(
+    table.raw_set(
+        "get_file_creation_time",
+        lua.create_function(|_, path: LuaString| {
+            Ok(std::fs::metadata(path.to_str()?)?
+                .created()?
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs())
+        })?,
+    )?;
+    table.raw_set(
         "get_file_modification_time",
         lua.create_function(|_, path: LuaString| {
             Ok(std::fs::metadata(path.to_str()?)?
@@ -58,28 +71,28 @@ pub fn create_sys_table(lua: &Lua) -> Result<Table> {
                 .as_secs())
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "is_dir",
         lua.create_function(|_, path: LuaString| {
             Ok(AsRef::<Path>::as_ref(path.to_str()?).is_dir())
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "mkdir",
         lua.create_function(|_, path: LuaString| Ok(std::fs::create_dir_all(path.to_str()?)?))?,
     )?;
-    table.set(
+    table.raw_set(
         "list_dir",
         lua.create_function(|lua, path: LuaString| {
             let table = lua.create_table()?;
             for dir in std::fs::read_dir(path.to_str()?)? {
                 let dir = dir?;
-                table.push(dir.file_name().to_string_lossy())?;
+                table.raw_push(dir.file_name().to_string_lossy())?;
             }
             Ok(table)
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "get_extension",
         lua.create_function(|lua, path: LuaString| {
             let path = path.to_str()?;
@@ -92,7 +105,7 @@ pub fn create_sys_table(lua: &Lua) -> Result<Table> {
             }
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "get_extensions",
         lua.create_function(|lua, path: LuaString| {
             let path = path.to_str()?;
@@ -101,12 +114,12 @@ pub fn create_sys_table(lua: &Lua) -> Result<Table> {
 
             let table = lua.create_table()?;
             for str in str.split('.').skip(1) {
-                table.push(str)?;
+                table.raw_push(str)?;
             }
             Ok(table)
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "has_extension",
         lua.create_function(|_, (path, extension): (LuaString, LuaString)| {
             let path = path.to_str()?;
@@ -116,7 +129,7 @@ pub fn create_sys_table(lua: &Lua) -> Result<Table> {
             Ok(str.split('.').skip(1).any(|x| x == extension))
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "strip_extensions",
         lua.create_function(|lua, path: LuaString| {
             let path = path.to_str()?;
@@ -125,7 +138,7 @@ pub fn create_sys_table(lua: &Lua) -> Result<Table> {
             lua.create_string(str.split('.').next().unwrap())
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "basename",
         lua.create_function(|lua, path: LuaString| {
             let path = path.to_str()?;
@@ -133,14 +146,14 @@ pub fn create_sys_table(lua: &Lua) -> Result<Table> {
             lua.create_string(path.file_name().unwrap().to_string_lossy().as_ref())
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "basename_unix",
         lua.create_function(|lua, path: LuaString| {
             let path = path.to_str()?;
             lua.create_string(path.trim_end_matches('/').split('/').last().unwrap_or(""))
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "dirname",
         lua.create_function(|lua, path: LuaString| {
             let path = path.to_str()?;
@@ -151,7 +164,7 @@ pub fn create_sys_table(lua: &Lua) -> Result<Table> {
             }
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "dirname_unix",
         lua.create_function(|lua, path: LuaString| {
             let path = path.to_str()?;
@@ -162,7 +175,61 @@ pub fn create_sys_table(lua: &Lua) -> Result<Table> {
             }
         })?,
     )?;
-    // TODO: Everything after Sys.join_path
+    table.raw_set(
+        "join_path",
+        lua.create_function(|lua, (path_a, path_b): (LuaString, LuaString)| {
+            let mut path = PathBuf::from(path_a.to_str()?);
+            path.push(path_b.to_str()?);
+            Ok(lua.create_string(&*path.to_string_lossy())?)
+        })?,
+    )?;
+    table.raw_set(
+        "join_path_unix",
+        lua.create_function(|_, (path_a, path_b): (LuaString, LuaString)| {
+            Ok(format!(
+                "{}/{}",
+                path_a.to_str()?.trim_end_matches('/'),
+                path_b.to_str().unwrap().trim_start_matches('/'),
+            ))
+        })?,
+    )?;
+    table.raw_set(
+        "split_path",
+        lua.create_function(|lua, path: LuaString| {
+            let path = path.to_str()?;
+            let path = AsRef::<Path>::as_ref(path);
+
+            let table = lua.create_table()?;
+            for component in path.components() {
+                table.raw_push(lua.create_string(&*component.as_os_str().to_string_lossy())?)?;
+            }
+            Ok(table)
+        })?,
+    )?;
+    table.raw_set(
+        "split_path_unix",
+        lua.create_function(|lua, path: LuaString| {
+            let table = lua.create_table()?;
+            for component in path.to_str()?.split('/').filter(|x| !x.is_empty()) {
+                table.raw_push(lua.create_string(component)?)?;
+            }
+            Ok(table)
+        })?,
+    )?;
+    // TODO: run_program
+    // TODO: run_program_get_exit_code
+    // TODO: get_program_output
+    table.raw_set("is_unix", lua.create_function(|_, ()| Ok(cfg!(unix)))?)?;
+    table.raw_set("is_windows", lua.create_function(|_, ()| Ok(cfg!(windows)))?)?;
+    table.raw_set(
+        "getenv",
+        lua.create_function(|lua, (env, default): (LuaString, Value)| {
+            match std::env::var(env.to_str()?) {
+                Ok(val) => Ok(Value::String(lua.create_string(val)?)),
+                Err(_) => Ok(default),
+            }
+        })?,
+    )?;
 
     Ok(table)
 }

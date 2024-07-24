@@ -5,7 +5,7 @@ use std::io::Cursor;
 fn create_json_table(lua: &Lua) -> Result<Table> {
     let table = lua.create_table()?;
 
-    table.set(
+    table.raw_set(
         "from_string",
         lua.create_function(|lua, str: LuaString| {
             let value: serde_json::Value =
@@ -13,13 +13,13 @@ fn create_json_table(lua: &Lua) -> Result<Table> {
             lua.to_value(&value)
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "to_string",
         lua.create_function(|_, value: Value| {
             serde_json::to_string(&value).map_err(Error::runtime)
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "pretty_print",
         lua.create_function(|_, value: Value| {
             serde_json::to_string_pretty(&value).map_err(Error::runtime)
@@ -32,14 +32,14 @@ fn create_json_table(lua: &Lua) -> Result<Table> {
 fn create_toml_table(lua: &Lua) -> Result<Table> {
     let table = lua.create_table()?;
 
-    table.set(
+    table.raw_set(
         "from_string",
         lua.create_function(|lua, str: LuaString| {
             let value: toml::Value = toml::from_str(str.to_str()?).map_err(Error::runtime)?;
             lua.to_value(&value)
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "to_string",
         lua.create_function(|_, value: Value| toml::to_string(&value).map_err(Error::runtime))?,
     )?;
@@ -50,7 +50,7 @@ fn create_toml_table(lua: &Lua) -> Result<Table> {
 fn create_yaml_table(lua: &Lua) -> Result<Table> {
     let table = lua.create_table()?;
 
-    table.set(
+    table.raw_set(
         "from_string",
         lua.create_function(|lua, str: LuaString| {
             let value: serde_yaml::Value =
@@ -58,7 +58,7 @@ fn create_yaml_table(lua: &Lua) -> Result<Table> {
             lua.to_value(&value)
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "to_string",
         lua.create_function(|_, value: Value| {
             serde_yaml::to_string(&value).map_err(Error::runtime)
@@ -71,7 +71,7 @@ fn create_yaml_table(lua: &Lua) -> Result<Table> {
 fn create_csv_table(lua: &Lua) -> Result<Table> {
     let table = lua.create_table()?;
 
-    table.set(
+    table.raw_set(
         "from_string",
         lua.create_function(|lua, str: LuaString| {
             let bytes = str.as_bytes();
@@ -93,7 +93,7 @@ fn create_csv_table(lua: &Lua) -> Result<Table> {
             Ok(outer)
         })?,
     )?;
-    table.set(
+    table.raw_set(
         "to_list_of_tables",
         lua.create_function(|lua, str: LuaString| {
             let bytes = str.as_bytes();
@@ -124,9 +124,9 @@ fn create_csv_table(lua: &Lua) -> Result<Table> {
 
 pub fn create_codec_table(lua: &Lua) -> Result<Table> {
     let table = lua.create_table()?;
-    table.set("JSON", create_json_table(lua)?)?;
-    table.set("TOML", create_toml_table(lua)?)?;
-    table.set("YAML", create_yaml_table(lua)?)?;
-    table.set("CSV", create_csv_table(lua)?)?;
+    table.raw_set("JSON", create_json_table(lua)?)?;
+    table.raw_set("TOML", create_toml_table(lua)?)?;
+    table.raw_set("YAML", create_yaml_table(lua)?)?;
+    table.raw_set("CSV", create_csv_table(lua)?)?;
     Ok(table)
 }

@@ -22,12 +22,12 @@ fn digest_helper<D: Digest>(lua: &Lua) -> Result<LuaFunction> {
 pub fn create_digest_table(lua: &Lua) -> Result<Table> {
     let table = lua.create_table()?;
 
-    table.set("md5", digest_helper::<Md5>(lua)?)?;
-    table.set("sha1", digest_helper::<Sha1>(lua)?)?;
-    table.set("sha256", digest_helper::<Sha256>(lua)?)?;
-    table.set("sha512", digest_helper::<Sha512>(lua)?)?;
-    table.set("blake2s", digest_helper::<Blake2s256>(lua)?)?;
-    table.set("blake2b", digest_helper::<Blake2b512>(lua)?)?;
+    table.raw_set("md5", digest_helper::<Md5>(lua)?)?;
+    table.raw_set("sha1", digest_helper::<Sha1>(lua)?)?;
+    table.raw_set("sha256", digest_helper::<Sha256>(lua)?)?;
+    table.raw_set("sha512", digest_helper::<Sha512>(lua)?)?;
+    table.raw_set("blake2s", digest_helper::<Blake2s256>(lua)?)?;
+    table.raw_set("blake2b", digest_helper::<Blake2b512>(lua)?)?;
 
     Ok(table)
 }

@@ -91,6 +91,7 @@ _G.Date = shared.Date
 _G.Digest = shared.Digest
 _G.HTML = shared.HTML
 _G.JSON = shared.codecs.JSON
+_G.Process = shared.Process
 _G.String = shared.String
 _G.Sys = shared.Sys
 _G.TOML = shared.codecs.TOML
@@ -110,6 +111,7 @@ shared.register_builtin_name(shared_env.HTML.delete, "HTML.delete")
 shared.register_builtin_name(shared_env.HTML.prepend, "HTML.prepend")
 shared.register_builtin_name(shared_env.Sys.basename_unix, "Sys.basename_unix")
 shared.register_builtin_name(shared_env.Sys.dirname_unix, "Sys.dirname_unix")
+shared.register_builtin_name(shared_env.Sys.join_path_unix, "Sys.join_path_unix")
 shared.register_builtin_name(shared.nyi, "nyi")
 
 -- Setup each specific environment
