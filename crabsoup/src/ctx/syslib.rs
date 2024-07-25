@@ -216,9 +216,6 @@ pub fn create_sys_table(lua: &Lua) -> Result<Table> {
             Ok(table)
         })?,
     )?;
-    // TODO: run_program
-    // TODO: run_program_get_exit_code
-    // TODO: get_program_output
     table.raw_set("is_unix", lua.create_function(|_, ()| Ok(cfg!(unix)))?)?;
     table.raw_set("is_windows", lua.create_function(|_, ()| Ok(cfg!(windows)))?)?;
     table.raw_set(

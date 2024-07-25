@@ -18,9 +18,10 @@ chrono-tz = { version = "0.9", features = ["case-insensitive"] }
 encoding_rs = { version = "0.8.34", features = ["fast-legacy-encode"] }
 html5ever = "0.27"
 minijinja = "2.1"
+parking_lot = "0.12"
 regex = "1.10"
 rustyline = { version = "14.0", default-features = false }
-tokio = "1.39"
+tokio = { version = "1.39", features = ["io-util", "process", "rt", "rt-multi-thread"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 urlencoding = "2.1.3"

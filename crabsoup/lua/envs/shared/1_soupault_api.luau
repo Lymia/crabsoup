@@ -31,10 +31,22 @@ end
 local Sys = _G.Sys or {}
 _G.Sys = Sys
 
-_G.Sys.basename_url = _G.Sys.basename_unix
-_G.Sys.dirname_url = _G.Sys.dirname_unix
-_G.Sys.join_url = _G.Sys.join_path_unix
-_G.Sys.split_path_url = _G.Sys.split_path_unix
+Sys.basename_url = Sys.basename_unix
+Sys.dirname_url = Sys.dirname_unix
+Sys.join_url = Sys.join_path_unix
+Sys.split_path_url = Sys.split_path_unix
+
+function Sys.run_program(program)
+    return Process.run({ shell = program })
+end
+
+function Sys.run_program_get_exit_code(program)
+    return Process.try_run({ shell = program })
+end
+
+function Sys.get_program_output(program)
+    return Process.run_output({ shell = program })
+end
 
 -- Function definitions for `Plugin` module
 local Plugin = _G.Plugin or {}
