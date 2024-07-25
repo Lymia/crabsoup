@@ -135,7 +135,7 @@ fn create_tz_table(lua: &Lua) -> Result<Table> {
     let table = lua.create_table()?;
 
     let new_mt = lua.create_table()?;
-    new_mt.set("__metatable", "This metatable is locked.")?;
+    new_mt.set("__metatable", false)?;
     new_mt.set(
         "__index",
         lua.create_function::<_, (), _>(|_, (_, name): (Value, LuaString)| {

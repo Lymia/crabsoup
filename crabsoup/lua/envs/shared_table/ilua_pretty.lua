@@ -1,5 +1,5 @@
 --
--- 2_ilua_pretty.lua
+-- ilua_pretty.lua
 --
 -- The pretty printing library from ilua
 --
@@ -41,49 +41,47 @@ local function escape_string(str)
     return '"' .. str .. '"'
 end
 
--- this sort function compares table keys to allow a sort by key
--- the order is: numeric keys, string keys, other keys(converted to string)
-local function key_cmp(a, b)
-    local at = type(a)
-    local bt = type(b)
-    if at == "number" then
-        if bt == "number" then
-            return a < b
-        else
-            return true
-        end
-    elseif at == "string" then
-        if bt == "string" then
-            return a < b
-        elseif bt == "number" then
-            return false
-        else
-            return true
-        end
+-- returns an iterator to sort by table keys
+local function compare_any(a, b)
+    local ta, tb = type(a), type(b)
+
+    if ta == "number" and tb == "number" then
+        return a < b
+    elseif ta == "number" then
+        return true
+    elseif tb == "number" then
+        return false
+    end
+
+    if ta < tb then
+        return true
+    elseif ta > tb then
+        return false
     else
-        if bt == "string" or bt == "number" then
-            return false
-        else
-            return tostring(a) < tostring(b)
-        end
+        return a < b
     end
 end
-
--- returns an iterator to sort by table keys using func
--- as the comparison func. defaults to Pretty.key_cmp
-local function pairs_by_keys(tbl, func)
-    func = func or key_cmp
-    local a = {}
-    for n in pairs(tbl) do
-        a[#a + 1] = n
+local function pairs_by_keys(tbl)
+    local k_a, k_b = {}, {}
+    for k, v in pairs(tbl) do
+        if type(v) == "table" then
+            table.insert(k_a, k)
+        else
+            table.insert(k_b, k)
+        end
     end
-    table.sort(a, func)
+    table.sort(k_a, compare_any)
+    table.sort(k_b, compare_any)
+    for _, v in ipairs(k_b) do
+        table.insert(k_a, v)
+    end
+    local t = k_a
 
     local i = 0
     return function()
         -- iterator function
         i = i + 1
-        return a[i], a[i] and tbl[a[i]]
+        return t[i], t[i] and tbl[t[i]]
     end
 end
 
@@ -183,7 +181,7 @@ function table_children2str(tbl, path, depth, multiline, seen)
     local eol = "\n" -- end of line (multiline)
     local eq = " = " -- table equals string value (printed as key..eq..value)
 
-    local compactable, cnt, c = 0, 0, {}
+    local cnt, c = 0, {}
 
     -- metatable
     local mt = getmetatable(tbl)
@@ -198,7 +196,6 @@ function table_children2str(tbl, path, depth, multiline, seen)
         -- item limit
         if cnt >= max_items then
             table.insert(c, "...")
-            compactable = compactable + 1
             break
         end
         -- determine how to display the key. array part of table will show no keys
@@ -227,9 +224,6 @@ function table_children2str(tbl, path, depth, multiline, seen)
         end
         -- format val
         local val = val2str(v, path .. (path == "" and "" or ".") .. key, depth + 1, multiline, seen)
-        if not string.match(val, "[\r\n]") then
-            compactable = compactable + 1
-        end
         -- put the pieces together
         local out = ""
         if print_index then
@@ -242,14 +236,18 @@ function table_children2str(tbl, path, depth, multiline, seen)
     end
 
     -- compact
-    if multiline and #c > 0 and compactable == #c then
+    if #c == 0 then
+        -- empty
+        return empty
+    elseif multiline then
+        -- multiline
         local lines = {}
         local line = ""
         for i, v in ipairs(c) do
             local f = v .. sep
             if line == "" then
                 line = ind2 .. f
-            elseif #line + #f <= line_len then
+            elseif not string.find(f, "\n") and #line + #f <= line_len then
                 line = line .. f
             else
                 table.insert(lines, line)
@@ -258,16 +256,6 @@ function table_children2str(tbl, path, depth, multiline, seen)
         end
         table.insert(lines, line)
         return bl_m .. table.concat(lines, eol) .. br_m
-    elseif #c == 0 then
-        -- empty
-        return empty
-    elseif multiline then
-        -- multiline
-        local c2 = {}
-        for i, v in ipairs(c) do
-            table.insert(c2, ind2 .. v .. sep)
-        end
-        return bl_m .. table.concat(c2, eol) .. br_m
     else
         -- single line
         local c2 = {}

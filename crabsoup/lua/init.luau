@@ -82,10 +82,6 @@ local function for_env(v)
 end
 
 -- Setup global environment
-function shared.nyi(...)
-    return error("not yet implemented", 2)
-end
-
 _G.CSV = shared.codecs.CSV
 _G.Date = shared.Date
 _G.Digest = shared.Digest
@@ -99,10 +95,11 @@ _G.YAML = shared.codecs.YAML
 
 call_env_chunks("global", shared, _G)
 shared.baselib.do_sandbox()
+call_env_chunks("shared_table", shared)
 
 -- Setup shared environment
 local shared_env = deep_copy(_G)
-call_env_chunks("shared", shared, shared_env)
+call_env_chunks("shared_env", shared, shared_env)
 freeze_env(shared_env)
 
 -- Manually set a few specific functions names that are aliased even in the standalone environment
@@ -112,7 +109,6 @@ shared.register_builtin_name(shared_env.HTML.prepend, "HTML.prepend")
 shared.register_builtin_name(shared_env.Sys.basename_unix, "Sys.basename_unix")
 shared.register_builtin_name(shared_env.Sys.dirname_unix, "Sys.dirname_unix")
 shared.register_builtin_name(shared_env.Sys.join_path_unix, "Sys.join_path_unix")
-shared.register_builtin_name(shared.nyi, "nyi")
 
 -- Setup each specific environment
 shared.envs = { global = _G, shared = shared_env }

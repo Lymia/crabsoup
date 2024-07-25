@@ -1,9 +1,7 @@
 --
--- ilua.lua
+-- ilua_repl.lua
 --
--- A more friendly Lua interactive prompt
--- doesn't need '='
--- will print out tables recursively
+-- A more friendly Lua interactive prompt, doesn't need '=', will print out tables recursively
 --
 -- Steve Donovan, 2007
 -- Chris Hixon, 2010
