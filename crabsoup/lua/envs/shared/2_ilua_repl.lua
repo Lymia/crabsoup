@@ -35,7 +35,8 @@ local function repl_main()
 
     -- functions
     local function get_input()
-        local lines, i, input, chunk, err = {}, 1
+        local lines, i = {}, 1
+        local input, chunk, err
         while true do
             input = readline((i == 1) and ">> " or ".. ")
             if not input then
@@ -100,7 +101,7 @@ local function run_repl(env)
 
         is_repl_running = true
         local success, err = pcall(function()
-            repl_main(env)
+            repl_main()
         end)
         is_repl_running = false
 

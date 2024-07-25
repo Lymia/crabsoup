@@ -1,6 +1,6 @@
 --!strict
 
-local shared, _G = ...
+local _, _G = ...
 
 -- Helper functions
 local function create_unsafe_from_string<T>(func: (string) -> T): (string) -> T?
@@ -83,7 +83,26 @@ function Table.has_key(table, key)
 end
 
 -- Function definitions for 'Sys' module
-_G.Sys.get_file_modification_date = _G.Sys.get_file_modification_time
+local Sys = _G.Sys or {}
+_G.Sys = Sys
+
+Sys.get_file_modification_date = Sys.get_file_modification_time
+
+function Sys.run_program(program)
+    return Process.run({ shell = program })
+end
+
+function Sys.run_program_get_exit_code(program)
+    return Process.try_run({ shell = program })
+end
+
+function Sys.get_program_output(program)
+    return Process.run_output({ shell = program })
+end
+
+function Sys.random(n)
+    return math.random(0, n)
+end
 
 -- Function definitions for 'HTML' module
 local function join_selectors(selectors: any?): string
@@ -107,11 +126,3 @@ end
 _G.HTML.append_root = HTML.append_child
 _G.HTML.prepend_root = HTML.prepend_child
 _G.HTML.replace = HTML.replace_element
-
--- Function definitions for `Sys` module
-local Sys = _G.Sys or {}
-_G.Sys = Sys
-
-function Sys.random(n)
-    return math.random(0, n)
-end

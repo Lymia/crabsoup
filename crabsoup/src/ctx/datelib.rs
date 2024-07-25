@@ -139,10 +139,7 @@ fn create_tz_table(lua: &Lua) -> Result<Table> {
     new_mt.set(
         "__index",
         lua.create_function::<_, (), _>(|_, (_, name): (Value, LuaString)| {
-            Err(Error::runtime(format_args!(
-                "Timezone component not found: {:?}",
-                name.to_str()?
-            )))
+            Err(Error::runtime(format_args!("Timezone not found: {:?}", name.to_str()?)))
         })?,
     )?;
     new_mt.set_readonly(true);
@@ -150,38 +147,7 @@ fn create_tz_table(lua: &Lua) -> Result<Table> {
     table.set_metatable(Some(new_mt.clone()));
     table.raw_set("Local", LuaTimezone::Local(Local))?;
     for variant in TZ_VARIANTS {
-        let name = variant
-            .name()
-            .replace("GMT+", "GMTPlus")
-            .replace("GMT-", "GMTMinus")
-            .replace("-", "_");
-        let name = name.as_str();
-        if !name.contains("/") {
-            assert!(table.raw_get::<_, Value>(name)?.is_nil());
-            table.raw_set(name, LuaTimezone::Tz(variant))?;
-        } else {
-            let (path, name) = name.rsplit_once('/').unwrap();
-
-            let table = if !path.is_empty() {
-                let mut temp = table.clone();
-                for path in path.split('/') {
-                    let value = temp.raw_get::<_, Value>(path)?;
-                    assert!(value.is_nil() || value.is_table());
-                    if value.is_nil() {
-                        let table = lua.create_table()?;
-                        table.set_metatable(Some(new_mt.clone()));
-                        temp.raw_set(path, table)?;
-                    }
-                    temp = temp.raw_get(path)?;
-                }
-                temp
-            } else {
-                table.clone()
-            };
-
-            assert!(table.raw_get::<_, Value>(name)?.is_nil());
-            table.raw_set(name, LuaTimezone::Tz(variant))?;
-        }
+        table.raw_set(variant.name(), LuaTimezone::Tz(variant))?;
     }
 
     Ok(table)

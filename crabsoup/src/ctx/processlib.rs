@@ -85,7 +85,7 @@ fn parse_command_value(data: &Table) -> Result<CommandInfo> {
             command.env(k.to_str()?, v.to_str()?);
         }
     }
-    if let Some(dir) = data.get::<_, Option<LuaString>>("stdio")? {
+    if let Some(dir) = data.get::<_, Option<LuaString>>("stdin")? {
         command.stdin(Stdio::piped());
         stdin = Some(dir.to_str()?.to_string());
     } else {

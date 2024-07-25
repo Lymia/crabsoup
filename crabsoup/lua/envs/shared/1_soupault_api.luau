@@ -36,40 +36,45 @@ Sys.dirname_url = Sys.dirname_unix
 Sys.join_url = Sys.join_path_unix
 Sys.split_path_url = Sys.split_path_unix
 
-function Sys.run_program(program)
-    return Process.run({ shell = program })
-end
-
-function Sys.run_program_get_exit_code(program)
-    return Process.try_run({ shell = program })
-end
-
-function Sys.get_program_output(program)
-    return Process.run_output({ shell = program })
-end
-
 -- Function definitions for `Plugin` module
 local Plugin = _G.Plugin or {}
 _G.Plugin = Plugin
 
 function Plugin.fail<T>(message: T): never
     coroutine.yield(baselib.plugin_fail(tostring(message)))
-    return error("unreachable")
+    return error("Coroutine resumed despite Plugin.fail?")
 end
 
 function Plugin.exit<T>(message: T): never
     coroutine.yield(baselib.plugin_exit(tostring(message)))
-    return error("unreachable")
+    return error("Coroutine resumed despite Plugin.exit?")
 end
 
-Plugin.require_version = shared.nyi
+local supported_soupault_version = "4.10.0" -- Newest *compatible* version of Soupault.
+local crabsoup_version = shared.baselib.VERSION_ONLY
+
+function Plugin.require_version(version: string)
+    local min_components = string.split(version, ".")
+    local cur_components = string.split(supported_soupault_version, ".")
+
+    for i = 1, math.max(#min_components, #cur_components) do
+        local min = tonumber(min_components[i] or "0")
+        local cur = tonumber(cur_components[i] or "0")
+        if cur > min then
+            return
+        end
+        if min > cur then
+            error(`Plugin requires Soupault v{version} compatibility, but crabsoup v{crabsoup_version} is compatible with Soupault v{supported_soupault_version}.`, 2)
+        end
+    end
+end
 
 function Plugin.soupault_version(): string
-    return "4.10.0" -- Newest *compatible* version of Soupault.
+    return supported_soupault_version
 end
 
 function Plugin.crabsoup_version(): string
-    return _CRABSOUP_VERSION
+    return crabsoup_version
 end
 
 -- Function definitions for `Log` module

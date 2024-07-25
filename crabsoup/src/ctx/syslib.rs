@@ -52,6 +52,12 @@ pub fn create_sys_table(lua: &Lua) -> Result<Table> {
         })?,
     )?;
     table.raw_set(
+        "is_dir",
+        lua.create_function(|_, path: LuaString| {
+            Ok(AsRef::<Path>::as_ref(path.to_str()?).is_dir())
+        })?,
+    )?;
+    table.raw_set(
         "get_file_creation_time",
         lua.create_function(|_, path: LuaString| {
             Ok(std::fs::metadata(path.to_str()?)?
@@ -69,12 +75,6 @@ pub fn create_sys_table(lua: &Lua) -> Result<Table> {
                 .duration_since(UNIX_EPOCH)
                 .unwrap()
                 .as_secs())
-        })?,
-    )?;
-    table.raw_set(
-        "is_dir",
-        lua.create_function(|_, path: LuaString| {
-            Ok(AsRef::<Path>::as_ref(path.to_str()?).is_dir())
         })?,
     )?;
     table.raw_set(

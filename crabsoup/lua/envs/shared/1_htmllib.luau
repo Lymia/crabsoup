@@ -1,9 +1,9 @@
 --!strict
 
-local shared, _G = ...
+local _, _G = ...
 
 function _G.HTML.append_attribute(node, attr, value)
-    HTML.set_attribute(node, HTML.get_attribute(node, attr) .. value)
+    HTML.set_attribute(node, attr, HTML.get_attribute(node, attr) .. value)
 end
 
 function _G.HTML.replace_element(orig, new)

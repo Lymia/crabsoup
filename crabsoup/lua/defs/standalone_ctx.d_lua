@@ -1,9 +1,62 @@
 declare _CRABSOUP_VERSION: string
 
 -- Crabsoup Classes
+declare class CompletedProcess end
 declare class NodeRef end
+declare class Process end
+declare class Timezone end
+
+-- Crabsoup IPC Classes
+declare class PluginInstruction
+    function is_exit(self): boolean
+    function is_fail(self): boolean
+    function get_message(self): string
+end
 
 -- Crabsoup APIs
+declare CSV: {
+    from_string: (string) -> {{string}},
+    to_list_of_tables: (string) -> {{ [string]: string }},
+}
+declare Date: {
+    Timezone: { [string]: Timezone, Local: Timezone, UTC: Timezone },
+    rfc2822: string,
+    rfc3339: string,
+    iso8601: string,
+    now_timestamp: () -> number,
+    now_timestamp_frac: () -> number,
+    now_format: (format: string?, tz: (Timezone | string)?) -> string,
+    format: (time: number, format: string?, tz: (Timezone | string)?) -> string,
+    to_timestamp: (time: string, format: (string | {string})?, tz: (Timezone | string)?) -> number,
+    reformat: (time: string, from_format: (string | {string})?, to_format: string?, tz: (Timezone | string)?) -> number,
+}
+declare Digest: {
+    md5: (string) -> string,
+    sha1: (string) -> string,
+    sha256: (string) -> string,
+    sha512: (string) -> string,
+    blake2s: (string) -> string,
+    blake2b: (string) -> string,
+}
+declare JSON: {
+    from_string: (string) -> any?,
+    to_string: (any?) -> string,
+    pretty_print: (any?) -> string,
+}
+declare Log: {
+    error: <T>(...T) -> (),
+    warn: <T>(...T) -> (),
+    info: <T>(...T) -> (),
+    debug: <T>(...T) -> (),
+    trace: <T>(...T) -> (),
+}
+declare Plugin: {
+    fail: <T>(T) -> never,
+    exit: <T>(T) -> never,
+    require_version: (version: string) -> (),
+    soupault_version: () -> string,
+    crabsoup_version: () -> string,
+}
 declare String: {
     truncate: (str: string, length: number, trailer: string?) -> string,
     slugify: (string) -> string,
@@ -15,19 +68,38 @@ declare String: {
     url_encode: (str: string, exclude: {string}?) -> string,
     url_decode: (string) -> string,
 }
-declare Plugin: {
-    fail: <T>(T) -> never,
-    exit: <T>(T) -> never,
-    require_version: (version: string) -> (),
-    soupault_version: () -> string,
-    crabsoup_version: () -> string,
-}
-declare Log: {
-    error: <T>(...T) -> (),
-    warn: <T>(...T) -> (),
-    info: <T>(...T) -> (),
-    debug: <T>(...T) -> (),
-    trace: <T>(...T) -> (),
+declare Sys: {
+    read_file: (path: string) -> string,
+    write_file: (path: string, data: string) -> (),
+    delete_file: (path: string) -> (),
+    delete_recursive: (path: string) -> (),
+    get_file_size: (path: string) -> number,
+    file_exists: (path: string) -> boolean,
+    is_file: (path: string) -> boolean,
+    is_dir: (path: string) -> boolean,
+    get_file_creation_time: (path: string) -> number,
+    get_file_modification_time: (path: string) -> number,
+    mkdir: (path: string) -> (),
+    list_dir: (path: string) -> {string},
+    get_extension: (path: string) -> string?,
+    get_extensions: (path: string) -> {string},
+    has_extension: (path: string, extension: string) -> boolean,
+    strip_extensions: (path: string) -> string,
+    basename: (path: string) -> string,
+    basename_unix: (path: string) -> string,
+    basename_url: (path: string) -> string,
+    dirname: (path: string) -> string,
+    dirname_unix: (path: string) -> string,
+    dirname_url: (path: string) -> string,
+    join_path: (path: string, fragment: string) -> string,
+    join_path_unix: (path: string, fragment: string) -> string,
+    join_url: (path: string, fragment: string) -> string,
+    split_path: (path: string) -> {string},
+    split_path_unix: (path: string) -> {string},
+    split_path_url: (path: string) -> {string},
+    is_unix: () -> boolean,
+    is_windows: () -> boolean,
+    getenv: (name: string, default: string?) -> string?,
 }
 declare Table: {
     get_key_default: <K, V>(table: { [K]: V }, key: K, default_value: V) -> V,
@@ -51,6 +123,10 @@ declare Table: {
     is_empty: <K, V>(value: { [K]: V }) -> boolean,
     copy: <K, V>(value: { [K]: V }) -> { [K]: V },
 }
+declare TOML: {
+    from_string: (string) -> any?,
+    to_string: (any?) -> string,
+}
 declare Value: {
     repr: <T>(value: T) -> string,
     is_nil: <T>(value: T) -> boolean,
@@ -61,7 +137,34 @@ declare Value: {
     is_list: <T>(value: T) -> boolean,
     is_html: <T>(value: T) -> boolean,
 }
+declare YAML: {
+    from_string: (string) -> any?,
+    to_string: (any?) -> string,
+}
 
+-- Process library
+type CommandInfo = {
+    [number]: string,
+    shell: string?, 
+    current_directory: string?,
+    env: { [string]: string }?,
+    stdin: string?,
+    capture_stdout: boolean?,
+    capture_stdout: boolean?,
+}
+declare Process: {
+    run: (CommandInfo) -> (),
+    try_run: (CommandInfo) -> number,
+    run_output: (CommandInfo) -> string,
+    spawn: (CommandInfo) -> Process,
+    is_completed: (Process) -> boolean,
+    wait_on: (Process) -> CompletedProcess,
+    status: (CompletedProcess) -> number,
+    get_stdout: (CompletedProcess) -> string,
+    get_stderr: (CompletedProcess) -> string,
+}
+
+-- HTML library
 type HeadingsTreeADT = { heading: NodeRef, children: {HeadingsTreeADT} }
 declare HTML: {
     parse: (text: string, encoding: string) -> NodeRef,
@@ -112,6 +215,11 @@ declare HTML: {
     unwrap: (NodeRef) -> (),
     get_heading_level: (node: NodeRef) -> number,
     get_headings_tree: (node: NodeRef) -> HeadingsTreeADT,
+    is_comment: (NodeRef) -> boolean,
+    is_doctype: (NodeRef) -> boolean,
+    is_document: (NodeRef) -> boolean,
+    is_element: (NodeRef) -> boolean,
+    is_text: (NodeRef) -> boolean,
 }
 
 -- String loading functions
