@@ -223,9 +223,11 @@ declare HTML: {
 }
 
 -- String loading functions
-declare function dostring(src: string): any
+declare function dostring(src: string | () -> string, chunkname: string?, mode: string?, env: { [string]: any }?): any
+declare function dofile(filename: string, mode: string?, env: { [string]: any }?): any
 declare function load<A...>(src: string | () -> string, chunkname: string?, mode: string?, env: { [string]: any }?): (((A...) -> any)?, string?)
 declare function loadstring<A...>(src: string, chunkname: string?, mode: string?, env: { [string]: any }?): (((A...) -> any)?, string?)
+declare function loadfile<A...>(filename: string, mode: string?, env: { [string]: any }?): (((A...) -> any)?, string?)
 
 -- Standard library extensions
 declare string: {
@@ -260,18 +262,14 @@ declare math: {
     modf: (n: number) -> (number, number),
     pow: (x: number, y: number) -> number,
     exp: (n: number) -> number,
-
     ceil: (n: number) -> number,
     floor: (n: number) -> number,
     abs: (n: number) -> number,
     sqrt: (n: number) -> number,
-
     log: (n: number, base: number?) -> number,
     log10: (n: number) -> number,
-
     rad: (n: number) -> number,
     deg: (n: number) -> number,
-
     sin: (n: number) -> number,
     cos: (n: number) -> number,
     tan: (n: number) -> number,
@@ -282,16 +280,12 @@ declare math: {
     acos: (n: number) -> number,
     asin: (n: number) -> number,
     atan2: (y: number, x: number) -> number,
-
     min: (number, ...number) -> number,
     max: (number, ...number) -> number,
-
     pi: number,
     huge: number,
-
     randomseed: (seed: number) -> (),
     random: (number?, number?) -> number,
-
     sign: (n: number) -> number,
     clamp: (n: number, min: number, max: number) -> number,
     noise: (x: number, y: number?, z: number?) -> number,

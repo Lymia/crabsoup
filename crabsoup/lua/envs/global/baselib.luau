@@ -158,8 +158,17 @@ function _G.load(chunk: () -> string? | string, chunkname: string?, mode: string
     return loadstring(code, chunkname, mode, env)
 end
 
-function _G.dofile(filename: string): any
-    return error("not yet implemented", 2)
+_G.loadstring = loadstring
+
+function _G.loadfile(filename: string, mode: string?, env: any?): (((...any) -> any)?, string?)
+    return load(Sys.read_file(filename), `@{filename}`, mode, env)
 end
 
-_G.loadstring = loadstring
+function _G.dofile(filename: string, mode: string?, env: any?): any
+    local chunk, err = loadfile(filename, mode, env)
+    if chunk then
+        return chunk()
+    else
+        return error(err, 2)
+    end
+end

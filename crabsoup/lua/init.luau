@@ -106,9 +106,10 @@ freeze_env(shared_env)
 shared.register_builtin_name(shared_env.HTML.append, "HTML.append")
 shared.register_builtin_name(shared_env.HTML.delete, "HTML.delete")
 shared.register_builtin_name(shared_env.HTML.prepend, "HTML.prepend")
-shared.register_builtin_name(shared_env.Sys.basename_unix, "Sys.basename_unix")
-shared.register_builtin_name(shared_env.Sys.dirname_unix, "Sys.dirname_unix")
-shared.register_builtin_name(shared_env.Sys.join_path_unix, "Sys.join_path_unix")
+shared.register_builtin_name(shared_env.Sys.basename_url, "Sys.basename_url")
+shared.register_builtin_name(shared_env.Sys.dirname_url, "Sys.dirname_url")
+shared.register_builtin_name(shared_env.Sys.join_url, "Sys.join_url")
+shared.register_builtin_name(shared_env.Sys.split_path_url, "Sys.split_path_url")
 
 -- Setup each specific environment
 shared.envs = { global = _G, shared = shared_env }

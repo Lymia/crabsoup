@@ -9,7 +9,9 @@ pub fn create_sys_table(lua: &Lua) -> Result<Table> {
 
     table.raw_set(
         "read_file",
-        lua.create_function(|_, path: LuaString| Ok(std::fs::read_to_string(path.to_str()?)?))?,
+        lua.create_function(|lua, path: LuaString| {
+            Ok(lua.create_string(std::fs::read(path.to_str()?)?)?)
+        })?,
     )?;
     table.raw_set(
         "write_file",

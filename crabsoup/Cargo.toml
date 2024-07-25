@@ -15,6 +15,7 @@ license = "Apache-2.0"
 base64 = "0.22.1"
 chrono = "0.4"
 chrono-tz = { version = "0.9", features = ["case-insensitive"] }
+clap = { version = "4.5", features = ["derive"] }
 encoding_rs = { version = "0.8.34", features = ["fast-legacy-encode"] }
 html5ever = "0.27"
 minijinja = "2.1"
@@ -50,6 +51,7 @@ mlua = { workspace = true }
 
 # Internal libraries
 crabsoup-kuchikiki = { version = "0.8.2-crabsoup", path = "../crabsoup-kuchikiki" }
+crabsoup-mlua-analyze = { version = "0.1.0", path = "../crabsoup-mlua-analyze" }
 
 [build-dependencies]
 anyhow = { workspace = true }

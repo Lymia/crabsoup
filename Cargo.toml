@@ -2,6 +2,7 @@
 members = [
     "crabsoup",
     "crabsoup-kuchikiki",
+    "crabsoup-mlua-analyze",
 ]
 resolver = "2"
 

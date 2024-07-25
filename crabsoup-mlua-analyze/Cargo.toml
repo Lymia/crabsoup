@@ -1,0 +1,11 @@
+[package]
+name = "crabsoup-mlua-analyze"
+version = "0.1.0"
+authors = ["Lymia Kanokawa <lymia@lymia.moe>"]
+edition = "2021"
+
+description = "Internal crate for crabsoup (for now)."
+repository = "https://github.com/Lymia/crabsoup"
+
+[dependencies]
+luau0-src = "=0.10.2+luau635" # pin luau version
