@@ -135,9 +135,9 @@ local table2str, table_children2str
 local function val2str(val, path, depth, multiline, seen)
     local tp = typeof(val)
 
-    if tp == 'function' then
+    if tp == "function" then
         return fn2str(val)
-    elseif tp == 'table' then
+    elseif tp == "table" then
         local mt = getmetatable(val)
         if mt and mt.__do_not_enter then
             return mt.__do_not_enter
@@ -146,7 +146,7 @@ local function val2str(val, path, depth, multiline, seen)
         else
             return table2str(val, path, depth, multiline, seen)
         end
-    elseif tp == 'string' then
+    elseif tp == "string" then
         return escape_string(val)
     else
         return tostring(val)
@@ -220,7 +220,7 @@ function table_children2str(tbl, path, depth, multiline, seen)
             end
         end
         if print_brackets then
-            key = '[' .. key .. ']'
+            key = "[" .. key .. "]"
         end
         -- format val
         local val = val2str(v, path .. (path == "" and "" or ".") .. key, depth + 1, multiline, seen)

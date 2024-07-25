@@ -16,7 +16,7 @@ local function return_helper(success: boolean, ...: unknown): ...unknown
 end
 function _G.dostring(chunk, chunkname, mode, env)
     if not env then
-       env = getfenv(2)
+        env = getfenv(2)
     end
     local func, err = loadstring(chunk, chunkname, mode, env)
     if func then

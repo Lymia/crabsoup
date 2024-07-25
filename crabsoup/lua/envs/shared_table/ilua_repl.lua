@@ -16,7 +16,7 @@ local safe_loadstring = shared.baselib.loadstring
 local function repl_main()
     local env = getfenv(0) -- implicitly optimizes
 
-    print('ILUA: ' .. _VERSION .. ' + ' .. _CRABSOUP_VERSION)
+    print("ILUA: " .. _VERSION .. " + " .. _CRABSOUP_VERSION)
     local chunkname = "@<stdin>"
 
     -- readline support
@@ -81,7 +81,7 @@ local function repl_main()
 
     while true do
         local input = get_input()
-        if not input or string.trim(input) == 'quit' then
+        if not input or string.trim(input) == "quit" then
             break
         end
         eval_lua(input)

@@ -39,7 +39,7 @@ String.trim = string.trim
 
 String.to_number = tonumber
 
-function String.join(sep: string, list: {string}): string
+function String.join(sep: string, list: { string }): string
     return table.concat(list, sep)
 end
 

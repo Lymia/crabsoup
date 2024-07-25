@@ -64,7 +64,10 @@ function Plugin.require_version(version: string)
             return
         end
         if min > cur then
-            error(`Plugin requires Soupault v{version} compatibility, but crabsoup v{crabsoup_version} is compatible with Soupault v{supported_soupault_version}.`, 2)
+            error(
+                `Plugin requires Soupault v{version} compatibility, but crabsoup v{crabsoup_version} is compatible with Soupault v{supported_soupault_version}.`,
+                2
+            )
         end
     end
 end
@@ -109,7 +112,7 @@ function Table.get_key_default<K, V>(table: { [K]: V }, key: K, default_value: V
     return table[key]
 end
 
-function Table.keys<K, V>(value: { [K]: V }): {K}
+function Table.keys<K, V>(value: { [K]: V }): { K }
     local new_table = {}
     for k, _ in value do
         table.insert(new_table, k)
@@ -220,7 +223,7 @@ function Table.for_any<K, V>(func: (V) -> boolean, table: { [K]: V }): boolean
     return false
 end
 
-function Table.take<T>(value: {T}, count: number): {T}
+function Table.take<T>(value: { T }, count: number): { T }
     local out = {}
     for i = 1, count do
         out[i] = value[i]
@@ -234,7 +237,7 @@ function Table.take<T>(value: {T}, count: number): {T}
     return out
 end
 
-function Table.chunks<T>(value: {T}, size: number): {{T}}
+function Table.chunks<T>(value: { T }, size: number): { { T } }
     local chunks = {}
     local current = {}
     for i = 1, #value do

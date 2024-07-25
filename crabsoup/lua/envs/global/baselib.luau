@@ -125,17 +125,22 @@ local function loadstring(chunk: string, chunkname: string?, mode: string?, env:
     end
 
     if mode then
-       baselib.warn("`mode` is ignored on `loadstring` and `load`")
+        baselib.warn("`mode` is ignored on `loadstring` and `load`")
     end
 
     if not env then
-       env = getfenv(2)
+        env = getfenv(2)
     end
     baselib.deoptimize_env(env)
     return baselib.loadstring(chunk, chunkname, env)
 end
 
-function _G.load(chunk: () -> string? | string, chunkname: string?, mode: string?, env: any?): (((...any) -> any)?, string?)
+function _G.load(
+    chunk: () -> string? | string,
+    chunkname: string?,
+    mode: string?,
+    env: any?
+): (((...any) -> any)?, string?)
     local code
     if type(chunk) == "string" then
         code = chunk
