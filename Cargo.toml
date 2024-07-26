@@ -17,3 +17,7 @@ lto = true
 anyhow = "1.0"
 glob = "0.3"
 mlua = { version = "0.9", features = ["luau-jit", "serialize"] }
+
+# Internal dependencies
+crabsoup-kuchikiki = { version = "0.8.2-crabsoup", path = "crabsoup-kuchikiki" }
+crabsoup-mlua-analyze = { version = "0.1.0", path = "crabsoup-mlua-analyze" }

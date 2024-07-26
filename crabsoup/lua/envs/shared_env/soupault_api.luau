@@ -58,8 +58,8 @@ function Plugin.require_version(version: string)
     local cur_components = string.split(supported_soupault_version, ".")
 
     for i = 1, math.max(#min_components, #cur_components) do
-        local min = tonumber(min_components[i] or "0")
-        local cur = tonumber(cur_components[i] or "0")
+        local min = tonumber(min_components[i] or "0") or error("could not parse number")
+        local cur = tonumber(cur_components[i] or "0") or error("could not parse number")
         if cur > min then
             return
         end
@@ -146,8 +146,12 @@ local function compare_any(a: any?, b: any?): boolean
         return true
     elseif ta > tb then
         return false
-    else
+    elseif type(a) == "string" and type(b) == "string" then
         return a < b
+    elseif type(a) == "number" and type(b) == "number" then
+        return a < b
+    else
+        return tostring(a) < tostring(b)
     end
 end
 function Table.iter_ordered<K, V>(func: (K, V) -> (), value: { [K]: V })

@@ -1,4 +1,5 @@
 use anyhow::Result;
+use crabsoup_mlua_analyze::LuaAnalyzerBuilder;
 use mlua::Compiler;
 use std::path::PathBuf;
 
@@ -16,6 +17,9 @@ pub fn main() -> Result<()> {
 
     let mut all_paths = Vec::new();
 
+    let analyze = LuaAnalyzerBuilder::new()
+        .add_definitions("standalone_ctx.d_lua", include_str!("lua/defs/standalone_ctx.d_lua"))
+        .build();
     for path in glob::glob("lua/**/*")? {
         let path = path?;
         let file_name = path.file_name().unwrap().to_string_lossy();
@@ -24,10 +28,19 @@ pub fn main() -> Result<()> {
             let mut output = out_path.clone();
             output.push(suffix);
 
+            let script = std::fs::read_to_string(&path)?;
+            let name = path.file_name().unwrap().to_string_lossy();
+            let result = analyze.check(&name, &script, false);
+
+            if result.iter().any(|x| x.is_error) {
+                println!("{result:#?}");
+                panic!("Error in script: {name}");
+            }
+
             let mut parent = output.clone();
             parent.pop();
             std::fs::create_dir_all(parent)?;
-            std::fs::write(&output, compile_script(&std::fs::read(&path)?))?;
+            std::fs::write(&output, compile_script(script.as_bytes()))?;
 
             all_paths.push((
                 path.to_string_lossy()

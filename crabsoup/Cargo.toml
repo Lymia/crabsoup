@@ -50,10 +50,11 @@ glob = { workspace = true }
 mlua = { workspace = true }
 
 # Internal libraries
-crabsoup-kuchikiki = { version = "0.8.2-crabsoup", path = "../crabsoup-kuchikiki" }
-crabsoup-mlua-analyze = { version = "0.1.0", path = "../crabsoup-mlua-analyze" }
+crabsoup-kuchikiki = { workspace = true }
+crabsoup-mlua-analyze = { workspace = true }
 
 [build-dependencies]
 anyhow = { workspace = true }
 glob = { workspace = true }
 mlua = { workspace = true }
+crabsoup-mlua-analyze = { workspace = true }
