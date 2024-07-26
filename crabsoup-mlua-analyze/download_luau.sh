@@ -23,6 +23,3 @@ cp -rv ~/Downloads/luau/{Analysis,Config,Common}/ luau/
 
 mkdir -pv luau/Ast
 cp -rv ~/Downloads/luau/Ast/include luau/Ast/
-
-mkdir -pv luau/CLI
-cp -rv ~/Downloads/luau/CLI/*.h luau/CLI/

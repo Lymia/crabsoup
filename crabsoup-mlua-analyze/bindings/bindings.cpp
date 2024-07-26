@@ -1,0 +1,157 @@
+#include "Luau/Frontend.h"
+#include "Luau/BuiltinDefinitions.h"
+
+namespace luauAnalyze {
+    struct SourceInfo {
+        std::string code;
+        bool is_module;
+    };
+
+    struct MemoryFileResolver : Luau::FileResolver {
+        std::unordered_map<std::string, SourceInfo> sources;
+
+        virtual std::optional<Luau::SourceCode> readSource(const Luau::ModuleName& name) {
+            auto it = sources.find(name);
+            if (it == sources.end()) {
+                return std::nullopt;
+            } else {
+                auto source = std::move(sources[name]);
+                sources.erase(it);
+
+                auto type = source.is_module ? Luau::SourceCode::Type::Module : Luau::SourceCode::Type::Script;
+                Luau::SourceCode info = { std::move(source.code), type };
+                return std::move(info);
+            }
+        }
+
+        void register_source(std::string name, std::string source, bool is_module) {
+            sources[name] = { source, is_module };
+        }
+    };
+
+    struct FrontendWrapper {
+        std::unique_ptr<MemoryFileResolver> file_resolver;
+        std::unique_ptr<Luau::NullConfigResolver> config_resolver;
+        std::unique_ptr<Luau::Frontend> frontend;
+    };
+}
+
+extern "C" {
+    struct RustCheckResultReceiver;
+    struct RustString {
+        const char* data;
+        size_t len;
+    };
+    struct RustLineColumn {
+        unsigned int line, column;
+    };
+    extern void luauAnalyze_push_result(
+        RustCheckResultReceiver* receiver,
+        RustString module,
+        RustLineColumn error_start,
+        RustLineColumn error_end,
+        bool is_error,
+        bool is_lint,
+        RustString message
+    );
+
+    static RustString to_rust_string(std::string& str) {
+        return { str.data(), str.length() };
+    }
+    static std::string from_rust_string(RustString str) {
+        std::string new_str(str.data, str.len);
+        return new_str;
+    }
+    static void push_to_receiver(RustCheckResultReceiver* receiver, Luau::TypeError& error) {
+        std::string message = toString(error);
+        luauAnalyze_push_result(
+            receiver,
+            to_rust_string(error.moduleName),
+            { error.location.begin.line, error.location.begin.column },
+            { error.location.end.line, error.location.end.column },
+            true,
+            false,
+            to_rust_string(message)
+        );
+    }
+    static void push_to_receiver_lint(
+        RustCheckResultReceiver* receiver,
+        std::string& name,
+        Luau::LintWarning& error,
+        bool is_error
+    ) {
+        luauAnalyze_push_result(
+            receiver,
+            to_rust_string(name),
+            { error.location.begin.line, error.location.begin.column },
+            { error.location.end.line, error.location.end.column },
+            is_error,
+            true,
+            to_rust_string(error.text)
+        );
+    }
+
+    luauAnalyze::FrontendWrapper* luauAnalyze_new_frontend() {
+        auto file_resolver = std::make_unique<luauAnalyze::MemoryFileResolver>();
+        auto config_resolver = std::make_unique<Luau::NullConfigResolver>();
+
+        Luau::FrontendOptions options;
+        options.runLintChecks = true;
+        options.moduleTimeLimitSec = 1.0;
+
+        auto frontend = std::make_unique<Luau::Frontend>(&*file_resolver, &*config_resolver, options);
+        Luau::registerBuiltinGlobals(*frontend.get(), frontend->globals);
+
+        luauAnalyze::FrontendWrapper *wrapper = new luauAnalyze::FrontendWrapper();
+        wrapper->file_resolver = std::move(file_resolver);
+        wrapper->config_resolver = std::move(config_resolver);
+        wrapper->frontend = std::move(frontend);
+        return wrapper;
+    }
+
+    bool luauAnalyze_register_definitions(
+        luauAnalyze::FrontendWrapper* wrapper,
+        RustString r_module_name,
+        RustString r_definitions
+    ) {
+        std::string module_name = from_rust_string(r_module_name);
+        std::string definitions = from_rust_string(r_definitions);
+        auto result = wrapper->frontend->loadDefinitionFile(
+            wrapper->frontend->globals,
+            wrapper->frontend->globals.globalScope,
+            std::move(definitions),
+            std::move(module_name),
+            false
+        );
+        return result.success;
+    }
+
+    void luauAnalyze_freeze_definitions(luauAnalyze::FrontendWrapper* wrapper) {
+        Luau::freeze(wrapper->frontend->globals.globalTypes);
+        Luau::freeze(wrapper->frontend->globalsForAutocomplete.globalTypes);
+    }
+
+    void luauAnalyze_check(
+        RustCheckResultReceiver* receiver,
+        luauAnalyze::FrontendWrapper* wrapper,
+        RustString r_name,
+        RustString r_contents,
+        bool is_module
+    ) {
+        std::string name = from_rust_string(r_name);
+        std::string contents = from_rust_string(r_contents);
+
+        wrapper->file_resolver->register_source(name, std::move(contents), is_module);
+        auto result = wrapper->frontend->check(name);
+
+        for (auto& entry : result.errors) push_to_receiver(receiver, entry);
+        for (auto& entry : result.lintResult.errors) push_to_receiver_lint(receiver, name, entry, true);
+        for (auto& entry : result.lintResult.warnings) push_to_receiver_lint(receiver, name, entry, false);
+
+        wrapper->frontend->clear();
+    }
+
+    void luauAnalyze_free_frontend(luauAnalyze::FrontendWrapper* wrapper) {
+        delete wrapper;
+    }
+}

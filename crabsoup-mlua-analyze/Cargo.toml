@@ -8,4 +8,8 @@ description = "Internal crate for crabsoup (for now)."
 repository = "https://github.com/Lymia/crabsoup"
 
 [dependencies]
-luau0-src = "=0.10.2+luau635" # pin luau version
+mlua-sys = { version = "0.6", features = ["luau", "luau-codegen", "vendored"] }
+luau0-src = "=0.10.2" # pin luau version
+
+[build-dependencies]
+cc = { version = "1.1", features = ["parallel"] }
