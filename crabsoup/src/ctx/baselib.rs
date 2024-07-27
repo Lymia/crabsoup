@@ -1,13 +1,13 @@
 use mlua::{
     ffi::{
-        luaL_checktype, luaL_sandbox, luaL_sandboxthread, lua_getfenv, lua_mainthread,
+        luaL_checktype, luaL_sandbox, luaL_sandboxthread, lua_getfenv, lua_gettop, lua_mainthread,
         lua_newthread, lua_pushglobaltable, lua_replace, lua_rotate, lua_setfenv, lua_setsafeenv,
         lua_xmove, LUA_GLOBALSINDEX, LUA_TFUNCTION, LUA_TTABLE,
     },
     lua_State,
     prelude::LuaString,
-    ChunkMode, Error, Lua, MultiValue, Result, Table, UserData, UserDataFields, UserDataMethods,
-    Value,
+    ChunkMode, Compiler, Error, Lua, MultiValue, Result, Table, UserData, UserDataFields,
+    UserDataMethods, UserDataRef, Value,
 };
 use rustyline::{error::ReadlineError, DefaultEditor};
 use std::borrow::Cow;
@@ -175,6 +175,39 @@ pub fn create_base_table(lua: &Lua) -> Result<Table> {
         })?,
     )?;
 
+    table.raw_set(
+        "create_opaque_environment",
+        lua.create_function(|_, ()| Ok(OpaqueEnvironment(())))?,
+    )?;
+    table.raw_set(
+        "compile_for_environment",
+        lua.create_function(|_, (source, mutable_globals): (LuaString, Option<Table>)| {
+            let mut mutable = Vec::new();
+            if let Some(globals) = mutable_globals {
+                for global in globals.sequence_values::<LuaString>() {
+                    mutable.push(global?.to_string_lossy().to_string());
+                }
+            }
+
+            let data = Compiler::new()
+                .set_optimization_level(2)
+                .set_type_info_level(1)
+                .set_mutable_globals(mutable)
+                .compile(source.as_bytes());
+            Ok(CompiledChunk(data))
+        })?,
+    )?;
+    table.raw_set(
+        "load_precompiled_chunk",
+        lua.create_function(|lua, (chunk, chunkname): (UserDataRef<CompiledChunk>, LuaString)| {
+            Ok(lua
+                .load(chunk.0.as_slice())
+                .set_mode(ChunkMode::Binary)
+                .set_name(chunkname.to_str()?)
+                .into_function()?)
+        })?,
+    )?;
+
     load_unsafe_functions(lua, &table)?;
 
     Ok(table)
@@ -185,11 +218,14 @@ fn load_unsafe_functions(lua: &Lua, table: &Table) -> Result<()> {
         // signature: (loader, env) -> thread
         luaL_checktype(lua, 1, LUA_TFUNCTION);
         luaL_checktype(lua, 2, LUA_TTABLE);
+        assert_eq!(lua_gettop(lua), 2);
 
         // Transfer all arguments to the main Lua thread.
         let lua_main = lua_mainthread(lua);
         let lua_thread = lua_newthread(lua_main);
-        lua_rotate(lua, -3, 1);
+        if lua == lua_main {
+            lua_rotate(lua_main, -3, 1);
+        }
         lua_xmove(lua, lua_thread, 2);
 
         // Creates the new thread
@@ -314,5 +350,19 @@ impl UserData for RustyLineEditor {
                 .map_err(Error::runtime)?;
             Ok(())
         });
+    }
+}
+
+struct OpaqueEnvironment(());
+impl UserData for OpaqueEnvironment {
+    fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {
+        fields.add_meta_field("__type", "Environment");
+    }
+}
+
+struct CompiledChunk(Vec<u8>);
+impl UserData for CompiledChunk {
+    fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {
+        fields.add_meta_field("__type", "CompiledChunk");
     }
 }

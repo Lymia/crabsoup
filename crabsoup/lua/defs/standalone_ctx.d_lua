@@ -2,6 +2,7 @@ declare _CRABSOUP_VERSION: string
 
 -- Crabsoup Classes
 declare class CompletedProcess end
+declare class Environment end
 declare class NodeRef end
 declare class Process end
 declare class Timezone end
@@ -56,6 +57,9 @@ declare Plugin: {
     require_version: (version: string) -> (),
     soupault_version: () -> string,
     crabsoup_version: () -> string,
+    env_standalone: Environment,
+    env_plugin: Environment,
+    load_plugin: (name: string, source: string, env: Environment, allowed_globals: { string }?) -> (globals: { [string]: any }) -> thread,
 }
 declare String: {
     truncate: (str: string, length: number, trailer: string?) -> string,

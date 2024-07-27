@@ -76,9 +76,11 @@ local function register_builtins_for_env(path: string, value: any, seen)
     end
 end
 
-local function for_env(v)
+shared.analyzer = {}
+local function for_env(name, v)
     register_builtins_for_env("", v, {})
     shared.mark_system_fenv(v)
+    shared.analyzer[name] = shared.analyze.create(`@{name}`, shared.sources[`defs/{name}_ctx.d_lua`] or "")
 end
 
 -- Setup global environment
@@ -113,13 +115,13 @@ shared.register_builtin_name(shared_env.Sys.split_path_url, "Sys.split_path_url"
 
 -- Setup each specific environment
 shared.envs = { global = _G, shared = shared_env }
-for_env(_G)
-for_env(shared_env)
+for_env("global", _G)
+for_env("shared", shared_env)
 for _, env in { "standalone", "plugin" } do
     local env_table = deep_copy(shared_env)
     call_env_chunks(env, shared, env_table)
     freeze_env(env_table)
-    for_env(env_table)
+    for_env(env, env_table)
     shared.envs[env] = env_table
 end
 

@@ -1,5 +1,6 @@
 use mlua::{prelude::LuaFunction, ChunkMode, Lua, LuaOptions, Result, StdLib, Table, Thread};
 
+mod analyzelib;
 mod baselib;
 mod codeclib;
 mod datelib;
@@ -26,6 +27,7 @@ impl CrabsoupLuaContext {
             // Create the shared table
             let shared_table = lua.create_table()?;
             lua.set_named_registry_value(SHARED_TABLE_LOC, &shared_table)?;
+            shared_table.set("analyze", analyzelib::create_analyze_table(&lua)?)?;
             shared_table.set("baselib", baselib::create_base_table(&lua)?)?;
             shared_table.set("codecs", codeclib::create_codec_table(&lua)?)?;
             shared_table.set("Date", datelib::create_date_table(&lua)?)?;

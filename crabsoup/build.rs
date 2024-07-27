@@ -49,6 +49,14 @@ pub fn main() -> Result<()> {
                     .to_string(),
                 output.to_string_lossy().to_string(),
             ));
+        } else if file_name.ends_with(".d_lua") {
+            all_paths.push((
+                path.to_string_lossy()
+                    .strip_prefix("lua/")
+                    .unwrap()
+                    .to_string(),
+                path.canonicalize()?.to_string_lossy().to_string(),
+            ));
         }
         println!("cargo::rerun-if-changed={}", path.display());
     }
