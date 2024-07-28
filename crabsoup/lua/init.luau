@@ -80,7 +80,13 @@ shared.analyzer = {}
 local function for_env(name, v)
     register_builtins_for_env("", v, {})
     shared.mark_system_fenv(v)
-    shared.analyzer[name] = shared.analyze.create(`@{name}`, shared.sources[`defs/{name}_ctx.d_lua`] or "")
+    shared.analyzer[name] = shared.analyze.create(function(analyzer)
+        local ctx_init = `defs/ctx_{name}.luau`
+        if shared.sources[ctx_init] then
+            local init = shared.baselib.loadstring_rt(shared.sources[ctx_init], `@<rt>/{ctx_init}`)
+            init(shared.sources, analyzer)
+        end
+    end)
 end
 
 -- Setup global environment
@@ -112,6 +118,7 @@ shared.register_builtin_name(shared_env.Sys.basename_url, "Sys.basename_url")
 shared.register_builtin_name(shared_env.Sys.dirname_url, "Sys.dirname_url")
 shared.register_builtin_name(shared_env.Sys.join_url, "Sys.join_url")
 shared.register_builtin_name(shared_env.Sys.split_path_url, "Sys.split_path_url")
+shared.register_builtin_name(shared_env.Log.warn, "Log.warn")
 
 -- Setup each specific environment
 shared.envs = { global = _G, shared = shared_env }
@@ -146,7 +153,7 @@ end
 
 function shared.run_main(args)
     local require_env = shared_env.Plugin.create_require_env("", shared_env.Plugin.env_standalone)
-    shared.attach_compiled_chunks(require_env, "apps/crabsoup/?.luau")
+    shared.attach_compiled_chunks(require_env, "app/?.luau")
     local require = shared_env.Plugin.create_require_func(require_env)
     require("crabsoup").main(args)
 end

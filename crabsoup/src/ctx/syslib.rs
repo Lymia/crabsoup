@@ -1,8 +1,10 @@
-use mlua::{prelude::LuaString, Lua, Result, Table, Value};
+use mlua::{prelude::LuaString, Error, Lua, Result, Table, Value};
 use std::{
     path::{Path, PathBuf},
-    time::UNIX_EPOCH,
+    time::{Duration, UNIX_EPOCH},
 };
+
+const MICROS: f64 = 1000000.0;
 
 pub fn create_sys_table(lua: &Lua) -> Result<Table> {
     let table = lua.create_table()?;
@@ -90,6 +92,16 @@ pub fn create_sys_table(lua: &Lua) -> Result<Table> {
             for dir in std::fs::read_dir(path.to_str()?)? {
                 let dir = dir?;
                 table.raw_push(dir.file_name().to_string_lossy())?;
+            }
+            Ok(table)
+        })?,
+    )?;
+    table.raw_set(
+        "glob",
+        lua.create_function(|lua, glob: LuaString| {
+            let table = lua.create_table()?;
+            for result in glob::glob(glob.to_str()?).map_err(Error::runtime)? {
+                table.raw_push(result.map_err(Error::runtime)?.to_string_lossy().as_ref())?;
             }
             Ok(table)
         })?,
@@ -227,6 +239,13 @@ pub fn create_sys_table(lua: &Lua) -> Result<Table> {
                 Ok(val) => Ok(Value::String(lua.create_string(val)?)),
                 Err(_) => Ok(default),
             }
+        })?,
+    )?;
+    table.raw_set(
+        "sleep",
+        lua.create_function(|_, secs: f64| {
+            std::thread::sleep(Duration::from_micros((secs * MICROS).round() as u64));
+            Ok(())
         })?,
     )?;
 

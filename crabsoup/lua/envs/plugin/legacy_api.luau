@@ -126,3 +126,48 @@ end
 _G.HTML.append_root = HTML.append_child
 _G.HTML.prepend_root = HTML.prepend_child
 _G.HTML.replace = HTML.replace_element
+
+-- Function definitions for `Value` module
+local Value = _G.Value or {}
+_G.Value = Value
+
+function Value.is_nil<T>(value: T): boolean
+    return value == nil
+end
+
+function Value.is_int<T>(value: T): boolean
+    if type(value) == "number" then
+        return math.isfinite(value) and math.round(value) == value
+    else
+        return false
+    end
+end
+
+function Value.is_float<T>(value: T): boolean
+    return type(value) == "number"
+end
+
+function Value.is_string<T>(value: T): boolean
+    return type(value) == "string"
+end
+
+function Value.is_table<T>(value: T): boolean
+    return type(value) == "table"
+end
+
+function Value.is_list<T>(value: T): boolean
+    if not value or type(value) ~= "table" then
+        return false
+    else
+        for k in value do
+            if type(k) ~= "number" then
+                return false
+            end
+        end
+        return true
+    end
+end
+
+function Value.is_html<T>(value: T): boolean
+    return typeof(value) == "NodeRef"
+end

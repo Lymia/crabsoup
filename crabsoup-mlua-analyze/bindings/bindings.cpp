@@ -63,7 +63,7 @@ extern "C" {
         return new_str;
     }
     static void push_to_receiver(RustCheckResultReceiver* receiver, Luau::TypeError& error) {
-        std::string message = toString(error);
+        auto message = toString(error);
         luauAnalyze_push_result(
             receiver,
             to_rust_string(error.moduleName),
@@ -114,8 +114,8 @@ extern "C" {
         RustString r_module_name,
         RustString r_definitions
     ) {
-        std::string module_name = from_rust_string(r_module_name);
-        std::string definitions = from_rust_string(r_definitions);
+        auto module_name = from_rust_string(r_module_name);
+        auto definitions = from_rust_string(r_definitions);
         auto result = wrapper->frontend->loadDefinitionFile(
             wrapper->frontend->globals,
             wrapper->frontend->globals.globalScope,
@@ -124,6 +124,50 @@ extern "C" {
             false
         );
         return result.success;
+    }
+
+    static std::vector<std::string> split_str(std::string s, std::string delimiter) {
+        size_t pos_start = 0, pos_end, delim_len = delimiter.length();
+        std::string token;
+        std::vector<std::string> res;
+
+        while ((pos_end = s.find(delimiter, pos_start)) != std::string::npos) {
+            token = s.substr (pos_start, pos_end - pos_start);
+            pos_start = pos_end + delim_len;
+            res.push_back (token);
+        }
+
+        res.push_back (s.substr (pos_start));
+        return res;
+    }
+
+    void luauAnalyze_set_deprecation(
+        luauAnalyze::FrontendWrapper* wrapper,
+        RustString r_module_path,
+        RustString r_replacement
+    ) {
+        auto module_path = from_rust_string(r_module_path);
+        auto replacement = from_rust_string(r_replacement);
+        bool has_replacement = replacement != "";
+
+        auto split = split_str(module_path, ".");
+        if (split.size() == 1) {
+            auto astName = wrapper->frontend->globals.globalNames.names->getOrAdd(module_path.c_str());
+            wrapper->frontend->globals.globalScope->bindings[astName].deprecated = true;
+            if (has_replacement)
+                wrapper->frontend->globals.globalScope->bindings[astName].deprecatedSuggestion = replacement;
+        } else if (split.size() == 2) {
+            Luau::TableType* ttv =
+                Luau::getMutable<Luau::TableType>(Luau::getGlobalBinding(wrapper->frontend->globals, split[0]));
+            if (ttv) {
+                ttv->props[split[1]].deprecated = true;
+                if (has_replacement) ttv->props[split[1]].deprecatedSuggestion = replacement;
+            } else {
+                throw std::runtime_error("where is table");
+            }
+        } else {
+            throw std::runtime_error("Invalid size (for now)");
+        }
     }
 
     void luauAnalyze_freeze_definitions(luauAnalyze::FrontendWrapper* wrapper) {
@@ -138,8 +182,8 @@ extern "C" {
         RustString r_contents,
         bool is_module
     ) {
-        std::string name = from_rust_string(r_name);
-        std::string contents = from_rust_string(r_contents);
+        auto name = from_rust_string(r_name);
+        auto contents = from_rust_string(r_contents);
 
         wrapper->file_resolver->register_source(name, std::move(contents), is_module);
         auto result = wrapper->frontend->check(name);

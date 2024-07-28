@@ -1,55 +1,14 @@
-declare _CRABSOUP_VERSION: string
-
--- Crabsoup Classes
-declare class CompletedProcess end
-declare class Environment end
-declare class NodeRef end
-declare class Process end
-declare class Timezone end
-
--- Crabsoup IPC Classes
-declare class PluginInstruction
-    function is_exit(self): boolean
-    function is_fail(self): boolean
-    function get_message(self): string
-end
-
 -- Crabsoup APIs
 declare CSV: {
     from_string: (string) -> {{string}},
+    unsafe_from_string: (string) -> {{string}}?,
     to_list_of_tables: (string) -> {{ [string]: string }},
-}
-declare Date: {
-    Timezone: { [string]: Timezone, Local: Timezone, UTC: Timezone },
-    rfc2822: string,
-    rfc3339: string,
-    iso8601: string,
-    now_timestamp: () -> number,
-    now_timestamp_frac: () -> number,
-    now_format: (format: string?, tz: (Timezone | string)?) -> string,
-    format: (time: number, format: string?, tz: (Timezone | string)?) -> string,
-    to_timestamp: (time: string, format: (string | {string})?, tz: (Timezone | string)?) -> number,
-    reformat: (time: string, from_format: (string | {string})?, to_format: string?, tz: (Timezone | string)?) -> number,
-}
-declare Digest: {
-    md5: (string) -> string,
-    sha1: (string) -> string,
-    sha256: (string) -> string,
-    sha512: (string) -> string,
-    blake2s: (string) -> string,
-    blake2b: (string) -> string,
 }
 declare JSON: {
     from_string: (string) -> any?,
+    unsafe_from_string: (string) -> any?,
     to_string: (any?) -> string,
     pretty_print: (any?) -> string,
-}
-declare Log: {
-    error: <T>(...T) -> (),
-    warn: <T>(...T) -> (),
-    info: <T>(...T) -> (),
-    debug: <T>(...T) -> (),
-    trace: <T>(...T) -> (),
 }
 declare String: {
     truncate: (str: string, length: number, trailer: string?) -> string,
@@ -61,6 +20,14 @@ declare String: {
     base64_decode: (string) -> string,
     url_encode: (str: string, exclude: {string}?) -> string,
     url_decode: (string) -> string,
+    is_valid_utf8: (str: string) -> boolean,
+    length: (str: string) -> number,
+    length_ascii: (str: string) -> number,
+    trim: (s: string) -> string,
+    to_number: typeof(tonumber),
+    join: (sep: string, list: { string }) -> string,
+    starts_with: (s: string, prefix: string) -> boolean,
+    ends_with: (s: string, prefix: string) -> boolean,
 }
 declare Sys: {
     read_file: (path: string) -> string,
@@ -73,8 +40,10 @@ declare Sys: {
     is_dir: (path: string) -> boolean,
     get_file_creation_time: (path: string) -> number,
     get_file_modification_time: (path: string) -> number,
+    get_file_modification_date: (path: string) -> number,
     mkdir: (path: string) -> (),
     list_dir: (path: string) -> {string},
+    glob: (pattern: string) -> {string},
     get_extension: (path: string) -> string?,
     get_extensions: (path: string) -> {string},
     has_extension: (path: string, extension: string) -> boolean,
@@ -94,6 +63,12 @@ declare Sys: {
     is_unix: () -> boolean,
     is_windows: () -> boolean,
     getenv: (name: string, default: string?) -> string?,
+    sleep: (number) -> (),
+    run_program: (string) -> (),
+    run_program_get_exit_code: (string) -> number,
+    get_program_output: (string) -> string,
+    random: (number) -> number,
+    has_key: <K, V>(table: { [K]: V }, key: K) -> boolean,
 }
 declare Table: {
     get_key_default: <K, V>(table: { [K]: V }, key: K, default_value: V) -> V,
@@ -118,9 +93,11 @@ declare Table: {
     length: <K, V>(value: { [K]: V }) -> number,
     is_empty: <K, V>(value: { [K]: V }) -> boolean,
     copy: <K, V>(value: { [K]: V }) -> { [K]: V },
+    has_key: <K, V>(value: { [K]: V }, key: K) -> boolean,
 }
 declare TOML: {
     from_string: (string) -> any?,
+    unsafe_from_string: (string) -> any?,
     to_string: (any?) -> string,
 }
 declare Value: {
@@ -135,48 +112,8 @@ declare Value: {
 }
 declare YAML: {
     from_string: (string) -> any?,
+    unsafe_from_string: (string) -> any?,
     to_string: (any?) -> string,
-}
-
--- Process library
-type CommandInfo = {
-    [number]: string,
-    shell: string?, 
-    current_directory: string?,
-    env: { [string]: string }?,
-    stdin: string?,
-    capture_stdout: boolean?,
-    capture_stdout: boolean?,
-}
-declare Process: {
-    run: (CommandInfo) -> (),
-    try_run: (CommandInfo) -> number,
-    run_output: (CommandInfo) -> string,
-    spawn: (CommandInfo) -> Process,
-    is_completed: (Process) -> boolean,
-    wait_on: (Process) -> CompletedProcess,
-    status: (CompletedProcess) -> number,
-    get_stdout: (CompletedProcess) -> string,
-    get_stderr: (CompletedProcess) -> string,
-}
-
--- Plugin library
-type RequireEnv = typeof(setmetatable(newproxy(), {}))
-declare Plugin: {
-    fail: <T>(T) -> never,
-    exit: <T>(T) -> never,
-    require_version: (version: string) -> (),
-    soupault_version: () -> string,
-    crabsoup_version: () -> string,
-
-    -- Plugin API
-    env_standalone: Environment,
-    env_plugin: Environment,
-    create_require_env: (sources_path: string, env: Environment) -> RequireEnv,
-    load_plugin: (ctx: RequireEnv, name: string, source: string, allowed_globals: { string }?) -> (globals: { [string]: any }?) -> thread,
-    require_add_preload: (ctx: RequireEnv, name: string, value: any) -> (),
-    require_set_strict: (ctx: RequireEnv) -> (),
-    create_require_func: (ctx: RequireEnv) -> (name: string) -> any,
 }
 
 -- HTML library
@@ -235,79 +172,13 @@ declare HTML: {
     is_document: (NodeRef) -> boolean,
     is_element: (NodeRef) -> boolean,
     is_text: (NodeRef) -> boolean,
+    select_any_of: (node: NodeRef, selectors: {string}) -> NodeRef,
+    select_all_of: (node: NodeRef, selectors: {string}) -> {NodeRef},
+    matches_any_of_selectors: (node: NodeRef, selectors: {string}) -> boolean,
+    append_root: (parent: NodeRef, child: NodeRef) -> (),
+    prepend_root: (parent: NodeRef, child: NodeRef) -> (),
+    replace: (from: NodeRef, with: NodeRef) -> (),
 }
 
 -- String loading functions
 declare function dostring(src: string | () -> string, chunkname: string?, mode: string?, env: { [string]: any }?): any
-declare function dofile(filename: string, mode: string?, env: { [string]: any }?): any
-declare function load<A...>(src: string | () -> string, chunkname: string?, mode: string?, env: { [string]: any }?): (((A...) -> any)?, string?)
-declare function loadstring<A...>(src: string, chunkname: string?, mode: string?, env: { [string]: any }?): (((A...) -> any)?, string?)
-declare function loadfile<A...>(filename: string, mode: string?, env: { [string]: any }?): (((A...) -> any)?, string?)
-
--- Standard library extensions
-declare string: {
-    byte: (s: string, f: number?, t: number?) -> ...number,
-    char: (...number) -> string,
-    find: (s: string, p: string, init: number?, plain: boolean?) -> (number?, number?, ...string),
-    format: (s: string, ...any) -> string,
-    gmatch: (s: string, p: string) -> (() -> ...string?),
-    gsub: (s: string, p: string, f: ((...string) -> (string | number | false | nil)) | { [string]: string } | string, number?) -> (string, number),
-    len: (s: string) -> number,
-    lower: (s: string) -> string,
-    match: (s: string, p: string, init: number?) -> ...string?,
-    rep: (s: string, n: number) -> string,
-    reverse: (s: string) -> string,
-    sub: (s: string, f: number, t: number?) -> string,
-    upper: (s: string) -> string,
-    split: (s: string, sep: string?) -> {string},
-    pack: (f: string, ...any) -> string,
-    packsize: (f: string) -> number,
-    unpack: (f: string, s: string) -> ...any,
-
-    -- Extended functions
-    trim: (s: string) -> string,
-    startswith: (s: string, prefix: string) -> boolean,
-    endswith: (s: string, prefix: string) -> boolean,
-}
-
-declare math: {
-    frexp: (n: number) -> (number, number),
-    ldexp: (s: number, e: number) -> number,
-    fmod: (x: number, y: number) -> number,
-    modf: (n: number) -> (number, number),
-    pow: (x: number, y: number) -> number,
-    exp: (n: number) -> number,
-    ceil: (n: number) -> number,
-    floor: (n: number) -> number,
-    abs: (n: number) -> number,
-    sqrt: (n: number) -> number,
-    log: (n: number, base: number?) -> number,
-    log10: (n: number) -> number,
-    rad: (n: number) -> number,
-    deg: (n: number) -> number,
-    sin: (n: number) -> number,
-    cos: (n: number) -> number,
-    tan: (n: number) -> number,
-    sinh: (n: number) -> number,
-    cosh: (n: number) -> number,
-    tanh: (n: number) -> number,
-    atan: (n: number) -> number,
-    acos: (n: number) -> number,
-    asin: (n: number) -> number,
-    atan2: (y: number, x: number) -> number,
-    min: (number, ...number) -> number,
-    max: (number, ...number) -> number,
-    pi: number,
-    huge: number,
-    randomseed: (seed: number) -> (),
-    random: (number?, number?) -> number,
-    sign: (n: number) -> number,
-    clamp: (n: number, min: number, max: number) -> number,
-    noise: (x: number, y: number?, z: number?) -> number,
-    round: (n: number) -> number,
-
-    -- Extended functions
-    isnan: (n: number) -> boolean,
-    isinf: (n: number) -> boolean,
-    isfinite: (n: number) -> boolean,
-}

@@ -30,6 +30,7 @@ end
 _G.math.isnan = baselib.is_nan
 _G.math.isinf = baselib.is_inf
 _G.math.isfinite = baselib.is_finite
+_G.os.sleep = baselib.sleep
 
 -- Sandboxed versions of setfenv and getfenv
 shared.orig_setfenv = _G.setfenv

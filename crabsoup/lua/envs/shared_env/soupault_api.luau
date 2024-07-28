@@ -88,6 +88,7 @@ Log.trace = baselib.trace
 Log.debug = baselib.debug
 Log.info = baselib.info
 Log.warn = baselib.warn
+Log.warning = baselib.warn
 Log.error = baselib.error
 
 -- Function definitions for `Date` module
@@ -307,45 +308,4 @@ _G.Value = Value
 function Value.repr<T>(value: T): string
     local str = shared.repr(value)
     return str
-end
-
-function Value.is_nil<T>(value: T): boolean
-    return value == nil
-end
-
-function Value.is_int<T>(value: T): boolean
-    if type(value) == "number" then
-        return math.isfinite(value) and math.round(value) == value
-    else
-        return false
-    end
-end
-
-function Value.is_float<T>(value: T): boolean
-    return type(value) == "number"
-end
-
-function Value.is_string<T>(value: T): boolean
-    return type(value) == "string"
-end
-
-function Value.is_table<T>(value: T): boolean
-    return type(value) == "table"
-end
-
-function Value.is_list<T>(value: T): boolean
-    if not value or type(value) ~= "table" then
-        return false
-    else
-        for k in value do
-            if type(k) ~= "number" then
-                return false
-            end
-        end
-        return true
-    end
-end
-
-function Value.is_html<T>(value: T): boolean
-    return typeof(value) == "NodeRef"
 end

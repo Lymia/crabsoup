@@ -1,3 +1,4 @@
 /target
 /.idea/LanguageServersSettings.xml
 /dist
+/tests

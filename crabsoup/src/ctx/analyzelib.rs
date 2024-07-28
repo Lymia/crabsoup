@@ -1,5 +1,8 @@
 use crabsoup_mlua_analyze::{LuaAnalyzer, LuaAnalyzerBuilder};
-use mlua::{prelude::LuaString, Lua, Result, Table, UserData, UserDataFields, UserDataRef};
+use mlua::{
+    prelude::{LuaFunction, LuaString},
+    Lua, Result, Table, UserData, UserDataFields, UserDataMethods, UserDataRef,
+};
 use tracing::{error, warn};
 
 pub fn create_analyze_table(lua: &Lua) -> Result<Table> {
@@ -7,12 +10,12 @@ pub fn create_analyze_table(lua: &Lua) -> Result<Table> {
 
     table.raw_set(
         "create",
-        lua.create_function(|_, (name, definitions): (LuaString, LuaString)| {
-            Ok(Analyzer(
-                LuaAnalyzerBuilder::new()
-                    .add_definitions(name.to_str()?, definitions.to_str()?)
-                    .build(),
-            ))
+        lua.create_function(|lua, setup_func: LuaFunction| {
+            let builder = LuaAnalyzerBuilder::new();
+            let userdata = lua.create_userdata(AnalyzerSetup(builder))?;
+            setup_func.call::<_, ()>(&userdata)?;
+            let builder = userdata.take::<AnalyzerSetup>()?;
+            Ok(Analyzer(builder.0.build()))
         })?,
     )?;
     table.raw_set(
@@ -40,6 +43,35 @@ pub fn create_analyze_table(lua: &Lua) -> Result<Table> {
     )?;
 
     Ok(table)
+}
+
+struct AnalyzerSetup(LuaAnalyzerBuilder);
+impl UserData for AnalyzerSetup {
+    fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {
+        fields.add_meta_field("__type", "AnalyzerSetup");
+    }
+
+    fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
+        methods.add_method_mut(
+            "add_definitions",
+            |_, this, (name, source): (LuaString, LuaString)| {
+                this.0.add_definitions(name.to_str()?, source.to_str()?);
+                Ok(())
+            },
+        );
+
+        methods.add_method_mut(
+            "set_deprecation",
+            |_, this, (path, replacement): (LuaString, Option<LuaString>)| {
+                let replacement = match &replacement {
+                    None => None,
+                    Some(s) => Some(s.to_str()?),
+                };
+                this.0.set_deprecation(path.to_str()?, replacement);
+                Ok(())
+            },
+        );
+    }
 }
 
 struct Analyzer(LuaAnalyzer);

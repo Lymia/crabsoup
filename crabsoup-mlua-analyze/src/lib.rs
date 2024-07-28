@@ -65,6 +65,11 @@ extern "C-unwind" {
         module_name: RustString,
         definitions: RustString,
     ) -> bool;
+    fn luauAnalyze_set_deprecation(
+        wrapper: *mut FrontendWrapper,
+        module_path: RustString,
+        replacement: RustString,
+    );
     fn luauAnalyze_freeze_definitions(wrapper: *mut FrontendWrapper);
     #[allow(improper_ctypes)] // only used as an opaque reference
     fn luauAnalyze_check(
@@ -109,7 +114,7 @@ impl LuaAnalyzerBuilder {
         LuaAnalyzerBuilder { underlying: unsafe { luauAnalyze_new_frontend() } }
     }
 
-    pub fn add_definitions(self, name: &str, definitions: &str) -> Self {
+    pub fn add_definitions(&mut self, name: &str, definitions: &str) {
         if !unsafe {
             luauAnalyze_register_definitions(
                 self.underlying,
@@ -119,7 +124,17 @@ impl LuaAnalyzerBuilder {
         } {
             panic!("Failed to parse definitions file: {name}");
         }
-        self
+    }
+
+    pub fn set_deprecation(&mut self, name: &str, replacement: Option<&str>) {
+        let replacement = replacement.unwrap_or("");
+        unsafe {
+            luauAnalyze_set_deprecation(
+                self.underlying,
+                RustString::encode(name),
+                RustString::encode(replacement),
+            );
+        }
     }
 
     pub fn build(self) -> LuaAnalyzer {

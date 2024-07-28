@@ -68,6 +68,7 @@ local function compile_chunk(
         return error(`Type error in '{chunkname}'!`)
     end
 
+    shared.baselib.debug(`Compiling chunk '{chunkname}'...`)
     local compiled_chunk = shared.baselib.compile_for_environment(chunk, allowed_globals)
     local load_chunk = function()
         return shared.baselib.load_precompiled_chunk(compiled_chunk, chunkname)(chunkname)
@@ -76,6 +77,8 @@ local function compile_chunk(
     local require_func = create_require_func(require_env)
 
     return function(global_values: { [string]: any }?)
+        Log.debug(`Loading chunk '{chunkname}'...`)
+
         local new_table = {}
         if global_values then
             for k, v in global_values do
@@ -107,6 +110,8 @@ local function compile_preloaded_chunk(
         return shared.baselib.loadstring_rt(chunk, chunkname)(chunkname)
     end
     return function(global_values: { [string]: any }?)
+        shared.baselib.debug(`Loading builtin chunk '{chunkname}'...`)
+
         if global_values then
             for _ in global_values do
                 return error("Globals are not allowed to be defined with preloaded chunks.", 2)

@@ -21,9 +21,11 @@ pub fn main() -> Result<()> {
 
     let mut all_paths = Vec::new();
 
-    let analyze = LuaAnalyzerBuilder::new()
-        .add_definitions("standalone_ctx.d_lua", include_str!("lua/defs/standalone_ctx.d_lua"))
-        .build();
+    let mut analyze = LuaAnalyzerBuilder::new();
+    analyze.add_definitions("defs_shared.d_lua", include_str!("lua/defs/defs_shared.d_lua"));
+    analyze
+        .add_definitions("defs_standalone.d_lua", include_str!("lua/defs/defs_standalone.d_lua"));
+    let analyze = analyze.build();
     for path in glob::glob("lua/**/*")? {
         let path = path?;
         let file_name = path.file_name().unwrap().to_string_lossy();
@@ -55,7 +57,7 @@ pub fn main() -> Result<()> {
             )?;
 
             all_paths.push((str_path, output.to_string_lossy().to_string()));
-        } else if file_name.ends_with(".d_lua") {
+        } else if path.is_file() {
             all_paths.push((str_path, path.canonicalize()?.to_string_lossy().to_string()));
         }
         println!("cargo::rerun-if-changed={}", path.display());
