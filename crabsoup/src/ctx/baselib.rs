@@ -1,8 +1,9 @@
 use mlua::{
     ffi::{
-        luaL_checktype, luaL_sandbox, luaL_sandboxthread, lua_getfenv, lua_gettop, lua_mainthread,
-        lua_newthread, lua_pushglobaltable, lua_replace, lua_rotate, lua_setfenv, lua_setsafeenv,
-        lua_xmove, LUA_GLOBALSINDEX, LUA_TFUNCTION, LUA_TTABLE,
+        luaL_checktype, luaL_sandbox, luaL_sandboxthread, lua_getfenv, lua_getmetatable,
+        lua_gettop, lua_mainthread, lua_newthread, lua_pushglobaltable, lua_pushnil, lua_replace,
+        lua_rotate, lua_setfenv, lua_setmetatable, lua_setsafeenv, lua_xmove, LUA_GLOBALSINDEX,
+        LUA_TFUNCTION, LUA_TTABLE,
     },
     lua_State,
     prelude::LuaString,
@@ -11,7 +12,6 @@ use mlua::{
 };
 use rustyline::{error::ReadlineError, DefaultEditor};
 use std::borrow::Cow;
-use mlua::ffi::{lua_getmetatable, lua_pushnil, lua_setmetatable};
 use tracing::{debug, error, info, trace, warn};
 
 pub fn create_base_table(lua: &Lua) -> Result<Table> {
