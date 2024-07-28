@@ -124,6 +124,7 @@ for _, env in { "standalone", "plugin" } do
     for_env(env, env_table)
     shared.envs[env] = env_table
 end
+register_builtins_for_env("<rt>", shared, {})
 
 -- Helper functions used by Rust code
 function shared.run_standalone(string, chunk_name)

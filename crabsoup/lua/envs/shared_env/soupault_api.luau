@@ -199,6 +199,25 @@ function Table.map_values<K, V, R>(func: (V) -> R, value: { [K]: V }): { [K]: R 
     return out
 end
 
+function Table.filter<K, V>(func: (K, V) -> boolean, value: { [K]: V }): { [K]: V }
+    local out = {}
+    for k, v in value do
+        if func(k, v) then
+            out[k] = v
+        end
+    end
+    return out
+end
+function Table.filter_values<K, V>(func: (V) -> boolean, value: { [K]: V }): { [K]: V }
+    local out = {}
+    for k, v in value do
+        if func(v) then
+            out[k] = v
+        end
+    end
+    return out
+end
+
 function Table.apply<K, V>(func: (K, V) -> V, value: { [K]: V })
     for k, v in value do
         value[k] = func(k, v)

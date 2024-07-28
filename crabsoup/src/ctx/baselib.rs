@@ -11,6 +11,7 @@ use mlua::{
 };
 use rustyline::{error::ReadlineError, DefaultEditor};
 use std::borrow::Cow;
+use mlua::ffi::{lua_getmetatable, lua_pushnil, lua_setmetatable};
 use tracing::{debug, error, info, trace, warn};
 
 pub fn create_base_table(lua: &Lua) -> Result<Table> {
@@ -157,17 +158,6 @@ pub fn create_base_table(lua: &Lua) -> Result<Table> {
     )?;
 
     table.raw_set(
-        "raw_setmetatable",
-        lua.create_function(|_, (table, metatable): (Table, Option<Table>)| {
-            table.set_metatable(metatable);
-            Ok(())
-        })?,
-    )?;
-    table.raw_set(
-        "raw_getmetatable",
-        lua.create_function(|_, table: Table| Ok(table.get_metatable()))?,
-    )?;
-    table.raw_set(
         "raw_freeze",
         lua.create_function(|_, table: Table| {
             table.set_readonly(true);
@@ -207,6 +197,8 @@ pub fn create_base_table(lua: &Lua) -> Result<Table> {
                 .into_function()?)
         })?,
     )?;
+
+    table.raw_set("opaque_key", OpaqueKey(()))?;
 
     load_unsafe_functions(lua, &table)?;
 
@@ -286,6 +278,31 @@ fn load_unsafe_functions(lua: &Lua, table: &Table) -> Result<()> {
         0
     }
 
+    unsafe extern "C-unwind" fn raw_getmetatable(lua: *mut lua_State) -> i32 {
+        // signature: (target) -> metatable
+        if lua_gettop(lua) != 1 {
+            panic!("wrong number of arguments");
+        }
+        if lua_getmetatable(lua, 1) != 0 {
+            1
+        } else {
+            0
+        }
+    }
+    unsafe extern "C-unwind" fn raw_setmetatable(lua: *mut lua_State) -> i32 {
+        // signature: (target, metatable)
+        let top = lua_gettop(lua);
+        if top == 1 {
+            lua_pushnil(lua);
+        } else if top == 2 {
+            // do nothing
+        } else {
+            panic!("wrong number of arguments");
+        }
+        lua_setmetatable(lua, 1);
+        1
+    }
+
     unsafe {
         table.raw_set("load_in_new_thread", lua.create_c_function(load_in_new_thread)?)?;
         table.raw_set("set_safeenv_flag", lua.create_c_function(set_safeenv_flag)?)?;
@@ -295,6 +312,8 @@ fn load_unsafe_functions(lua: &Lua, table: &Table) -> Result<()> {
         table.raw_set("raw_getfenv", lua.create_c_function(raw_getfenv)?)?;
         table.raw_set("raw_setfenv", lua.create_c_function(raw_setfenv)?)?;
         table.raw_set("do_sandbox", lua.create_c_function(do_sandbox)?)?;
+        table.raw_set("raw_getmetatable", lua.create_c_function(raw_getmetatable)?)?;
+        table.raw_set("raw_setmetatable", lua.create_c_function(raw_setmetatable)?)?;
     }
 
     Ok(())
@@ -364,5 +383,12 @@ struct CompiledChunk(Vec<u8>);
 impl UserData for CompiledChunk {
     fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {
         fields.add_meta_field("__type", "CompiledChunk");
+    }
+}
+
+pub struct OpaqueKey(());
+impl UserData for OpaqueKey {
+    fn add_fields<'lua, F: UserDataFields<'lua, Self>>(fields: &mut F) {
+        fields.add_meta_field("__type", "OpaqueKey");
     }
 }

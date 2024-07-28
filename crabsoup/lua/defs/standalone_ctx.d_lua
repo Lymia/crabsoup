@@ -51,16 +51,6 @@ declare Log: {
     debug: <T>(...T) -> (),
     trace: <T>(...T) -> (),
 }
-declare Plugin: {
-    fail: <T>(T) -> never,
-    exit: <T>(T) -> never,
-    require_version: (version: string) -> (),
-    soupault_version: () -> string,
-    crabsoup_version: () -> string,
-    env_standalone: Environment,
-    env_plugin: Environment,
-    load_plugin: (name: string, source: string, env: Environment, allowed_globals: { string }?) -> (globals: { [string]: any }) -> thread,
-}
 declare String: {
     truncate: (str: string, length: number, trailer: string?) -> string,
     slugify: (string) -> string,
@@ -117,6 +107,8 @@ declare Table: {
     fold_values: <K, V, A>(func: (V, A) -> A, value: { [K]: V }, initial_value: A) -> A,
     map: <K, V, R>(func: (K, V) -> R, value: { [K]: V }) -> { [K]: R },
     map_values: <K, V, R>(func: (V) -> R, value: { [K]: V }) -> { [K]: R },
+    filter: <K, V>(func: (K, V) -> boolean, value: { [K]: V }) -> { [K]: V },
+    filter_values: <K, V>(func: (V) -> boolean, value: { [K]: V }) -> { [K]: V },
     apply: <K, V>(func: (K, V) -> V, value: { [K]: V }) -> (),
     apply_to_values: <K, V>(func: (V) -> V, value: { [K]: V }) -> (),
     for_all: <K, V>(func: (V) -> boolean, table: { [K]: V }) -> boolean,
@@ -166,6 +158,25 @@ declare Process: {
     status: (CompletedProcess) -> number,
     get_stdout: (CompletedProcess) -> string,
     get_stderr: (CompletedProcess) -> string,
+}
+
+-- Plugin library
+type RequireEnv = typeof(setmetatable(newproxy(), {}))
+declare Plugin: {
+    fail: <T>(T) -> never,
+    exit: <T>(T) -> never,
+    require_version: (version: string) -> (),
+    soupault_version: () -> string,
+    crabsoup_version: () -> string,
+
+    -- Plugin API
+    env_standalone: Environment,
+    env_plugin: Environment,
+    create_require_env: (sources_path: string, env: Environment) -> RequireEnv,
+    load_plugin: (ctx: RequireEnv, name: string, source: string, allowed_globals: { string }?) -> (globals: { [string]: any }?) -> thread,
+    require_add_preload: (ctx: RequireEnv, name: string, value: any) -> (),
+    require_set_strict: (ctx: RequireEnv) -> (),
+    create_require_func: (ctx: RequireEnv) -> (name: string) -> any,
 }
 
 -- HTML library

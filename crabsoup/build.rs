@@ -3,10 +3,14 @@ use crabsoup_mlua_analyze::LuaAnalyzerBuilder;
 use mlua::Compiler;
 use std::path::PathBuf;
 
-fn compile_script(input: &[u8]) -> Vec<u8> {
-    let compiler = Compiler::new()
+fn compile_script(input: &[u8], has_require: bool) -> Vec<u8> {
+    let mut compiler = Compiler::new()
         .set_optimization_level(2)
         .set_type_info_level(1);
+    if has_require {
+        compiler =
+            compiler.set_mutable_globals(vec!["require".to_string(), "require_env".to_string()]);
+    }
     compiler.compile(input)
 }
 
@@ -23,8 +27,13 @@ pub fn main() -> Result<()> {
     for path in glob::glob("lua/**/*")? {
         let path = path?;
         let file_name = path.file_name().unwrap().to_string_lossy();
+        let suffix = path.strip_prefix("lua/")?;
+        let str_path = path
+            .to_string_lossy()
+            .strip_prefix("lua/")
+            .unwrap()
+            .to_string();
         if path.is_file() && (file_name.ends_with(".lua") || file_name.ends_with(".luau")) {
-            let suffix = path.strip_prefix("lua/")?;
             let mut output = out_path.clone();
             output.push(suffix);
 
@@ -40,23 +49,14 @@ pub fn main() -> Result<()> {
             let mut parent = output.clone();
             parent.pop();
             std::fs::create_dir_all(parent)?;
-            std::fs::write(&output, compile_script(script.as_bytes()))?;
+            std::fs::write(
+                &output,
+                compile_script(script.as_bytes(), !suffix.starts_with("envs/")),
+            )?;
 
-            all_paths.push((
-                path.to_string_lossy()
-                    .strip_prefix("lua/")
-                    .unwrap()
-                    .to_string(),
-                output.to_string_lossy().to_string(),
-            ));
+            all_paths.push((str_path, output.to_string_lossy().to_string()));
         } else if file_name.ends_with(".d_lua") {
-            all_paths.push((
-                path.to_string_lossy()
-                    .strip_prefix("lua/")
-                    .unwrap()
-                    .to_string(),
-                path.canonicalize()?.to_string_lossy().to_string(),
-            ));
+            all_paths.push((str_path, path.canonicalize()?.to_string_lossy().to_string()));
         }
         println!("cargo::rerun-if-changed={}", path.display());
     }
