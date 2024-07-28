@@ -56,6 +56,7 @@ mlua = { workspace = true }
 # Internal libraries
 crabsoup-kuchikiki = { workspace = true }
 crabsoup-mlua-analyze = { workspace = true }
+serde = { version = "1.0.204", features = ["derive"] }
 
 [build-dependencies]
 anyhow = { workspace = true }

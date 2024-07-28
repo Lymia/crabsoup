@@ -1,4 +1,7 @@
-use mlua::{prelude::LuaFunction, ChunkMode, Lua, LuaOptions, Result, StdLib, Table, Thread};
+use mlua::{
+    prelude::LuaFunction, ChunkMode, Lua, LuaOptions, LuaSerdeExt, Result, StdLib, Table, Thread,
+};
+use serde::Serialize;
 
 mod analyzelib;
 mod baselib;
@@ -78,6 +81,15 @@ impl CrabsoupLuaContext {
         shared_table
             .get::<_, LuaFunction>("run_repl_from_console_plugin")?
             .call::<_, ()>(())?;
+        Ok(())
+    }
+
+    pub fn run_main(&self, args: impl Serialize) -> Result<()> {
+        let value = self.lua.to_value(&args)?;
+        let shared_table = self.lua.named_registry_value::<Table>(SHARED_TABLE_LOC)?;
+        shared_table
+            .get::<_, LuaFunction>("run_main")?
+            .call::<_, ()>(value)?;
         Ok(())
     }
 }

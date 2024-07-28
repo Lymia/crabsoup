@@ -143,3 +143,10 @@ end
 function shared.run_repl_from_console_plugin()
     shared.run_repl_in_env(shared.envs.plugin)
 end
+
+function shared.run_main(args)
+    local require_env = shared_env.Plugin.create_require_env("", shared_env.Plugin.env_standalone)
+    shared.attach_compiled_chunks(require_env, "apps/crabsoup/?.luau")
+    local require = shared_env.Plugin.create_require_func(require_env)
+    require("crabsoup").main(args)
+end
