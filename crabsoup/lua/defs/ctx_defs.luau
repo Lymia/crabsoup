@@ -31,6 +31,16 @@ do
         -- CSV library
         analyzer:set_deprecation("CSV.unsafe_from_string", "pcall(CSV.from_string, x)")
 
+        -- HTML library
+        analyzer:set_deprecation("HTML.select_any_of", 'HTML.select_one(e, "h1,h2")')
+        analyzer:set_deprecation("HTML.select_all_of", 'HTML.select(e, "h1,h2")')
+        analyzer:set_deprecation("HTML.matches_any_of_selectors", 'HTML.matches_selector(e, "h1,h2")')
+        analyzer:set_deprecation("HTML.append_root", "HTML.append")
+        analyzer:set_deprecation("HTML.prepend_root", "HTML.prepend")
+        analyzer:set_deprecation("HTML.replace", "HTML.replace_element")
+        analyzer:set_deprecation("HTML.clone_content", "HTML.clone")
+        analyzer:set_deprecation("HTML.clone_document", "HTML.clone")
+
         -- JSON library
         analyzer:set_deprecation("JSON.unsafe_from_string", "pcall(JSON.from_string, x)")
 
@@ -66,6 +76,41 @@ do
 
         -- YAML library
         analyzer:set_deprecation("YAML.unsafe_from_string", "pcall(YAML.from_string, x)")
+
+        -- Globals
+        analyzer:set_deprecation("dostring", "loadstring")
+        analyzer:set_deprecation("nextvar")
+        analyzer:set_deprecation("setglobal")
+        analyzer:set_deprecation("getglobal")
+        analyzer:set_deprecation("setfallback")
+        analyzer:set_deprecation("mod", "x % y")
+        analyzer:set_deprecation("size", "#t")
+        analyzer:set_deprecation("strfind", "string.find")
+        analyzer:set_deprecation("strlen", "string.len")
+        analyzer:set_deprecation("strsub", "string.sub")
+        analyzer:set_deprecation("strlower", "string.lower")
+        analyzer:set_deprecation("strupper", "string.upper")
+        analyzer:set_deprecation("strrep", "string.rep")
+        analyzer:set_deprecation("ascii", "string.byte")
+        analyzer:set_deprecation("format", "string.format")
+        analyzer:set_deprecation("gsub", "string.gsub")
+        analyzer:set_deprecation("abs", "math.abs")
+        analyzer:set_deprecation("acos", "math.acos")
+        analyzer:set_deprecation("asin", "math.asin")
+        analyzer:set_deprecation("atan", "math.atan")
+        analyzer:set_deprecation("atan2", "math.atan2")
+        analyzer:set_deprecation("ceil", "math.ceil")
+        analyzer:set_deprecation("cos", "math.cos")
+        analyzer:set_deprecation("floor", "math.floor")
+        analyzer:set_deprecation("log", "math.log")
+        analyzer:set_deprecation("log10", "math.log10")
+        analyzer:set_deprecation("max", "math.max")
+        analyzer:set_deprecation("min", "math.min")
+        analyzer:set_deprecation("sin", "math.sin")
+        analyzer:set_deprecation("sqrt", "math.sqrt")
+        analyzer:set_deprecation("tan", "math.tan")
+        analyzer:set_deprecation("random", "math.random")
+        analyzer:set_deprecation("randomseed", "math.randomseed")
     end
 
     module.plugin = {}
