@@ -1,0 +1,40 @@
+-- Unique global functions
+declare function dostring(src: string | () -> string, chunkname: string?, mode: string?, env: { [string]: any }?): any
+declare function nextvar(name: any): (any, any)
+declare function setglobal<T>(name: string, value: T)
+declare function getglobal<T>(name: string): T
+declare function setfallback(fallbackname: string, newfallback: any)
+
+-- Base functions
+declare strfind: typeof(string.find)
+declare strlen: typeof(string.len)
+declare strsub: typeof(string.sub)
+declare strlower: typeof(string.lower)
+declare strupper: typeof(string.upper)
+declare strrep: typeof(string.rep)
+declare ascii: typeof(string.byte)
+declare format: typeof(string.format)
+declare gsub: typeof(string.gsub)
+
+declare abs: typeof(math.abs)
+declare acos: typeof(math.acos)
+declare asin: typeof(math.asin)
+declare atan: typeof(math.atan)
+declare atan2: typeof(math.atan2)
+declare ceil: typeof(math.ceil)
+declare cos: typeof(math.cos)
+declare floor: typeof(math.floor)
+declare log: typeof(math.log)
+declare log10: typeof(math.log10)
+declare max: typeof(math.max)
+declare min: typeof(math.min)
+declare sin: typeof(math.sin)
+declare sqrt: typeof(math.sqrt)
+declare tan: typeof(math.tan)
+declare random: typeof(math.random)
+declare randomseed: typeof(math.randomseed)
+
+declare function mod(lhs: number, rhs: number): number
+
+-- Lua-ML functions
+declare size: typeof(Table.length)

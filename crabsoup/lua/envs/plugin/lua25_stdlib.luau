@@ -30,11 +30,11 @@ function _G.nextvar(name: any): (any, any)
     return next(getfenv(0), name)
 end
 
-function _G.setglobal(name: string, value: any)
+function _G.setglobal<T>(name: string, value: T)
     getfenv(0)[name] = value
 end
 
-function _G.getglobal(name: string): any
+function _G.getglobal<T>(name: string): T
     return getfenv(0)[name]
 end
 

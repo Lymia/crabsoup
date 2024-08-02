@@ -50,7 +50,8 @@ local function compile_chunk(
     require_env: RequireEnv,
     chunkname: string,
     chunk: string,
-    parsed_globals: { [string]: boolean }
+    parsed_globals: { [string]: boolean },
+    is_module: boolean
 ): (globals: { [string]: any }?) -> thread
     parsed_globals["require"] = true
     parsed_globals["require_env"] = true
@@ -63,7 +64,7 @@ local function compile_chunk(
     end
 
     local mt = retrieve_metadata(require_env)
-    local check_result = shared.analyze.check(mt.analyzer, chunkname, chunk)
+    local check_result = shared.analyze.check(if is_module then mt.analyzer_module else mt.analyzer, chunkname, chunk)
     if not check_result and mt.strict then
         return error(`Type error in '{chunkname}'!`)
     end
@@ -143,7 +144,7 @@ function Plugin.load_plugin(
         end
     end
 
-    return compile_chunk(ctx, `@{name}`, source, parsed_globals)
+    return compile_chunk(ctx, `@{name}`, source, parsed_globals, false)
 end
 
 -- Require implementation
@@ -172,7 +173,8 @@ function Plugin.create_require_env(sources_path: string, env: Environment): Requ
 
     local mt = table.clone(require_ctx_metatable)
     local analyzer, env_table = retrieve_env(env)
-    mt.analyzer = analyzer
+    mt.analyzer = analyzer.plugin_ctx
+    mt.analyzer_module = analyzer.require_ctx
     mt.env_table = env_table
     mt.sources_path = split_path(sources_path)
     mt.compiled_chunks_path = {}
@@ -245,7 +247,7 @@ local function try_resolve(
 
     local chunk, chunkname, new_fragment = try_resolve_path(mt.sources_path, path_fragment)
     if chunk and chunkname then
-        return compile_chunk(require_env, `@{chunkname}`, chunk, {})
+        return compile_chunk(require_env, `@{chunkname}`, chunk, {}, true)
     end
     assert(new_fragment)
     fragment ..= new_fragment

@@ -65,6 +65,13 @@ declare Process: {
     get_stdout: (CompletedProcess) -> string,
     get_stderr: (CompletedProcess) -> string,
 }
+declare Regex: {
+    match: (string, string) -> string,
+    find_all: (string, string) -> {string},
+    replace: (string, string, string) -> string,
+    replace_all: (string, string, string) -> string,
+    split: (string, string) -> {string},
+}
 
 -- Plugin library
 type RequireEnv = typeof(setmetatable(newproxy(), {}))

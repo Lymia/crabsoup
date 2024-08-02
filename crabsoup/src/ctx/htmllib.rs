@@ -1,5 +1,6 @@
 use crate::{
     html::{
+        clone_node,
         extract_text::{inner_text, strip_tags},
         is_document::is_document,
     },
@@ -217,6 +218,12 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
         "create_text",
         lua.create_function(|_, text: LuaString| {
             Ok(LuaNodeRef(NodeRef::new_text(text.to_str()?)))
+        })?,
+    )?;
+    table.raw_set(
+        "clone",
+        lua.create_function(|_, elem: UserDataRef<LuaNodeRef>| {
+            Ok(LuaNodeRef(clone_node(&elem.0)))
         })?,
     )?;
 

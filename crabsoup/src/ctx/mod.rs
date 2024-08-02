@@ -10,6 +10,7 @@ mod datelib;
 mod digestlib;
 mod htmllib;
 mod processlib;
+mod regexlib;
 mod stringlib;
 mod syslib;
 
@@ -37,6 +38,7 @@ impl CrabsoupLuaContext {
             shared_table.set("Digest", digestlib::create_digest_table(&lua)?)?;
             shared_table.set("HTML", htmllib::create_html_table(&lua)?)?;
             shared_table.set("Process", processlib::create_process_table(&lua)?)?;
+            shared_table.set("Regex", regexlib::create_regex_table(&lua)?)?;
             shared_table.set("String", stringlib::create_string_table(&lua)?)?;
             shared_table.set("Sys", syslib::create_sys_table(&lua)?)?;
 

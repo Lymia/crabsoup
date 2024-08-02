@@ -102,12 +102,12 @@ declare TOML: {
 }
 declare Value: {
     repr: <T>(value: T) -> string,
-    is_nil: <T>(value: T) -> boolean,
     is_int: <T>(value: T) -> boolean,
+    is_list: <T>(value: T) -> boolean,
+    is_nil: <T>(value: T) -> boolean,
     is_float: <T>(value: T) -> boolean,
     is_string: <T>(value: T) -> boolean,
     is_table: <T>(value: T) -> boolean,
-    is_list: <T>(value: T) -> boolean,
     is_html: <T>(value: T) -> boolean,
 }
 declare YAML: {
@@ -119,7 +119,7 @@ declare YAML: {
 -- HTML library
 type HeadingsTreeADT = { heading: NodeRef, children: {HeadingsTreeADT} }
 declare HTML: {
-    parse: (text: string, encoding: string) -> NodeRef,
+    parse: (text: string, encoding: string?) -> NodeRef,
     set_default_encoding: (string) -> (),
     to_string: (node: NodeRef, encoding: string?) -> string,
     pretty_print: (node: NodeRef, encoding: string?) -> string,
@@ -178,7 +178,7 @@ declare HTML: {
     append_root: (parent: NodeRef, child: NodeRef) -> (),
     prepend_root: (parent: NodeRef, child: NodeRef) -> (),
     replace: (from: NodeRef, with: NodeRef) -> (),
+    clone: (NodeRef) -> NodeRef,
+    clone_content: (NodeRef) -> NodeRef,
+    clone_document: (NodeRef) -> NodeRef,
 }
-
--- String loading functions
-declare function dostring(src: string | () -> string, chunkname: string?, mode: string?, env: { [string]: any }?): any

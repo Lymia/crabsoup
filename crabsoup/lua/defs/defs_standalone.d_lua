@@ -84,6 +84,8 @@ declare TOML: {
 }
 declare Value: {
     repr: <T>(value: T) -> string,
+    is_int: <T>(value: T) -> boolean,
+    is_list: <T>(value: T) -> boolean,
 }
 declare YAML: {
     from_string: (string) -> any?,
@@ -93,7 +95,7 @@ declare YAML: {
 -- HTML library
 type HeadingsTreeADT = { heading: NodeRef, children: {HeadingsTreeADT} }
 declare HTML: {
-    parse: (text: string, encoding: string) -> NodeRef,
+    parse: (text: string, encoding: string?) -> NodeRef,
     set_default_encoding: (string) -> (),
     to_string: (node: NodeRef, encoding: string?) -> string,
     pretty_print: (node: NodeRef, encoding: string?) -> string,
@@ -146,4 +148,5 @@ declare HTML: {
     is_document: (NodeRef) -> boolean,
     is_element: (NodeRef) -> boolean,
     is_text: (NodeRef) -> boolean,
+    clone: (NodeRef) -> NodeRef,
 }

@@ -126,6 +126,8 @@ end
 _G.HTML.append_root = HTML.append_child
 _G.HTML.prepend_root = HTML.prepend_child
 _G.HTML.replace = HTML.replace_element
+_G.HTML.clone_content = HTML.clone
+_G.HTML.clone_document = HTML.clone
 
 -- Function definitions for `Value` module
 local Value = _G.Value or {}

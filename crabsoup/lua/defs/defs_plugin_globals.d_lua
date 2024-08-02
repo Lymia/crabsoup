@@ -1,0 +1,15 @@
+declare page: NodeRef
+declare page_file: string
+declare target_dir: string
+declare target_file: string
+declare nav_path: {string}
+declare page_url: string
+declare config: any
+declare soupault_config: any
+declare site_index: any
+declare index_entry: any
+declare site_dir: string
+declare build_dir: string
+declare persistent_data: any
+declare global_data: any
+declare soupault_pass: number

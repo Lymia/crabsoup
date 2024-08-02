@@ -76,17 +76,10 @@ local function register_builtins_for_env(path: string, value: any, seen)
     end
 end
 
-shared.analyzer = {}
+shared.analyzer = shared.baselib.loadstring_rt(shared.sources["defs/ctx_defs.luau"], "@<rt>defs/ctx_defs.luau")(shared)
 local function for_env(name, v)
     register_builtins_for_env("", v, {})
     shared.mark_system_fenv(v)
-    shared.analyzer[name] = shared.analyze.create(function(analyzer)
-        local ctx_init = `defs/ctx_{name}.luau`
-        if shared.sources[ctx_init] then
-            local init = shared.baselib.loadstring_rt(shared.sources[ctx_init], `@<rt>/{ctx_init}`)
-            init(shared.sources, analyzer)
-        end
-    end)
 end
 
 -- Setup global environment
@@ -96,6 +89,7 @@ _G.Digest = shared.Digest
 _G.HTML = shared.HTML
 _G.JSON = shared.codecs.JSON
 _G.Process = shared.Process
+_G.Regex = shared.Regex
 _G.String = shared.String
 _G.Sys = shared.Sys
 _G.TOML = shared.codecs.TOML
