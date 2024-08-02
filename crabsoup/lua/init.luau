@@ -148,6 +148,7 @@ end
 function shared.run_main(args)
     local require_env = shared_env.Plugin.create_require_env("", shared_env.Plugin.env_standalone)
     shared.attach_compiled_chunks(require_env, "app/?.luau")
+    shared_env.Plugin.require_add_preload(require_env, "resources", shared.sources)
     local require = shared_env.Plugin.create_require_func(require_env)
     require("crabsoup").main(args)
 end

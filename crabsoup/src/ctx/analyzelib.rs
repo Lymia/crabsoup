@@ -24,9 +24,12 @@ pub fn create_analyze_table(lua: &Lua) -> Result<Table> {
             |_, (analyzer, name, sources): (UserDataRef<Analyzer>, LuaString, LuaString)| {
                 let result = analyzer.0.check(name.to_str()?, sources.to_str()?, false);
                 for value in &result {
+                    let location = value.location.as_str();
+                    let location = location.strip_suffix(".lua").unwrap_or(location);
+                    let location = location.strip_suffix(".luau").unwrap_or(location);
                     let formatted = format!(
                         "{}({}:{}): {}",
-                        value.location,
+                        location,
                         value.location_start.line + 1,
                         value.location_start.column,
                         value.message,

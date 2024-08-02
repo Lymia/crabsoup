@@ -48,6 +48,7 @@ impl CrabsoupLuaContext {
             for (&name, &source) in &sources {
                 sources_table.set(name, lua.create_string(source)?)?;
             }
+            sources_table.set_readonly(true);
             shared_table.set("sources", &sources_table)?;
 
             // Load initialization code.

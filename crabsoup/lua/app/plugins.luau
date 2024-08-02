@@ -45,14 +45,13 @@ function PluginManager:register_inline_plugin(name: string, source: string, over
     self.plugins[name] = Plugin.load_plugin(self.require_ctx, name, source, plugin_globals)
 end
 
-function PluginManager:register_plugin_from_toml(table)
-    if table then
-        for k, v in table do
-            -- TODO
-            Log.error("TODO!")
-            print(k, v)
+function PluginManager:register_plugin_from_toml(config)
+    if config.settings.plugin_discovery then
+        for _, v in config.settings.plugin_dirs do
+            self:register_plugins_from_dir(v)
         end
     end
+    -- TODO: Explicit plugins
 end
 
 function PluginManager:register_plugins_from_dir(dir)

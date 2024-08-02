@@ -247,7 +247,7 @@ function table_children2str(tbl, path, depth, multiline, seen)
             local f = v .. sep
             if line == "" then
                 line = ind2 .. f
-            elseif not string.find(f, "\n") and #line + #f <= line_len then
+            elseif not string.find(line .. f, "\n") and #line + #f <= line_len then
                 line = line .. f
             else
                 table.insert(lines, line)
