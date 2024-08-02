@@ -1,9 +1,14 @@
+use codespan_reporting::{
+    diagnostic::{Diagnostic, Label},
+    files::{Files, SimpleFiles},
+    term,
+    term::termcolor::{ColorChoice, StandardStream},
+};
 use crabsoup_mlua_analyze::{LuaAnalyzer, LuaAnalyzerBuilder};
 use mlua::{
     prelude::{LuaFunction, LuaString},
-    Lua, Result, Table, UserData, UserDataFields, UserDataMethods, UserDataRef,
+    Error, Lua, Result, Table, UserData, UserDataFields, UserDataMethods, UserDataRef,
 };
-use tracing::{error, warn};
 
 pub fn create_analyze_table(lua: &Lua) -> Result<Table> {
     let table = lua.create_table()?;
@@ -22,23 +27,44 @@ pub fn create_analyze_table(lua: &Lua) -> Result<Table> {
         "check",
         lua.create_function(
             |_, (analyzer, name, sources): (UserDataRef<Analyzer>, LuaString, LuaString)| {
-                let result = analyzer.0.check(name.to_str()?, sources.to_str()?, false);
+                let location = name.to_str()?;
+                let location = location.strip_suffix(".lua").unwrap_or(location);
+                let location = location.strip_suffix(".luau").unwrap_or(location);
+                let location = location.strip_prefix("@").unwrap_or(location);
+
+                let sources = sources.to_str()?;
+
+                let mut files = SimpleFiles::new();
+                let file_id = files.add(location, sources);
+
+                let result = analyzer.0.check(&location, sources, false);
+
+                let writer = StandardStream::stderr(ColorChoice::Always);
+                let config = term::Config::default();
                 for value in &result {
-                    let location = value.location.as_str();
-                    let location = location.strip_suffix(".lua").unwrap_or(location);
-                    let location = location.strip_suffix(".luau").unwrap_or(location);
-                    let formatted = format!(
-                        "{}({}:{}): {}",
-                        location,
-                        value.location_start.line + 1,
-                        value.location_start.column,
-                        value.message,
-                    );
-                    if value.is_error {
-                        error!(target: "TypeCheck", "{formatted}");
+                    let diagnostic = if value.is_error {
+                        Diagnostic::error()
                     } else {
-                        warn!(target: "TypeCheck", "{formatted}");
-                    }
+                        Diagnostic::warning()
+                    };
+
+                    let start_idx = files
+                        .line_range(file_id, value.location_start.line)
+                        .map_err(Error::runtime)?
+                        .start
+                        + value.location_start.column;
+                    let end_idx = files
+                        .line_range(file_id, value.location_end.line)
+                        .map_err(Error::runtime)?
+                        .start
+                        + value.location_end.column;
+
+                    let diagnostic = diagnostic
+                        .with_message(&value.message)
+                        .with_labels(vec![Label::primary(file_id, start_idx..end_idx)]);
+
+                    term::emit(&mut writer.lock(), &config, &files, &diagnostic)
+                        .map_err(Error::runtime)?;
                 }
                 Ok(!result.iter().any(|x| x.is_error))
             },

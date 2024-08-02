@@ -46,12 +46,12 @@ pub struct AnalyzeResult {
 
 #[derive(Copy, Clone, Debug)]
 pub struct AnalyzeLocation {
-    pub line: u32,
-    pub column: u32,
+    pub line: usize,
+    pub column: usize,
 }
 impl From<RustLineColumn> for AnalyzeLocation {
     fn from(value: RustLineColumn) -> Self {
-        AnalyzeLocation { line: value.line as u32, column: value.column as u32 }
+        AnalyzeLocation { line: value.line as usize, column: value.column as usize }
     }
 }
 
