@@ -68,7 +68,6 @@ declare Sys: {
     run_program_get_exit_code: (string) -> number,
     get_program_output: (string) -> string,
     random: (number) -> number,
-    has_key: <K, V>(table: { [K]: V }, key: K) -> boolean,
 }
 declare Table: {
     get_key_default: <K, V>(table: { [K]: V }, key: K, default_value: V) -> V,
