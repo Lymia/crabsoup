@@ -1,5 +1,4 @@
-extern crate core;
-extern crate mlua_sys;
+extern crate crabsoup_luau_sys;
 
 use std::{
     ffi::{c_char, c_uint, c_void},

@@ -457,12 +457,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "crabsoup-mlua-analyze"
+name = "crabsoup-luau-sys"
 version = "0.1.0"
 dependencies = [
  "cc",
  "luau0-src",
  "mlua-sys",
+]
+
+[[package]]
+name = "crabsoup-mlua-analyze"
+version = "0.1.0"
+dependencies = [
+ "cc",
+ "crabsoup-luau-sys",
 ]
 
 [[package]]

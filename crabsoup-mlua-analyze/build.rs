@@ -12,13 +12,11 @@ fn main() {
         .warnings(false)
         .flag_if_supported("-std=c++17")
         .add_files_by_ext(&source_dir_base.join("bindings"), "cpp")
-        .add_files_by_ext(&analysis_dir.join("src"), "cpp")
-        .add_files_by_ext(&config_dir.join("src"), "cpp")
         .include(&analysis_dir.join("include"))
         .include(&ast_dir.join("include"))
         .include(&common_dir.join("include"))
         .include(&config_dir.join("include"))
-        .compile("luauanalysis");
+        .compile("mlua-analyze-bindings");
 
     println!("cargo:rerun-if-changed=bindings");
     println!("cargo:rerun-if-changed=luau");

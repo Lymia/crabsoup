@@ -119,7 +119,7 @@ extern "C" {
                     auto firstTable = Luau::getMutable<Luau::TableType>(tables[0]);
                     for (int i=1; i<tables.size(); i++) {
                         auto newTable = Luau::getMutable<Luau::TableType>(tables[0]);
-                        //firstTable->props.insert(newTable->props.begin(), newTable->props.end());
+                        firstTable->props.insert(newTable->props.begin(), newTable->props.end());
                     }
                     it->second.typeId = tables[0];
                 }

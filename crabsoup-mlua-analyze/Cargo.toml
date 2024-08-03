@@ -10,10 +10,10 @@ repository = "https://github.com/Lymia/crabsoup"
 include = [
     "bindings",
     "examples",
-    "luau/Analysis",
+    "luau/Analysis/include",
     "luau/Ast/include",
     "luau/Common/include",
-    "luau/Config",
+    "luau/Config/include",
     "src",
     "Cargo.toml",
     "LICENSE.md",
@@ -21,8 +21,7 @@ include = [
 ]
 
 [dependencies]
-mlua-sys = { version = "=0.6.1  ", features = ["luau", "luau-codegen", "vendored"] }
-luau0-src = "=0.10.2" # pin luau version
+crabsoup-luau-sys = { workspace = true }
 
 [build-dependencies]
 cc = { version = "1.1", features = ["parallel"] }
