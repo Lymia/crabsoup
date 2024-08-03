@@ -142,12 +142,34 @@ end
 local default_config = TOML.from_string(require("resources")["app/default_config.toml"])
 check_schema("", schema, default_config)
 
+local function clone_config(v)
+    if type(v) == "table" then
+        local new_table = {}
+        for k, v in v do
+            new_table[k] = clone_config(v)
+        end
+        return new_table
+    else
+        return v
+    end
+end
+local function freeze_recursive(tbl)
+    table.freeze(tbl)
+    for _, v in tbl do
+        if type(v) == "table" then
+            freeze_recursive(v)
+        end
+    end
+end
+
 function module.load_configuration(config_source)
     local config = TOML.from_string(config_source)
     check_schema("", schema, config)
     local merged = merge_config(config, default_config)
     check_deprecations(merged)
-    return merged
+    local clone = clone_config(merged)
+    freeze_recursive(clone)
+    return clone
 end
 
 return module

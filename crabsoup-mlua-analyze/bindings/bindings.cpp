@@ -36,6 +36,11 @@ namespace luauAnalyze {
     };
 }
 
+[[noreturn]] static void error(const char* error) {
+    printf("internal error in crabsoup-mlua-analyze: %s\n", error);
+    throw std::runtime_error("err");
+}
+
 extern "C" {
     struct RustCheckResultReceiver;
     struct RustString {
@@ -140,7 +145,18 @@ extern "C" {
         res.push_back (s.substr (pos_start));
         return res;
     }
-
+    static bool add_deprecation_to_table(Luau::TableType* ttv, std::string& target, std::string& replacement) {
+        if (ttv) {
+            if (ttv->props.count(target)) {
+                ttv->props[target].deprecated = true;
+                if (replacement != "")
+                    ttv->props[target].deprecatedSuggestion = replacement;
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
     void luauAnalyze_set_deprecation(
         luauAnalyze::FrontendWrapper* wrapper,
         RustString r_module_path,
@@ -157,16 +173,23 @@ extern "C" {
             if (has_replacement)
                 wrapper->frontend->globals.globalScope->bindings[astName].deprecatedSuggestion = replacement;
         } else if (split.size() == 2) {
-            Luau::TableType* ttv =
-                Luau::getMutable<Luau::TableType>(Luau::getGlobalBinding(wrapper->frontend->globals, split[0]));
+            auto binding = Luau::getGlobalBinding(wrapper->frontend->globals, split[0]);
+            Luau::TableType* ttv = Luau::getMutable<Luau::TableType>(binding);
             if (ttv) {
-                ttv->props[split[1]].deprecated = true;
-                if (has_replacement) ttv->props[split[1]].deprecatedSuggestion = replacement;
+                add_deprecation_to_table(ttv, module_path, replacement);
             } else {
-                throw std::runtime_error("where is table");
+                Luau::IntersectionType* intersection = Luau::getMutable<Luau::IntersectionType>(binding);
+                if (intersection) {
+                    for (auto& entry : intersection->parts) {
+                        Luau::TableType* e_ttv = Luau::getMutable<Luau::TableType>(entry);
+                        add_deprecation_to_table(e_ttv, module_path, replacement);
+                    }
+                } else {
+                    error("Table not found?");
+                }
             }
         } else {
-            throw std::runtime_error("Invalid size (for now)");
+            error("Invalid size (for now)");
         }
     }
 

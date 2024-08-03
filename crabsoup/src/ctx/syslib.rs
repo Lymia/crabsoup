@@ -30,6 +30,13 @@ pub fn create_sys_table(lua: &Lua) -> Result<Table> {
         })?,
     )?;
     table.raw_set(
+        "copy_file",
+        lua.create_function(|_, (src, dst): (LuaString, LuaString)| {
+            std::fs::copy(src.to_str()?, dst.to_str()?)?;
+            Ok(())
+        })?,
+    )?;
+    table.raw_set(
         "delete_recursive",
         lua.create_function(|_, path: LuaString| {
             let path = path.to_str()?;
