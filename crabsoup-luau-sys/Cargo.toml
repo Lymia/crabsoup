@@ -1,0 +1,28 @@
+[package]
+name = "crabsoup-luau-sys"
+version = "0.1.0"
+authors = ["Lymia Kanokawa <lymia@lymia.moe>"]
+edition = "2021"
+
+description = "Internal crate for crabsoup (for now)."
+repository = "https://github.com/Lymia/crabsoup"
+
+include = [
+    "bindings",
+    "examples",
+    "luau/Analysis",
+    "luau/Ast/include",
+    "luau/Common/include",
+    "luau/Config",
+    "src",
+    "Cargo.toml",
+    "LICENSE.md",
+    "README.md",
+]
+
+[dependencies]
+mlua-sys = { version = "=0.6.1  ", features = ["luau", "luau-codegen", "vendored"] }
+luau0-src = "=0.10.2" # pin luau version
+
+[build-dependencies]
+cc = { version = "1.1", features = ["parallel"] }

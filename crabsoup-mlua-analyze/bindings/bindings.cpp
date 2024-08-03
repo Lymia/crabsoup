@@ -92,6 +92,40 @@ extern "C" {
         return wrapper;
     }
 
+    static bool check_all_tables(Luau::TypeId id, std::vector<Luau::TypeId>& tables) {
+        if (auto table = Luau::getMutable<Luau::TableType>(id)) {
+            tables.push_back(id);
+            return true;
+        } else if (auto intersection = Luau::getMutable<Luau::IntersectionType>(id)) {
+            bool all_tables = true;
+            for (auto entry_id : intersection->parts) {
+                all_tables &= check_all_tables(entry_id, tables);
+            }
+            return all_tables;
+        } else {
+            return false;
+        }
+    }
+    static void flatten_globals(luauAnalyze::FrontendWrapper *wrapper) {
+        auto &globals = wrapper->frontend->globals;
+        auto &scope = globals.globalScope;
+        for (auto it = scope->bindings.begin(); it != scope->bindings.end(); it++) {
+            auto binding = it->second;
+            if (auto intersection = Luau::getMutable<Luau::IntersectionType>(binding.typeId)) {
+                for (auto entry_id : intersection->parts) {
+                    std::vector<Luau::TypeId> tables;
+                    check_all_tables(entry_id, tables);
+
+                    auto firstTable = Luau::getMutable<Luau::TableType>(tables[0]);
+                    for (int i=1; i<tables.size(); i++) {
+                        auto newTable = Luau::getMutable<Luau::TableType>(tables[0]);
+                        //firstTable->props.insert(newTable->props.begin(), newTable->props.end());
+                    }
+                    it->second.typeId = tables[0];
+                }
+            }
+        }
+    }
     bool luauAnalyze_register_definitions(luauAnalyze::FrontendWrapper *wrapper, RustString r_module_name,
                                           RustString r_definitions) {
         auto module_name = from_rust_string(r_module_name);
@@ -99,6 +133,10 @@ extern "C" {
         auto result =
             wrapper->frontend->loadDefinitionFile(wrapper->frontend->globals, wrapper->frontend->globals.globalScope,
                                                   std::move(definitions), std::move(module_name), false);
+        flatten_globals(wrapper);
+        for (auto error : result.parseResult.errors) {
+            printf("parse error in definition: %s\n", error.getMessage().c_str());
+        }
         return result.success;
     }
 
