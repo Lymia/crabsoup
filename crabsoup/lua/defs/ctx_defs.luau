@@ -6,8 +6,8 @@ local sources = shared.sources
 -- build table for standalone ctx
 do
     local function common_deps(analyzer)
-        analyzer:add_definitions("crabsoup", sources["defs/defs_shared.d_lua"])
-        analyzer:add_definitions("crabsoup", sources["defs/defs_standalone.d_lua"])
+        analyzer:add_definitions("defs_shared", sources["defs/defs_shared.d_lua"])
+        analyzer:add_definitions("defs_standalone", sources["defs/defs_standalone.d_lua"])
     end
 
     module.standalone = {}
@@ -16,16 +16,16 @@ do
     end)
     module.standalone.plugin_ctx = shared.analyze.create(function(analyzer)
         common_deps(analyzer)
-        analyzer:add_definitions("crabsoup", sources["defs/defs_plugin_globals.d_lua"])
+        analyzer:add_definitions("defs_plugin_globals", sources["defs/defs_plugin_globals.d_lua"])
     end)
 end
 
 -- build table for plugin ctx
 do
     local function common_deps(analyzer)
-        analyzer:add_definitions("crabsoup", sources["defs/defs_shared.d_lua"])
-        analyzer:add_definitions("crabsoup", sources["defs/defs_plugin.d_lua"])
-        analyzer:add_definitions("crabsoup", sources["defs/defs_legacy_alias.d_lua"])
+        analyzer:add_definitions("defs_shared", sources["defs/defs_shared.d_lua"])
+        analyzer:add_definitions("defs_plugin", sources["defs/defs_plugin.d_lua"])
+        analyzer:add_definitions("defs_legacy_alias", sources["defs/defs_legacy_alias.d_lua"])
     end
     local function deprecations(analyzer)
         -- CSV library
@@ -34,7 +34,7 @@ do
         -- HTML library
         analyzer:set_deprecation("HTML.select_any_of", 'HTML.select_one(e, "h1,h2")')
         analyzer:set_deprecation("HTML.select_all_of", 'HTML.select(e, "h1,h2")')
-        analyzer:set_deprecation("HTML.matches_selector", 'HTML.matches')
+        analyzer:set_deprecation("HTML.matches_selector", "HTML.matches")
         analyzer:set_deprecation("HTML.matches_any_of_selectors", 'HTML.matches(e, "h1,h2")')
         analyzer:set_deprecation("HTML.append_root", "HTML.append")
         analyzer:set_deprecation("HTML.prepend_root", "HTML.prepend")
@@ -121,7 +121,7 @@ do
     end)
     module.plugin.plugin_ctx = shared.analyze.create(function(analyzer)
         common_deps(analyzer)
-        analyzer:add_definitions("crabsoup", sources["defs/defs_plugin_globals.d_lua"])
+        analyzer:add_definitions("defs_plugin_globals", sources["defs/defs_plugin_globals.d_lua"])
         deprecations(analyzer)
     end)
 end

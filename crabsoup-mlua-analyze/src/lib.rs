@@ -68,7 +68,7 @@ extern "C-unwind" {
         wrapper: *mut FrontendWrapper,
         module_path: RustString,
         replacement: RustString,
-    );
+    ) -> bool;
     fn luauAnalyze_freeze_definitions(wrapper: *mut FrontendWrapper);
     #[allow(improper_ctypes)] // only used as an opaque reference
     fn luauAnalyze_check(
@@ -127,12 +127,14 @@ impl LuaAnalyzerBuilder {
 
     pub fn set_deprecation(&mut self, name: &str, replacement: Option<&str>) {
         let replacement = replacement.unwrap_or("");
-        unsafe {
+        if !unsafe {
             luauAnalyze_set_deprecation(
                 self.underlying,
                 RustString::encode(name),
                 RustString::encode(replacement),
-            );
+            )
+        } {
+            panic!("set_deprecation failed");
         }
     }
 

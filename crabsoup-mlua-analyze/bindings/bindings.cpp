@@ -36,11 +36,6 @@ namespace luauAnalyze {
     };
 } // namespace luauAnalyze
 
-[[noreturn]] static void error(const char *error) {
-    printf("internal error in crabsoup-mlua-analyze: %s\n", error);
-    throw std::runtime_error("err");
-}
-
 extern "C" {
     struct RustCheckResultReceiver;
     struct RustString {
@@ -92,7 +87,7 @@ extern "C" {
         return wrapper;
     }
 
-    static bool check_all_tables(Luau::TypeId id, std::vector<Luau::TypeId>& tables) {
+    static bool check_all_tables(Luau::TypeId id, std::vector<Luau::TypeId> &tables) {
         if (auto table = Luau::getMutable<Luau::TableType>(id)) {
             tables.push_back(id);
             return true;
@@ -106,22 +101,18 @@ extern "C" {
             return false;
         }
     }
-    static void flatten_globals(luauAnalyze::FrontendWrapper *wrapper) {
-        auto &globals = wrapper->frontend->globals;
-        auto &scope = globals.globalScope;
-        for (auto it = scope->bindings.begin(); it != scope->bindings.end(); it++) {
-            auto binding = it->second;
-            if (auto intersection = Luau::getMutable<Luau::IntersectionType>(binding.typeId)) {
-                for (auto entry_id : intersection->parts) {
-                    std::vector<Luau::TypeId> tables;
-                    check_all_tables(entry_id, tables);
-
-                    auto firstTable = Luau::getMutable<Luau::TableType>(tables[0]);
-                    for (int i=1; i<tables.size(); i++) {
-                        auto newTable = Luau::getMutable<Luau::TableType>(tables[0]);
+    static void flatten_scope(Luau::Scope &scope) {
+        for (auto it = scope.bindings.begin(); it != scope.bindings.end(); it++) {
+            auto &binding = it->second;
+            if (auto *intersection = Luau::getMutable<Luau::IntersectionType>(binding.typeId)) {
+                std::vector<Luau::TypeId> tables;
+                if (check_all_tables(binding.typeId, tables)) {
+                    auto *firstTable = Luau::getMutable<Luau::TableType>(tables[0]);
+                    for (int i = 1; i < tables.size(); i++) {
+                        auto *newTable = Luau::getMutable<Luau::TableType>(tables[i]);
                         firstTable->props.insert(newTable->props.begin(), newTable->props.end());
                     }
-                    it->second.typeId = tables[0];
+                    binding.typeId = tables[0];
                 }
             }
         }
@@ -133,7 +124,7 @@ extern "C" {
         auto result =
             wrapper->frontend->loadDefinitionFile(wrapper->frontend->globals, wrapper->frontend->globals.globalScope,
                                                   std::move(definitions), std::move(module_name), false);
-        flatten_globals(wrapper);
+        flatten_scope(*wrapper->frontend->globals.globalScope);
         for (auto error : result.parseResult.errors) {
             printf("parse error in definition: %s\n", error.getMessage().c_str());
         }
@@ -166,7 +157,7 @@ extern "C" {
             return false;
         }
     }
-    void luauAnalyze_set_deprecation(luauAnalyze::FrontendWrapper *wrapper, RustString r_module_path,
+    bool luauAnalyze_set_deprecation(luauAnalyze::FrontendWrapper *wrapper, RustString r_module_path,
                                      RustString r_replacement) {
         auto module_path = from_rust_string(r_module_path);
         auto replacement = from_rust_string(r_replacement);
@@ -178,24 +169,13 @@ extern "C" {
             wrapper->frontend->globals.globalScope->bindings[astName].deprecated = true;
             if (has_replacement)
                 wrapper->frontend->globals.globalScope->bindings[astName].deprecatedSuggestion = replacement;
+            return true;
         } else if (split.size() == 2) {
             auto binding = Luau::getGlobalBinding(wrapper->frontend->globals, split[0]);
             Luau::TableType *ttv = Luau::getMutable<Luau::TableType>(binding);
-            if (ttv) {
-                add_deprecation_to_table(ttv, module_path, replacement);
-            } else {
-                Luau::IntersectionType *intersection = Luau::getMutable<Luau::IntersectionType>(binding);
-                if (intersection) {
-                    for (auto &entry : intersection->parts) {
-                        Luau::TableType *e_ttv = Luau::getMutable<Luau::TableType>(entry);
-                        add_deprecation_to_table(e_ttv, module_path, replacement);
-                    }
-                } else {
-                    error("Table not found?");
-                }
-            }
+            return add_deprecation_to_table(ttv, split[1], replacement);
         } else {
-            error("Invalid size (for now)");
+            return false;
         }
     }
 
