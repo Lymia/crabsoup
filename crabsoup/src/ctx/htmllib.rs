@@ -230,6 +230,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
     // Selection and selector match checking
     // - Implemented in Lua: HTML.select_any_of - note: crabsoup uses selector lists
     // - Implemented in Lua: HTML.select_all_of - note: crabsoup uses selector lists
+    // - Implemented in Lua: HTML.matches_selector - note: crabsoup doesn't need the document ref
     // - Implemented in Lua: HTML.matches_any_of_selectors - note: crabsoup uses selector lists
     table.raw_set(
         "select",
@@ -257,7 +258,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
         })?,
     )?;
     table.raw_set(
-        "matches_selector",
+        "matches",
         lua.create_function(|_, (node, selector): (UserDataRef<LuaNodeRef>, LuaString)| {
             let selectors = Selectors::compile(selector.to_str()?)
                 .map_err(|()| Error::runtime("Could not parse selector."))?;

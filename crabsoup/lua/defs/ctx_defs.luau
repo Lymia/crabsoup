@@ -34,7 +34,8 @@ do
         -- HTML library
         analyzer:set_deprecation("HTML.select_any_of", 'HTML.select_one(e, "h1,h2")')
         analyzer:set_deprecation("HTML.select_all_of", 'HTML.select(e, "h1,h2")')
-        analyzer:set_deprecation("HTML.matches_any_of_selectors", 'HTML.matches_selector(e, "h1,h2")')
+        analyzer:set_deprecation("HTML.matches_selector", 'HTML.matches')
+        analyzer:set_deprecation("HTML.matches_any_of_selectors", 'HTML.matches(e, "h1,h2")')
         analyzer:set_deprecation("HTML.append_root", "HTML.append")
         analyzer:set_deprecation("HTML.prepend_root", "HTML.prepend")
         analyzer:set_deprecation("HTML.replace", "HTML.replace_element")

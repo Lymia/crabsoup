@@ -28,8 +28,6 @@ pub fn create_analyze_table(lua: &Lua) -> Result<Table> {
         lua.create_function(
             |_, (analyzer, name, sources): (UserDataRef<Analyzer>, LuaString, LuaString)| {
                 let location = name.to_str()?;
-                let location = location.strip_suffix(".lua").unwrap_or(location);
-                let location = location.strip_suffix(".luau").unwrap_or(location);
                 let location = location.strip_prefix("@").unwrap_or(location);
 
                 let sources = sources.to_str()?;

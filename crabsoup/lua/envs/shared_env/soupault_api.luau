@@ -200,7 +200,7 @@ function Table.map_values<K, V, R>(func: (V) -> R, value: { [K]: V }): { [K]: R 
     return out
 end
 
-function Table.filter<K, V>(func: (K, V) -> boolean, value: { [K]: V }): { [K]: V }
+function Table.filter_map<K, V>(func: (K, V) -> boolean, value: { [K]: V }): { [K]: V }
     local out = {}
     for k, v in value do
         if func(k, v) then
@@ -209,11 +209,11 @@ function Table.filter<K, V>(func: (K, V) -> boolean, value: { [K]: V }): { [K]: 
     end
     return out
 end
-function Table.filter_values<K, V>(func: (V) -> boolean, value: { [K]: V }): { [K]: V }
+function Table.filter_list<V>(func: (V) -> boolean, value: { V }): { V }
     local out = {}
     for k, v in value do
         if func(v) then
-            out[k] = v
+            table.insert(out, v)
         end
     end
     return out

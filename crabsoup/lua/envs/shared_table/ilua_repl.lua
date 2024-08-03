@@ -56,7 +56,9 @@ local function repl_main()
     end
 
     local function wrap_output(...)
-        print(shared.repr(...))
+        if #{...} ~= 0 then
+            print(shared.repr(...))
+        end
         env._ = select(1, ...)
     end
 

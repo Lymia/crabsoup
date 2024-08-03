@@ -119,8 +119,11 @@ end
 function _G.HTML.select_all_of(node, list)
     return HTML.select(node, join_selectors(list))
 end
-function _G.HTML.matches_any_of_selectors(node, list)
-    return HTML.matches_selector(node, join_selectors(list))
+function _G.HTML.matches_selector(_doc, node, selector)
+    return HTML.matches(node, selector)
+end
+function _G.HTML.matches_any_of_selectors(_doc, node, list)
+    return HTML.matches(node, join_selectors(list))
 end
 
 _G.HTML.append_root = HTML.append_child
