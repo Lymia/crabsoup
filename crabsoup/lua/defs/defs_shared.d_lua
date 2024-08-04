@@ -5,6 +5,7 @@ declare class CompletedProcess end
 declare class Environment end
 declare class NodeRef end
 declare class Process end
+declare class RequireEnv end
 declare class Timezone end
 
 -- Crabsoup IPC Classes
@@ -98,6 +99,7 @@ declare Sys: {
     is_windows: () -> boolean,
     getenv: (name: string, default: string?) -> string?,
     sleep: (number) -> (),
+    cpu_count: number,
 }
 declare Table: {
     get_key_default: <K, V>(table: { [K]: V }, key: K, default_value: V) -> V,
@@ -226,7 +228,6 @@ declare Regex: {
 }
 
 -- Plugin library
-type RequireEnv = typeof(setmetatable(newproxy(), {}))
 declare Plugin: {
     fail: <T>(T?) -> never,
     exit: <T>(T?) -> never,

@@ -256,5 +256,7 @@ pub fn create_sys_table(lua: &Lua) -> Result<Table> {
         })?,
     )?;
 
+    table.raw_set("cpu_count", num_cpus::get())?;
+
     Ok(table)
 }

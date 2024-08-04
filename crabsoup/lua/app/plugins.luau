@@ -1,7 +1,26 @@
+--!strict
+
 local module = {}
 
-local PluginManager = {}
-local PluginManager_mt = { __index = PluginManager }
+type LoadedPlugin = (globals: { [string]: any }) -> thread
+type PluginManager = typeof(setmetatable({} :: PluginManager_fields, {} :: PluginManager_mt))
+type PluginManager_fields = {
+    require_ctx: RequireEnv,
+    require: typeof(require),
+    plugins: { [string]: LoadedPlugin },
+}
+type PluginManager_mt = {
+    __index: PluginManager_methods,
+}
+type PluginManager_methods = {
+    register_plugin: (self: PluginManager, path: string, r_name: string?, override: boolean?) -> (),
+    register_inline_plugin: (self: PluginManager, name: string, source: string, override: boolean?) -> (),
+    register_plugin_from_toml: (self: PluginManager, config: any) -> (),
+    register_plugins_from_dir: (self: PluginManager, dir: string) -> (),
+}
+
+local PluginManager: PluginManager_methods = {} :: PluginManager_methods
+local PluginManager_mt: PluginManager_mt = { __index = PluginManager }
 
 local plugin_globals = {
     "page",
@@ -21,7 +40,7 @@ local plugin_globals = {
     "soupault_pass",
 }
 
-function module.create_plugin_manager(lib_path: string)
+function module.create_plugin_manager(lib_path)
     local require_ctx = Plugin.create_require_env(lib_path, Plugin.env_plugin)
     return setmetatable({
         require_ctx = require_ctx,
@@ -30,7 +49,7 @@ function module.create_plugin_manager(lib_path: string)
     }, PluginManager_mt)
 end
 
-function PluginManager:register_plugin(path: string, r_name: string?, override: boolean)
+function PluginManager:register_plugin(path, r_name, override)
     local name = if not r_name then Sys.strip_extensions(Sys.basename(path)) else r_name
     if self.plugins[name] and not override then
         error(`Duplicate plugin registered: {name}`)
@@ -38,7 +57,7 @@ function PluginManager:register_plugin(path: string, r_name: string?, override: 
     self.plugins[name] = Plugin.load_plugin(self.require_ctx, path, Sys.read_file(path), plugin_globals)
 end
 
-function PluginManager:register_inline_plugin(name: string, source: string, override: boolean)
+function PluginManager:register_inline_plugin(name, source, override)
     if self.plugins[name] and not override then
         error(`Duplicate plugin registered: {name}`)
     end

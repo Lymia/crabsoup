@@ -25,7 +25,6 @@ do
     local function common_deps(analyzer)
         analyzer:add_definitions("defs_shared", sources["defs/defs_shared.d_lua"])
         analyzer:add_definitions("defs_plugin", sources["defs/defs_plugin.d_lua"])
-        analyzer:add_definitions("defs_legacy_alias", sources["defs/defs_legacy_alias.d_lua"])
     end
     local function deprecations(analyzer)
         -- CSV library

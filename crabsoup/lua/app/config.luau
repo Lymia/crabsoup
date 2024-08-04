@@ -1,10 +1,18 @@
+--!strict
+
 local module = {}
 
 local ty_boolean = newproxy()
 local ty_string = newproxy()
 local ty_string_list = newproxy()
 
-local schema = {
+type SchemaType = typeof(ty_boolean) | typeof(ty_string) | typeof(ty_string_list)
+type Schema = {
+    __kind: nil | "list" | "string_map",
+    [string]: Schema | SchemaType,
+}
+
+local schema: Schema = {
     settings = {
         soupault_version = ty_string,
         strict = ty_boolean,
@@ -39,7 +47,7 @@ local function schema_error()
     error("Type error in configuration!", 2)
 end
 
-local function check_schema(config_name, schema, table)
+local function check_schema(config_name, schema: Schema, table: any)
     if type(table) ~= "table" then
         Log.error("Main config root is not a table??")
         error("could not parse config")
@@ -153,7 +161,7 @@ local function clone_config(v)
         return v
     end
 end
-local function freeze_recursive(tbl)
+local function freeze_recursive(tbl: any)
     table.freeze(tbl)
     for _, v in tbl do
         if type(v) == "table" then

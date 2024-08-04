@@ -1,3 +1,5 @@
+--!strict
+
 local module = {}
 
 local config = require("config")
