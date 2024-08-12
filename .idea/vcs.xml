@@ -3,6 +3,7 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/crabsoup-kuchikiki" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/crabsoup-luau-sys/luau" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/crabsoup-mlua-analyze/luau" vcs="Git" />
   </component>
 </project>

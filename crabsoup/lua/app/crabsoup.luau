@@ -2,8 +2,8 @@
 
 local module = {}
 
-local config = require("config")
-local plugins = require("plugins")
+local config = require("crabsoup.config")
+local plugins = require("crabsoup.plugins")
 
 function module.main(args)
     Log.info(`crabsoup v{Plugin.crabsoup_version()} (compatible: Soupault v{Plugin.soupault_version()})`)

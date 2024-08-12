@@ -38,6 +38,10 @@ local plugin_globals = {
     "persistent_data",
     "global_data",
     "soupault_pass",
+
+    -- crabsoup extensions
+    "global_config",
+    "checked_global_config",
 }
 
 function module.create_plugin_manager(lib_path)
@@ -65,12 +69,23 @@ function PluginManager:register_inline_plugin(name, source, override)
 end
 
 function PluginManager:register_plugin_from_toml(config)
-    if config.settings.plugin_discovery then
-        for _, v in config.settings.plugin_dirs do
+    if config.parsed.settings.plugin_discovery then
+        for _, v in config.parsed.settings.plugin_dirs do
             self:register_plugins_from_dir(v)
         end
     end
-    -- TODO: Explicit plugins
+
+    for k, v in config.parsed.plugins do
+        if v.file and v.lua_source then
+            error(`'[plugin.{k}]' declares both a 'file' and 'lua_source' field. Please only use one.`)
+        elseif v.file then
+            self:register_plugin(v.file, v)
+        elseif v.lua_source then
+            self:register_inline_plugin(k, v.lua_source)
+        else
+            error(`'[plugin.{k}]' does not declare a 'file' our 'lua_source' field.`)
+        end
+    end
 end
 
 function PluginManager:register_plugins_from_dir(dir)

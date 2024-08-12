@@ -95,6 +95,7 @@ declare Sys: {
     split_path: (path: string) -> {string},
     split_path_unix: (path: string) -> {string},
     split_path_url: (path: string) -> {string},
+    canonicalize: (path: string) -> string,
     is_unix: () -> boolean,
     is_windows: () -> boolean,
     getenv: (name: string, default: string?) -> string?,

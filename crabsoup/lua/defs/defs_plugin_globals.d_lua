@@ -13,3 +13,5 @@ declare build_dir: string
 declare persistent_data: any
 declare global_data: any
 declare soupault_pass: number
+declare global_config: any
+declare checked_global_config: any

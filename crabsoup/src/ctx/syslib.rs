@@ -237,6 +237,19 @@ pub fn create_sys_table(lua: &Lua) -> Result<Table> {
             Ok(table)
         })?,
     )?;
+    table.raw_set(
+        "canonicalize",
+        lua.create_function(|lua, path: LuaString| {
+            let path = path.to_str()?;
+            let path = AsRef::<Path>::as_ref(path);
+            lua.create_string(
+                path.canonicalize()
+                    .map_err(Error::runtime)?
+                    .to_string_lossy()
+                    .as_ref(),
+            )
+        })?,
+    )?;
     table.raw_set("is_unix", lua.create_function(|_, ()| Ok(cfg!(unix)))?)?;
     table.raw_set("is_windows", lua.create_function(|_, ()| Ok(cfg!(windows)))?)?;
     table.raw_set(

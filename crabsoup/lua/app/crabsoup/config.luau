@@ -8,7 +8,9 @@ local ty_string_list = newproxy()
 
 type SchemaType = typeof(ty_boolean) | typeof(ty_string) | typeof(ty_string_list)
 type Schema = {
-    __kind: nil | "list" | "string_map",
+    __kind: nil | "string_map",
+    __inner: Schema?,
+    __allow_unknown: boolean?,
     [string]: Schema | SchemaType,
 }
 
@@ -41,16 +43,55 @@ local schema: Schema = {
         caching = ty_boolean,
         cache_dir = ty_string,
     },
+    plugins = {
+        __kind = "string_map",
+        __inner = {
+            file = ty_string,
+            lua_source = ty_string,
+        },
+    },
+    widgets = {
+        __kind = "string_map",
+        __inner = {
+            widget = ty_string,
+            after = ty_string_list,
+            __allow_unknown = true,
+        },
+    },
+    __allow_unknown = true, -- custom options are pretty common in configs, for use by scripts
 }
 
-local function schema_error()
+local function schema_error(): never
     error("Type error in configuration!", 2)
 end
 
-local function check_schema(config_name, schema: Schema, table: any)
+local function check_schema(config_name, schema: Schema, table: any): any?
     if type(table) ~= "table" then
         Log.error("Main config root is not a table??")
         error("could not parse config")
+    end
+
+    if schema.__kind == "string_map" then
+        if not table then
+            return {}
+        elseif type(table) == "table" then
+            for k, v in table do
+                if type(k) ~= "string" then
+                    Log.error(`'{k}' should be a string, but it is a {type(k)}.`)
+                    schema_error()
+                end
+
+                if not schema.__inner then
+                    schema_error()
+                else
+                    check_schema(`{config_name}.{k}`, schema.__inner, v)
+                end
+            end
+            return
+        else
+            Log.error(`'{config_name}' should be a table, but it is a {type(table)}.`)
+            schema_error()
+        end
     end
 
     for k, v in table do
@@ -59,18 +100,22 @@ local function check_schema(config_name, schema: Schema, table: any)
             table[k] = nil
         else
             local key_name = if #config_name == 0 then k else `{config_name}.{k}`
-            if schema[k] then
+            if schema[k] and not string.startswith(k, "__") then
                 local k_schema = schema[k]
                 if type(k_schema) == "table" then
                     if v and type(v) ~= "table" then
-                        Log.error(`'{key_name}' should be a table, but it is a {type(v)}.'`)
+                        Log.error(`'{key_name}' should be a table, but it is a {type(v)}.`)
                         schema_error()
                     end
                     if not v then
                         table[k] = {}
                         v = table[k]
                     end
-                    check_schema(key_name, k_schema, v)
+
+                    local replace = check_schema(key_name, k_schema, v)
+                    if replace then
+                        table[k] = replace
+                    end
                 elseif k_schema == ty_boolean then
                     if v and type(v) ~= "boolean" then
                         Log.warn(`'{key_name}' should be a boolean, but it is a {type(v)}. It will be treated as one.`)
@@ -107,11 +152,28 @@ local function check_schema(config_name, schema: Schema, table: any)
                     error("unreachable?")
                 end
             else
-                Log.warn(`'{key_name}' is not a recognized configuration option. It will be ignored.`)
+                if not schema.__allow_unknown then
+                    Log.warn(`'{key_name}' is not a recognized configuration option. It will be ignored.`)
+                end
                 table[k] = nil
             end
         end
     end
+
+    for k, v in schema do
+        if not table[k] and not string.startswith(k, "__") then
+            if type(v) == "table" then
+                if v.__kind == "string_map" then
+                    table[k] = {}
+                else
+                    table[k] = {}
+                    check_schema(`{config_name}.{k}`, v, table[k])
+                end
+            end
+        end
+    end
+
+    return
 end
 
 local function merge_config(config, default_config)
@@ -147,7 +209,7 @@ local function check_deprecations(config)
     end
 end
 
-local default_config = TOML.from_string(require("resources")["app/default_config.toml"])
+local default_config = TOML.from_string(require("resources")["app/crabsoup/default_config.toml"])
 check_schema("", schema, default_config)
 
 local function clone_config(v)
@@ -170,7 +232,7 @@ local function freeze_recursive(tbl: any)
     end
 end
 
-function module.load_configuration(config_source)
+local function parse_configs(config_source)
     local config = TOML.from_string(config_source)
     check_schema("", schema, config)
     local merged = merge_config(config, default_config)
@@ -178,6 +240,13 @@ function module.load_configuration(config_source)
     local clone = clone_config(merged)
     freeze_recursive(clone)
     return clone
+end
+
+function module.load_configuration(config_source)
+    return {
+        parsed = parse_configs(config_source),
+        raw = TOML.from_string(config_source),
+    }
 end
 
 return module
