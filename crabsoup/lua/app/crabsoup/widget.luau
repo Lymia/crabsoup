@@ -4,12 +4,13 @@ local module = {}
 
 type Globals = { [string]: any }
 type WidgetConfig = {
-    plugin_name: string,
+    name: string,
+    plugin: string,
     after: { string },
     selection_functions: { (globals: Globals) -> boolean },
     widget_config: any,
 }
-type WidgetsConfig = { [string]: WidgetConfig }
+type WidgetsConfig = { WidgetConfig }
 
 type Widget = {
     name: string,
@@ -19,36 +20,62 @@ type Widget = {
     persistent_data: any,
 }
 
---[[
-    "page",
-    "page_file",
-    "target_dir",
-    "target_file",
-    "nav_path",
-    "page_url",
-    "config",
-    "soupault_config",
-    "site_index",
-    "index_entry",
-    "site_dir",
-    "build_dir",
-    "persistent_data",
-    "global_data",
-    "soupault_pass",
-]]
-
-local function load_widgets(plugins, config): WidgetsConfig
+local function parse_widgets(config): WidgetsConfig
     local list = {} :: WidgetsConfig
     for k, v in config.parsed.widgets do
         local widget: WidgetConfig = {
-            plugin_name = k,
+            name = k,
+            plugin = v.widget,
             after = v.after,
             selection_functions = {},
             widget_config = config.raw.widgets[k],
         }
-        list[k] = widget
+        table.insert(list, widget)
     end
     return list
+end
+
+local function resolve_widgets(plugins, widgets: WidgetsConfig): { Widget }
+    local full_list = {}
+    for k, v in widgets do
+        table.insert(full_list, v)
+    end
+    table.sort(full_list, function(a, b)
+        return a.name < b.name
+    end)
+
+    local resolved = {}
+    local resolved_list = {}
+
+    while #resolved_list ~= #full_list do
+        for k, v in full_list do
+            if not resolved[v.name] then
+                if
+                    Table.for_all(function(v)
+                        return not not resolved[v]
+                    end, v.after)
+                then
+                    resolved[v.name] = true
+                    local widget = {
+                        name = v.name,
+                        plugin = plugins:resolve(v.plugin),
+                        filter = function(globals: Globals)
+                            return true
+                        end,
+                        config = v.widget_config,
+                        persistent_data = {},
+                    }
+                    table.insert(resolved_list, widget)
+                end
+            end
+        end
+    end
+
+    return resolved_list
+end
+
+function module.load_widgets(plugins, config): { Widget }
+    return resolve_widgets(plugins, parse_widgets(config))
 end
 
 local function run_widget(widget: Widget, globals: Globals)
@@ -77,7 +104,7 @@ local function run_widget(widget: Widget, globals: Globals)
     end
 end
 
-local function run_widgets(widgets: { Widget }, globals: Globals)
+function module.run_widgets(widgets: { Widget }, globals: Globals)
     for _, v in widgets do
         run_widget(v, globals)
     end

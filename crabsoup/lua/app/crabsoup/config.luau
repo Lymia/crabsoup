@@ -169,6 +169,8 @@ local function check_schema(config_name, schema: Schema, table: any): any?
                     table[k] = {}
                     check_schema(`{config_name}.{k}`, v, table[k])
                 end
+            elseif v == ty_string_list then
+                table[k] = {}
             end
         end
     end
@@ -230,6 +232,7 @@ local function freeze_recursive(tbl: any)
             freeze_recursive(v)
         end
     end
+    return tbl
 end
 
 local function parse_configs(config_source)
@@ -245,7 +248,7 @@ end
 function module.load_configuration(config_source)
     return {
         parsed = parse_configs(config_source),
-        raw = TOML.from_string(config_source),
+        raw = freeze_recursive(TOML.from_string(config_source)),
     }
 end
 

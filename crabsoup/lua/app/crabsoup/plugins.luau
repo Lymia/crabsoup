@@ -17,6 +17,7 @@ type PluginManager_methods = {
     register_inline_plugin: (self: PluginManager, name: string, source: string, override: boolean?) -> (),
     register_plugin_from_toml: (self: PluginManager, config: any) -> (),
     register_plugins_from_dir: (self: PluginManager, dir: string) -> (),
+    resolve: (self: PluginManager, name: string) -> LoadedPlugin,
 }
 
 local PluginManager: PluginManager_methods = {} :: PluginManager_methods
@@ -44,6 +45,8 @@ local plugin_globals = {
     "checked_global_config",
 }
 
+local builtin_modules = { "builtin_plugins.common" }
+
 function module.create_plugin_manager(lib_path)
     local require_ctx = Plugin.create_require_env(lib_path, Plugin.env_plugin)
     return setmetatable({
@@ -69,6 +72,17 @@ function PluginManager:register_inline_plugin(name, source, override)
 end
 
 function PluginManager:register_plugin_from_toml(config)
+    for _, v in builtin_modules do
+        local module = require(v)
+        for k, v in module do
+            self.plugins[k] = function(globals)
+                return coroutine.create(function()
+                    return module[k](globals)
+                end)
+            end
+        end
+    end
+
     if config.parsed.settings.plugin_discovery then
         for _, v in config.parsed.settings.plugin_dirs do
             self:register_plugins_from_dir(v)
@@ -93,6 +107,14 @@ function PluginManager:register_plugins_from_dir(dir)
         if string.endswith(file, ".lua") or string.endswith(file, ".luau") then
             self:register_plugin(file)
         end
+    end
+end
+
+function PluginManager:resolve(name)
+    if self.plugins[name] then
+        return self.plugins[name]
+    else
+        error(`No such plugin '{name}'!`)
     end
 end
 

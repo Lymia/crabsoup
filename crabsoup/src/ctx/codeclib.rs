@@ -1,6 +1,13 @@
 use csv::ReaderBuilder;
-use mlua::{prelude::LuaString, Error, Lua, LuaSerdeExt, Result, Table, Value};
+use mlua::{prelude::LuaString, serde::ser, Error, Lua, LuaSerdeExt, Result, Table, Value};
 use std::io::Cursor;
+
+fn options() -> ser::Options {
+    let mut opts = ser::Options::new();
+    opts.set_array_metatable = false;
+    opts.detect_serde_json_arbitrary_precision = true;
+    opts
+}
 
 fn create_json_table(lua: &Lua) -> Result<Table> {
     let table = lua.create_table()?;
@@ -10,7 +17,7 @@ fn create_json_table(lua: &Lua) -> Result<Table> {
         lua.create_function(|lua, str: LuaString| {
             let value: serde_json::Value =
                 serde_json::from_slice(str.as_bytes()).map_err(Error::runtime)?;
-            lua.to_value(&value)
+            lua.to_value_with(&value, options())
         })?,
     )?;
     table.raw_set(
@@ -36,7 +43,7 @@ fn create_toml_table(lua: &Lua) -> Result<Table> {
         "from_string",
         lua.create_function(|lua, str: LuaString| {
             let value: toml::Value = toml::from_str(str.to_str()?).map_err(Error::runtime)?;
-            lua.to_value(&value)
+            lua.to_value_with(&value, options())
         })?,
     )?;
     table.raw_set(
@@ -55,7 +62,7 @@ fn create_yaml_table(lua: &Lua) -> Result<Table> {
         lua.create_function(|lua, str: LuaString| {
             let value: serde_yaml::Value =
                 serde_yaml::from_slice(str.as_bytes()).map_err(Error::runtime)?;
-            lua.to_value(&value)
+            lua.to_value_with(&value, options())
         })?,
     )?;
     table.raw_set(

@@ -58,7 +58,7 @@ local function compare_any(a, b)
     elseif ta > tb then
         return false
     else
-        return a < b
+        return tostring(a) < tostring(b)
     end
 end
 local function pairs_by_keys(tbl)
