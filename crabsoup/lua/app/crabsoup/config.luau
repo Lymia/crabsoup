@@ -285,17 +285,6 @@ end
 local default_config = TOML.from_string(require("resources")["app/crabsoup/default_config.toml"])
 check_schema("", schema, default_config)
 
-local function clone_config(v)
-    if type(v) == "table" then
-        local new_table = {}
-        for k, v in v do
-            new_table[k] = clone_config(v)
-        end
-        return new_table
-    else
-        return v
-    end
-end
 local function freeze_recursive(tbl: any)
     table.freeze(tbl)
     for _, v in tbl do
@@ -311,7 +300,7 @@ local function parse_configs(config_source)
     check_schema("", schema, config)
     local merged = merge_config(config, default_config)
     check_deprecations(merged)
-    local clone = clone_config(merged)
+    local clone = Table.deep_clone(merged)
     freeze_recursive(clone)
     return clone
 end

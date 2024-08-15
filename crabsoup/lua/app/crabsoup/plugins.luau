@@ -43,7 +43,7 @@ local plugin_globals = {
     -- crabsoup extensions
     "relative_page_file",
     "global_config",
-    "checked_global_config",
+    "parsed_config",
 }
 
 local builtin_modules = { "builtin_plugins.common" }
@@ -58,7 +58,7 @@ function module.create_plugin_manager(lib_path)
 end
 
 function PluginManager:register_plugin(path, r_name, override)
-    local name = if not r_name then Sys.strip_extensions(Sys.basename(path)) else r_name
+    local name = if not r_name then Sys.strip_all_extensions(Sys.basename(path)) else r_name
     if self.plugins[name] and not override then
         error(`Duplicate plugin registered: {name}`)
     end

@@ -23,8 +23,8 @@ local function build_globals(config, source_path, target_path): any
         nav_path = {}, -- TODO
         page_url = "", -- TODO
         config = nil, -- Set by widget module
-        soupault_config = config.raw,
-        site_index = nil, -- TODO
+        soupault_config = config.raw.raw,
+        site_index = {}, -- TODO
         index_entry = nil, -- TODO
         site_dir = config.raw.parsed.settings.site_dir,
         build_dir = config.raw.parsed.settings.build_dir,

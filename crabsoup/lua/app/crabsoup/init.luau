@@ -49,6 +49,11 @@ function module.process_pages(config: Configuration)
         extensions[v] = true
     end
 
+    local keep_extensions = {}
+    for _, v in config.raw.parsed.settings.keep_extensions do
+        keep_extensions[v] = true
+    end
+
     Log.debug(`Recreate directory: '{config.raw.parsed.settings.build_dir}'`)
     Sys.delete_recursive(config.raw.parsed.settings.build_dir)
     Sys.mkdir(config.raw.parsed.settings.build_dir)
@@ -64,13 +69,24 @@ function module.process_pages(config: Configuration)
             Sys.mkdir(target_path)
         else
             if extensions[Sys.get_extension(path)] then
+                -- process target path
+                if not keep_extensions[Sys.get_extension(target_path)] then
+                    local stripped = Sys.strip_extension(target_path)
+                    target_path = `{stripped}.{config.raw.parsed.settings.default_extension}`
+                end
+
+                if Sys.file_exists(target_path) then
+                    Log.error(`Skipping page (because it already exists): '{path}' -> '{target_path}'`)
+                end
+
+                -- enqueue the processor
                 Log.trace(`Enqueue page: '{path}' -> '{target_path}'`)
                 table.insert(thread_queue, {
                     name = path,
-                    thread = coroutine.create(function()
+                    thread = function()
                         Log.debug(`Process page: '{path}' -> '{target_path}'`)
                         Sys.write_file(target_path, pages.process_page(config, path, target_path))
-                    end),
+                    end,
                 })
             else
                 Log.debug(`Copy file: '{path}' -> '{target_path}'`)

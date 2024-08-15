@@ -38,7 +38,7 @@ local function matches_limits(pages, sections, path_regexes, include_subsections
     end
 
     return function(raw_path)
-        return Table.for_all(function(x)
+        return Table.for_any(function(x)
             return Regex.match(raw_path, x)
         end, regexes)
     end

@@ -2,24 +2,35 @@
 
 local module = {}
 
-function module.wait_on_processes(processes: { { name: string, thread: thread, resume_with: any? } })
+function module.wait_on_processes(processes: { { name: string, thread: () -> () } })
+    local queued = {}
+    for k, v in processes do
+        queued[k] = {
+            name = v.name,
+            thread = coroutine.create(function()
+                return xpcall(v.thread, debug.traceback)
+            end),
+            resume_with = nil :: any?,
+        }
+    end
+
     local deferred = {}
 
-    table.sort(processes, function(a, b)
+    table.sort(queued, function(a, b)
         return a.name > b.name
     end)
 
-    while #processes ~= 0 do
+    while #queued ~= 0 do
         -- resume the first plausible thread
-        local active = processes[#processes]
-        processes[#processes] = nil
+        local active = queued[#queued]
+        queued[#queued] = nil
 
-        local result, value = coroutine.resume(active.thread, active.resume_with)
+        local result, value, msg = coroutine.resume(active.thread, active.resume_with)
         if not result then
-            error(value)
+            error("Error resuming plugin??")
         end
 
-        if value then
+        if coroutine.status(active.thread) == "suspended" then
             if typeof(value) == "Process" then
                 Log.trace(`Deferring page '{active.name}' to wait for process...`)
                 table.insert(deferred, { obj = active, proc = value })
@@ -37,15 +48,16 @@ function module.wait_on_processes(processes: { { name: string, thread: thread, r
         else
             if coroutine.status(active.thread) == "dead" then
                 -- normal return
-            elseif coroutine.status(active.thread) == "suspended" then
-                error(`Plugin in page '{active.name}' yielded unexpectedly!`)
+                if not value then
+                    error(`Page '{active.name}' encountered an error during rendering:\n{msg}`)
+                end
             else
                 error("unreachable?")
             end
         end
 
         -- end early if everything is processed
-        if #processes == 0 and #deferred == 0 then
+        if #queued == 0 and #deferred == 0 then
             break
         end
 
@@ -56,7 +68,7 @@ function module.wait_on_processes(processes: { { name: string, thread: thread, r
                 if obj.proc and Process.is_completed(obj.proc) then
                     Log.trace(`Resuming deferred page '{obj.obj.name}'`)
                     obj.obj.resume_with = Process.wait_on(obj.proc)
-                    table.insert(processes, obj.obj)
+                    table.insert(queued, obj.obj)
                     table.remove(deferred, i)
                 end
             end
@@ -69,7 +81,7 @@ function module.wait_on_processes(processes: { { name: string, thread: thread, r
                 end
             end
 
-            if cpu_task_count <= Sys.cpu_count and #processes > 0 then
+            if cpu_task_count <= Sys.cpu_count and #queued > 0 then
                 break
             end
 

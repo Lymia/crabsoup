@@ -18,7 +18,7 @@ type Widget = {
     name: string,
     plugin: (globals: Globals) -> thread,
     filter: (globals: Globals) -> boolean,
-    config: any, -- MUST BE FROZEN!!
+    config: any,
     persistent_data: any,
 }
 
@@ -79,15 +79,16 @@ function module.load_widgets(plugins, config): { Widget }
 end
 
 local function run_widget(widget: Widget, globals: Globals)
-    Log.trace(`Running widget '{widget.name}' for page '{globals.page_file}'`)
+    Log.trace(`Running widget '{widget.name}' for page '{globals.page_file}' = {widget.plugin}`)
 
     local pass_globals = table.clone(globals)
-    pass_globals.config = widget.config
+    pass_globals.config = Table.deep_clone(widget.config) -- some plugins modify this, so unfreeze it
     pass_globals.persistent_data = widget.persistent_data
 
     if widget.filter(pass_globals) then
         local thread = widget.plugin(pass_globals)
         while true do
+            print(`resume thread: {Value.repr(widget)}`)
             local success, r = coroutine.resume(thread)
             if success then
                 local status = coroutine.status(thread)
@@ -100,7 +101,7 @@ local function run_widget(widget: Widget, globals: Globals)
                     error(`Internal error: Invalid widget coroutine status: {status}`)
                 end
             else
-                error(`Could not process widget '{widget.name}' for page '{globals.page_file}': {r}`)
+                error(`Could not process widget '{widget.name}' for page '{globals.page_file}':\n{r}`)
             end
         end
     end

@@ -82,7 +82,8 @@ declare Sys: {
     get_extension: (path: string) -> string?,
     get_extensions: (path: string) -> {string},
     has_extension: (path: string, extension: string) -> boolean,
-    strip_extensions: (path: string) -> string,
+    strip_extension: (path: string) -> string,
+    strip_all_extensions: (path: string) -> string,
     basename: (path: string) -> string,
     basename_unix: (path: string) -> string,
     basename_url: (path: string) -> string,
@@ -124,7 +125,7 @@ declare Table: {
     chunks: <T>(value: {T}, size: number) -> {{T}},
     length: <K, V>(value: { [K]: V }) -> number,
     is_empty: <K, V>(value: { [K]: V }) -> boolean,
-    copy: <K, V>(value: { [K]: V }) -> { [K]: V },
+    deep_clone: <K, V>(value: { [K]: V }) -> { [K]: V },
 }
 declare TOML: {
     from_string: (string) -> any?,

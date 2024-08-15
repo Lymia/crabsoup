@@ -20,9 +20,11 @@ declare Sys: typeof(Sys) & {
     run_program_get_exit_code: (string) -> number,
     get_program_output: (string) -> string,
     random: (number) -> number,
+    strip_extensions: (path: string) -> string,
 }
 declare Table: typeof(Table) & {
     has_key: <K, V>(value: { [K]: V }, key: K) -> boolean,
+    copy: <K, V>(value: { [K]: V }) -> { [K]: V },
 }
 declare TOML: typeof(TOML) & {
     unsafe_from_string: (string) -> any?,

@@ -82,6 +82,14 @@ function Table.has_key(table, key)
     end
 end
 
+function Table.copy<K, V>(value: { [K]: V }): { [K]: V }
+    local new = {}
+    for k, v in value do
+        new[k] = value[k]
+    end
+    return new
+end
+
 -- Function definitions for 'Sys' module
 local Sys = _G.Sys or {}
 _G.Sys = Sys
@@ -126,11 +134,11 @@ function _G.HTML.matches_any_of_selectors(_doc, node, list)
     return HTML.matches(node, join_selectors(list))
 end
 
-_G.HTML.append_root = HTML.append_child
-_G.HTML.prepend_root = HTML.prepend_child
-_G.HTML.replace = HTML.replace_element
-_G.HTML.clone_content = HTML.clone
-_G.HTML.clone_document = HTML.clone
+_G.HTML.append_root = _G.HTML.append_child
+_G.HTML.prepend_root = _G.HTML.prepend_child
+_G.HTML.replace = _G.HTML.replace_element
+_G.HTML.clone_content = _G.HTML.clone
+_G.HTML.clone_document = _G.HTML.clone
 
 -- Function definitions for `Value` module
 local Value = _G.Value or {}

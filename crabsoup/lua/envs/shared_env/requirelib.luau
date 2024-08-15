@@ -71,14 +71,24 @@ local function compile_chunk(
 
     shared.baselib.debug(`Compiling chunk '{chunkname}'...`)
     local compiled_chunk = shared.baselib.compile_for_environment(chunk, allowed_globals)
+
+    local function result_helper(status, ...)
+        if status then
+            return ...
+        else
+            local msg = ...
+            error(msg)
+        end
+    end
     local load_chunk = function()
-        return shared.baselib.load_precompiled_chunk(compiled_chunk, chunkname)(chunkname)
+        local func = shared.baselib.load_precompiled_chunk(compiled_chunk, chunkname)
+        return func(chunkname)--result_helper(xpcall(func, debug.traceback, chunkname))
     end
 
     local require_func = create_require_func(require_env)
 
     return function(global_values: { [string]: any }?)
-        Log.debug(`Loading chunk '{chunkname}'...`)
+        shared.baselib.debug(`Loading chunk '{chunkname}'...`)
 
         local new_table = {}
         if global_values then
@@ -294,7 +304,7 @@ function Plugin.create_require_func(ctx: RequireEnv): (string) -> any
 
                 if not value then
                     value = true
-                    Log.warn(`Module '{name}' returned no value. This is likely not what you want.`)
+                    shared.baselib.warn(`Module '{name}' returned no value. This is likely not what you want.`)
                 end
                 loaded[name] = value
 

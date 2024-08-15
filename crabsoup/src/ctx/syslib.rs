@@ -151,12 +151,26 @@ pub fn create_sys_table(lua: &Lua) -> Result<Table> {
         })?,
     )?;
     table.raw_set(
-        "strip_extensions",
+        "strip_all_extensions",
         lua.create_function(|lua, path: LuaString| {
             let path = path.to_str()?;
             let path = AsRef::<Path>::as_ref(path);
             let str = path.file_name().unwrap().to_string_lossy();
-            lua.create_string(str.split('.').next().unwrap())
+            let joined = path.parent().unwrap().join(str.split('.').next().unwrap());
+            Ok(lua.create_string(joined.to_string_lossy().as_ref()))
+        })?,
+    )?;
+    table.raw_set(
+        "strip_extension",
+        lua.create_function(|lua, path: LuaString| {
+            let path = path.to_str()?;
+            let path = AsRef::<Path>::as_ref(path);
+            let str = path.file_name().unwrap().to_string_lossy();
+            let joined = path.parent().unwrap().join(
+                str.rsplit_once('.')
+                    .map_or_else(|| str.as_ref(), |(s, _)| s),
+            );
+            Ok(lua.create_string(joined.to_string_lossy().as_ref()))
         })?,
     )?;
     table.raw_set(

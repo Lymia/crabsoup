@@ -293,13 +293,18 @@ function Table.is_empty<K, V>(value: { [K]: V }): boolean
     return true
 end
 
-function Table.copy<K, V>(value: { [K]: V }): { [K]: V }
+local function deep_clone(value)
     local new = {}
     for k, v in value do
-        new[k] = value[k]
+        if type(v) == "table" then
+            new[k] = deep_clone(v)
+        else
+            new[k] = v
+        end
     end
     return new
 end
+Table.deep_clone = deep_clone
 
 -- Function definitions for `Value` module
 local Value = _G.Value or {}

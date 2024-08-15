@@ -60,9 +60,11 @@ do
         analyzer:set_deprecation("Sys.run_program_get_exit_code", "Process.try_run")
         analyzer:set_deprecation("Sys.get_program_output", "Process.run_output")
         analyzer:set_deprecation("Sys.random", "math.random")
+        analyzer:set_deprecation("Sys.strip_extensions", "Sys.strip_all_extensions")
 
         -- Table library
         analyzer:set_deprecation("Table.has_key", "table[x]")
+        analyzer:set_deprecation("Table.copy", "table.clone")
 
         -- TOML library
         analyzer:set_deprecation("TOML.unsafe_from_string", "pcall(TOML.from_string, x)")
