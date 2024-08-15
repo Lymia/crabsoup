@@ -45,7 +45,7 @@ pub fn create_analyze_table(lua: &Lua) -> Result<Table> {
                     let enabled_error = enabled!(Level::ERROR);
 
                     if (!enabled_warn && !value.is_error) || (!enabled_error && value.is_error) {
-                        break;
+                        continue;
                     }
 
                     let diagnostic = if value.is_error {
