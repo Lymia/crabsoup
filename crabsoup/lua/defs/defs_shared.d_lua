@@ -145,6 +145,8 @@ declare YAML: {
 type HeadingsTreeADT = { heading: NodeRef, children: {HeadingsTreeADT} }
 declare HTML: {
     parse: (text: string, encoding: string?) -> NodeRef,
+    parse_document: (text: string, encoding: string?) -> NodeRef,
+    parse_fragment: (text: string, encoding: string?) -> NodeRef,
     set_default_encoding: (string) -> (),
     to_string: (node: NodeRef, encoding: string?) -> string,
     pretty_print: (node: NodeRef, encoding: string?) -> string,

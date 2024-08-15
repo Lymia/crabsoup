@@ -1,6 +1,7 @@
 --!strict
 
 local template = require("crabsoup.template")
+local widget = require("crabsoup.widget")
 
 local module = {}
 
@@ -73,6 +74,9 @@ function module.process_page(config, source_path, target_path)
 
     -- Apply template
     template.apply_template(config.templates, globals)
+
+    -- Apply plugins
+    widget.run_widgets(config.widget_list, globals)
 
     return HTML.to_string(globals.page)
 end

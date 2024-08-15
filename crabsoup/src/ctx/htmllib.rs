@@ -107,6 +107,37 @@ fn check_class_name(name: &str) -> Result<()> {
     }
 }
 
+fn parse<'lua>(
+    lua: &'lua Lua,
+    text: LuaString<'lua>,
+    encoding: Option<LuaString<'lua>>,
+    force_document: bool,
+    force_fragment: bool,
+    active_encoding_ref: &Rc<RefCell<&'static Encoding>>,
+) -> Result<LuaNodeRef> {
+    assert!(!(force_document && force_fragment));
+
+    let encoding = match encoding {
+        None => *active_encoding_ref.borrow(),
+        Some(encoding) => decode_encoding(&encoding)?,
+    };
+    let (text, encoding, errors) = encoding.decode(text.as_bytes());
+    if errors {
+        encoding_warning(lua, encoding, false);
+    }
+    if (force_document || is_document(&text)) && !force_fragment {
+        Ok(LuaNodeRef(parse_html().one(&*text)))
+    } else {
+        let fragment = parse_fragment(qual_name("section"), vec![]).one(&*text);
+        let new_root = NodeRef::new_document();
+        assert_eq!(fragment.children().count(), 1);
+        for child in fragment.children().next().unwrap().children() {
+            new_root.append(child);
+        }
+        Ok(LuaNodeRef(new_root))
+    }
+}
+
 pub fn create_html_table(lua: &Lua) -> Result<Table> {
     let table = lua.create_table()?;
 
@@ -118,25 +149,25 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
         table.raw_set(
             "parse",
             lua.create_function(move |lua, (text, encoding): (LuaString, Option<LuaString>)| {
-                let encoding = match encoding {
-                    None => *active_encoding_ref.borrow(),
-                    Some(encoding) => decode_encoding(&encoding)?,
-                };
-                let (text, encoding, errors) = encoding.decode(text.as_bytes());
-                if errors {
-                    encoding_warning(lua, encoding, false);
-                }
-                if is_document(&text) {
-                    Ok(LuaNodeRef(parse_html().one(&*text)))
-                } else {
-                    let fragment = parse_fragment(qual_name("section"), vec![]).one(&*text);
-                    let new_root = NodeRef::new_document();
-                    assert_eq!(fragment.children().count(), 1);
-                    for child in fragment.children().next().unwrap().children() {
-                        new_root.append(child);
-                    }
-                    Ok(LuaNodeRef(new_root))
-                }
+                parse(lua, text, encoding, false, false, &active_encoding_ref)
+            })?,
+        )?;
+    }
+    {
+        let active_encoding_ref = active_encoding.clone();
+        table.raw_set(
+            "parse_document",
+            lua.create_function(move |lua, (text, encoding): (LuaString, Option<LuaString>)| {
+                parse(lua, text, encoding, true, false, &active_encoding_ref)
+            })?,
+        )?;
+    }
+    {
+        let active_encoding_ref = active_encoding.clone();
+        table.raw_set(
+            "parse_fragment",
+            lua.create_function(move |lua, (text, encoding): (LuaString, Option<LuaString>)| {
+                parse(lua, text, encoding, false, true, &active_encoding_ref)
             })?,
         )?;
     }

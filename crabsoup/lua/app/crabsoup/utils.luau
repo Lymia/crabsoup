@@ -40,7 +40,7 @@ local function matches_limits(pages, sections, path_regexes, include_subsections
     return function(raw_path)
         return Table.for_all(function(x)
             return Regex.match(raw_path, x)
-        end, table)
+        end, regexes)
     end
 end
 

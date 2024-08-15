@@ -20,7 +20,7 @@ type TemplateInfo = {
 local function parse_default_template(config): Template
     return {
         name = ".default",
-        data = HTML.parse(Sys.read_file(config.parsed.settings.default_template_file)),
+        data = HTML.parse_document(Sys.read_file(config.parsed.settings.default_template_file)),
         selector = table.concat(config.parsed.settings.default_content_selector, ","),
         action = utils.lookup_action(config.parsed.settings.default_content_action),
         filter = function(globals)
@@ -32,7 +32,7 @@ end
 local function parse_template(default_template: Template, name: string, value): Template
     local template = table.clone(default_template)
     template.name = name
-    template.data = HTML.parse(Sys.read_file(value.file))
+    template.data = HTML.parse_document(Sys.read_file(value.file))
     template.selector = table.concat(value.content_selector, ",")
     template.filter = utils.parse_limiting_options(value)
     return template
