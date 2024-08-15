@@ -224,11 +224,12 @@ declare Process: {
     get_stderr: (CompletedProcess) -> string,
 }
 declare Regex: {
-    match: (string, string) -> string,
+    match: (string, string) -> boolean,
     find_all: (string, string) -> {string},
     replace: (string, string, string) -> string,
     replace_all: (string, string, string) -> string,
     split: (string, string) -> {string},
+    escape: (string) -> string,
 }
 
 -- Plugin library

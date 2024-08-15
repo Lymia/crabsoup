@@ -30,7 +30,7 @@ local schema: Schema = {
         generator_mode = ty_boolean,
         complete_page_selector = ty_string,
         default_template_file = ty_string,
-        default_content_selector = ty_string,
+        default_content_selector = ty_string_list,
         default_content_action = ty_string,
         keep_doctype = ty_boolean,
         doctype = ty_string,
@@ -57,10 +57,31 @@ local schema: Schema = {
         __inner = {
             widget = ty_string,
             after = ty_string_list,
+            page = ty_string_list,
+            section = ty_string_list,
+            path_regex = ty_string_list,
+            exclude_page = ty_string_list,
+            exclude_section = ty_string_list,
+            exclude_path_regex = ty_string_list,
+            include_subsections = ty_boolean,
             __allow_unknown = true,
         },
     },
-
+    templates = {
+        __kind = "string_map",
+        __inner = {
+            file = ty_string,
+            content_selector = ty_string_list,
+            content_action = ty_string,
+            page = ty_string_list,
+            section = ty_string_list,
+            path_regex = ty_string_list,
+            exclude_page = ty_string_list,
+            exclude_section = ty_string_list,
+            exclude_path_regex = ty_string_list,
+            include_subsections = ty_boolean,
+        },
+    },
     preprocessors = ty_command_map,
     __allow_unknown = true, -- custom options are pretty common in configs, for use by scripts
 }

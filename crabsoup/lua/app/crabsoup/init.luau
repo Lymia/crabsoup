@@ -4,6 +4,7 @@ local config = require("crabsoup.config")
 local pages = require("crabsoup.pages")
 local plugins = require("crabsoup.plugins")
 local scheduler = require("crabsoup.scheduler")
+local template = require("crabsoup.template")
 local widget = require("crabsoup.widget")
 
 type Configuration = {
@@ -28,11 +29,16 @@ function module.init_from_configuration(toml_file): Configuration
     Log.info("Loading widgets...")
     local widget_list = widget.load_widgets(plugin_manager, config)
 
+    -- load templates
+    Log.info("Loading templates...")
+    local templates = template.parse_templates(config)
+
     -- return the full object
     return {
         raw = config,
         plugin_manager = plugin_manager,
         widget_list = widget_list,
+        templates = templates,
     }
 end
 

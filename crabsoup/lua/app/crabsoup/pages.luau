@@ -1,8 +1,19 @@
 --!strict
 
+local template = require("crabsoup.template")
+
 local module = {}
 
 local function build_globals(config, source_path, target_path): any
+    local relative_prefix = config.raw.parsed.settings.site_dir
+    while string.endswith(relative_prefix, "/") do
+        relative_prefix = string.sub(relative_prefix, 1, #relative_prefix - 1)
+    end
+    local len = #relative_prefix
+    relative_prefix ..= "/"
+
+    assert(string.startswith(source_path, relative_prefix), "Internal error: could not build relative_page_file")
+
     return {
         page = nil, -- Set by process_page
         page_file = source_path,
@@ -19,6 +30,9 @@ local function build_globals(config, source_path, target_path): any
         persistent_data = {}, -- Set by widget module
         global_data = {}, -- TODO
         soupault_pass = 0, -- TODO
+
+        -- Crabsoup extensions
+        relative_page_file = string.sub(source_path, #relative_prefix + 1),
         global_config = config.raw.raw,
         parsed_config = config.raw.parsed,
     }
@@ -53,9 +67,12 @@ function module.process_page(config, source_path, target_path)
         page = HTML.parse(Process.get_stdout(finished_command))
     end
 
-
+    -- Create globals
     local globals = build_globals(config, source_path, target_path)
     globals.page = page
+
+    -- Apply template
+    template.apply_template(config.templates, globals)
 
     return HTML.to_string(globals.page)
 end

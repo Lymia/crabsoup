@@ -41,6 +41,7 @@ local plugin_globals = {
     "soupault_pass",
 
     -- crabsoup extensions
+    "relative_page_file",
     "global_config",
     "checked_global_config",
 }

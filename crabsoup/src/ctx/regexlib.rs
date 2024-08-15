@@ -63,6 +63,10 @@ pub fn create_regex_table(lua: &Lua) -> Result<Table> {
             Ok(table)
         })?,
     )?;
+    table.raw_set(
+        "escape",
+        lua.create_function(|_, str: LuaString| Ok(regex::escape(str.to_str()?)))?,
+    )?;
 
     Ok(table)
 }
