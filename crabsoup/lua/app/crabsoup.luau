@@ -9,6 +9,7 @@ function module.main(args)
 
     local config = init.init_from_configuration("soupault.toml")
     print(Value.repr(config))
+    init.process_pages(config)
 end
 
 return module

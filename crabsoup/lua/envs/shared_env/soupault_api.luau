@@ -309,3 +309,21 @@ function Value.repr<T>(value: T): string
     local str = shared.repr(value)
     return str
 end
+
+function Value.repr_compact<T>(value: T): string
+    local str = shared.repr_compact(value)
+    return str
+end
+
+-- Function definitions for `Process` module
+local Process = _G.Process or {}
+_G.Process = Process
+
+function Process.wait_on_yield(value: Process): CompletedProcess
+    Process.is_completed(value) -- ignore value, this just checks several useful things
+    local result = coroutine.yield(value)
+    if typeof(result) ~= "CompletedProcess" then
+        error("`coroutine.yield` did not return CompletedProcess!?")
+    end
+    return result
+end

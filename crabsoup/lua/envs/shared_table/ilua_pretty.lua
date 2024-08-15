@@ -293,3 +293,7 @@ end
 function shared.repr(...)
     return format(true, ...)
 end
+
+function shared.repr_compact(...)
+    return format(false, ...)
+end

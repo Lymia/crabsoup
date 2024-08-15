@@ -8,7 +8,7 @@ use std::borrow::Cow;
 struct IsDocumentTreeSink {
     handle_id: usize,
     is_document: bool,
-    elements: Vec<(Namespace, LocalName)>,
+    elements: Vec<Option<(Namespace, LocalName)>>,
 }
 impl Default for IsDocumentTreeSink {
     fn default() -> Self {
@@ -40,6 +40,7 @@ impl TreeSink for IsDocumentTreeSink {
 
     fn elem_name<'a>(&'a self, h: &'a Self::Handle) -> ExpandedName<'a> {
         let t = &self.elements[*h];
+        let t = t.as_ref().unwrap();
         ExpandedName { ns: &t.0, local: &t.1 }
     }
 
@@ -49,15 +50,17 @@ impl TreeSink for IsDocumentTreeSink {
         _: Vec<Attribute>,
         _: ElementFlags,
     ) -> Self::Handle {
-        self.elements.push((name.ns, name.local));
+        self.elements.push(Some((name.ns, name.local)));
         self.handle()
     }
 
     fn create_comment(&mut self, _: StrTendril) -> Self::Handle {
+        self.elements.push(None);
         self.handle()
     }
 
     fn create_pi(&mut self, _: StrTendril, _: StrTendril) -> Self::Handle {
+        self.elements.push(None);
         self.handle()
     }
 

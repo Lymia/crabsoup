@@ -349,6 +349,12 @@ pub fn create_process_table(lua: &Lua) -> Result<Table> {
 
     // Completed process API
     table.raw_set(
+        "check_status",
+        lua.create_function(|_, process: LuaUserDataRef<LuaCompletedProcess>| {
+            process.check_status()
+        })?,
+    )?;
+    table.raw_set(
         "status",
         lua.create_function(|_, process: LuaUserDataRef<LuaCompletedProcess>| process.status())?,
     )?;

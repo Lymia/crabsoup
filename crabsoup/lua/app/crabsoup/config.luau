@@ -5,6 +5,8 @@ local module = {}
 local ty_boolean = newproxy()
 local ty_string = newproxy()
 local ty_string_list = newproxy()
+local ty_command = newproxy()
+local ty_command_map = newproxy()
 
 type SchemaType = typeof(ty_boolean) | typeof(ty_string) | typeof(ty_string_list)
 type Schema = {
@@ -58,11 +60,67 @@ local schema: Schema = {
             __allow_unknown = true,
         },
     },
+    preprocessors = ty_command_map,
     __allow_unknown = true, -- custom options are pretty common in configs, for use by scripts
 }
 
 local function schema_error(): never
     error("Type error in configuration!", 2)
+end
+
+local function process_string_list(key_name, value): { string }
+    if not value then
+        return {}
+    elseif type(value) == "string" then
+        return { value }
+    elseif type(value) == "table" then
+        for k, v in value do
+            if type(k) ~= "number" then
+                Log.error(`'{key_name}' should be a list, but it is a dictionary.`)
+                schema_error()
+            end
+            if type(v) ~= "string" then
+                Log.error(`'{key_name}' should be a list of strings, not of {type(v)}.`)
+                schema_error()
+            end
+        end
+
+        return value
+    else
+        Log.error(`'{key_name}' should be a list, but it is a {type(value)}.`)
+        return schema_error()
+    end
+end
+
+local function process_command(key_name, value): { shell: string } | { string } | nil
+    if not value then
+        return nil
+    elseif type(value) == "string" then
+        return { shell = value }
+    elseif type(value) == "table" then
+        return process_string_list(key_name, value)
+    else
+        Log.error(`'{key_name}' should be a list, but it is a {type(value)}.`)
+        return schema_error()
+    end
+end
+
+local function process_command_map(key_name, value): { [string]: { shell: string } | { string } | nil }
+    if not value then
+        return {}
+    elseif type(value) == "table" then
+        for k, v in value do
+            if type(k) ~= "string" then
+                Log.error(`'{key_name}' should be a dictionary, but it is a list.`)
+                schema_error()
+            end
+            value[k] = process_command(key_name, v)
+        end
+        return value
+    else
+        Log.error(`'{key_name}' should be a dictionary of commands, but it is a {type(value)}.`)
+        return schema_error()
+    end
 end
 
 local function check_schema(config_name, schema: Schema, table: any): any?
@@ -127,27 +185,11 @@ local function check_schema(config_name, schema: Schema, table: any): any?
                         schema_error()
                     end
                 elseif k_schema == ty_string_list then
-                    if v then
-                        if type(v) == "string" then
-                            table[k] = { table[k] }
-                        elseif type(v) == "table" then
-                            for k, v in v do
-                                if type(k) ~= "number" then
-                                    Log.error(`'{key_name}' should be a list, but it is a dictionary.`)
-                                    schema_error()
-                                end
-                                if type(v) ~= "string" then
-                                    Log.error(`'{key_name}' should be a list of strings, not of {type(v)}.`)
-                                    schema_error()
-                                end
-                            end
-                        else
-                            Log.error(`'{key_name}' should be a list, but it is a {type(v)}.`)
-                            schema_error()
-                        end
-                    else
-                        table[k] = {}
-                    end
+                    table[k] = process_string_list(key_name, v)
+                elseif k_schema == ty_command then
+                    table[k] = process_command(key_name, v)
+                elseif k_schema == ty_command_map then
+                    table[k] = process_command_map(key_name, v)
                 else
                     error("unreachable?")
                 end
@@ -170,6 +212,8 @@ local function check_schema(config_name, schema: Schema, table: any): any?
                     check_schema(`{config_name}.{k}`, v, table[k])
                 end
             elseif v == ty_string_list then
+                table[k] = {}
+            elseif v == ty_command_map then
                 table[k] = {}
             end
         end
@@ -208,6 +252,11 @@ local function check_deprecations(config)
     end
     if config.settings.caching then
         Log.warn("`settings.caching` option is deprecated: Caching is not supported in crabsoup.")
+    end
+    for k, _ in config.preprocessors do
+        if not table.find(config.settings.page_file_extensions, k) then
+            Log.warn(`Preprocessor is defined for extension '.{k}', but it is not found in page_file_extensions.`)
+        end
     end
 end
 

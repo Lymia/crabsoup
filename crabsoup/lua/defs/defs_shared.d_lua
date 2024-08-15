@@ -132,6 +132,7 @@ declare TOML: {
 }
 declare Value: {
     repr: <T>(value: T) -> string,
+    repr_compact: <T>(value: T) -> string,
     is_int: <T>(value: T) -> boolean,
     is_list: <T>(value: T) -> boolean,
 }
@@ -216,6 +217,8 @@ declare Process: {
     spawn: (CommandInfo) -> Process,
     is_completed: (Process) -> boolean,
     wait_on: (Process) -> CompletedProcess,
+    wait_on_yield: (Process) -> CompletedProcess,
+    check_status: (CompletedProcess) -> (),
     status: (CompletedProcess) -> number,
     get_stdout: (CompletedProcess) -> string,
     get_stderr: (CompletedProcess) -> string,

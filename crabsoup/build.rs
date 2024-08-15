@@ -53,7 +53,7 @@ pub fn main() -> Result<()> {
             std::fs::create_dir_all(parent)?;
             std::fs::write(
                 &output,
-                compile_script(script.as_bytes(), !suffix.starts_with("envs/")),
+                compile_script(script.as_bytes(), !suffix.starts_with("app/")),
             )?;
 
             all_paths.push((str_path, output.to_string_lossy().to_string()));
