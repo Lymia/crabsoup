@@ -60,6 +60,7 @@ local schema: Schema = {
             __allow_unknown = true,
         },
     },
+
     preprocessors = ty_command_map,
     __allow_unknown = true, -- custom options are pretty common in configs, for use by scripts
 }

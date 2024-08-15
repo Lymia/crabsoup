@@ -1,3 +1,5 @@
+--!strict
+
 local config = require("crabsoup.config")
 local pages = require("crabsoup.pages")
 local plugins = require("crabsoup.plugins")

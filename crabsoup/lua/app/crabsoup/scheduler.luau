@@ -5,7 +5,9 @@ local module = {}
 function module.wait_on_processes(processes: { { name: string, thread: thread, resume_with: any? } })
     local deferred = {}
 
-    table.sort(processes, function(a, b) return a.name > b.name end)
+    table.sort(processes, function(a, b)
+        return a.name > b.name
+    end)
 
     while #processes ~= 0 do
         -- resume the first plausible thread
@@ -52,14 +54,14 @@ function module.wait_on_processes(processes: { { name: string, thread: thread, r
             for i = #deferred, 1, -1 do
                 local obj = deferred[i]
                 if obj.proc and Process.is_completed(obj.proc) then
-                    Log.trace(`Resuming deferred page '{active.name}'`)
+                    Log.trace(`Resuming deferred page '{obj.obj.name}'`)
                     obj.obj.resume_with = Process.wait_on(obj.proc)
                     table.insert(processes, obj.obj)
                     table.remove(deferred, i)
                 end
             end
 
-            -- wait if too many processes are currently deferred or no threads are ready to run
+            -- wait if too many CPU-consuming processes are currently deferred or no threads are ready to run
             local cpu_task_count = 0
             for _, v in deferred do
                 if v.proc then
@@ -71,7 +73,7 @@ function module.wait_on_processes(processes: { { name: string, thread: thread, r
                 break
             end
 
-            Sys.sleep(0.001)
+            Sys.sleep(0.0001)
         end
     end
 end

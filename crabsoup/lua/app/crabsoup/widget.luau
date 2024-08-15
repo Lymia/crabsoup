@@ -1,5 +1,7 @@
 --!strict
 
+local utils = require("crabsoup.utils")
+
 local module = {}
 
 type Globals = { [string]: any }
@@ -7,7 +9,7 @@ type WidgetConfig = {
     name: string,
     plugin: string,
     after: { string },
-    selection_functions: { (globals: Globals) -> boolean },
+    filter: (globals: Globals) -> boolean,
     widget_config: any,
 }
 type WidgetsConfig = { WidgetConfig }
@@ -27,7 +29,7 @@ local function parse_widgets(config): WidgetsConfig
             name = k,
             plugin = v.widget,
             after = v.after,
-            selection_functions = {},
+            filter = utils.parse_limiting_options(v),
             widget_config = config.raw.widgets[k],
         }
         table.insert(list, widget)
@@ -59,9 +61,7 @@ local function resolve_widgets(plugins, widgets: WidgetsConfig): { Widget }
                     local widget = {
                         name = v.name,
                         plugin = plugins:resolve(v.plugin),
-                        filter = function(globals: Globals)
-                            return true
-                        end,
+                        filter = v.filter,
                         config = v.widget_config,
                         persistent_data = {},
                     }
@@ -79,6 +79,8 @@ function module.load_widgets(plugins, config): { Widget }
 end
 
 local function run_widget(widget: Widget, globals: Globals)
+    Log.trace(`Running widget '{widget.name}' for page '{globals.page_file}'`)
+
     local pass_globals = table.clone(globals)
     pass_globals.config = widget.config
     pass_globals.persistent_data = widget.persistent_data
