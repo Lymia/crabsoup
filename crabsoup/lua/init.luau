@@ -21,7 +21,7 @@ local function deep_copy(env)
 end
 
 local function call_env_chunks(env, ...)
-    shared.baselib.debug(`Loading Lua environment: {env}`)
+    shared.baselib.trace(`Loading Lua environment: {env}`)
 
     local dir = `envs/{env}/`
     local files = {}
@@ -34,7 +34,7 @@ local function call_env_chunks(env, ...)
     table.sort(files)
     for _, name in files do
         local chunk = shared.sources[name]
-        shared.baselib.debug(`- Loading runtime sources: @<rt>/{name}`)
+        shared.baselib.trace(`- Loading runtime sources: @<rt>/{name}`)
         local func = shared.baselib.loadstring_rt(chunk, `@<rt>/{name}`)
         func(...)
     end

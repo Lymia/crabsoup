@@ -8,10 +8,16 @@ use serde::Serialize;
 struct Cli {
     /// Outputs more debugging output.
     ///
-    /// One use of this argument turns on `info`, and a second use turns on `debug`, a third use
-    /// turns on `trace`, and a fourth use enables debugging output for underlying crates.
+    /// One use of this argument turns on `debug`, a second use turns on `trace`, and a third use
+    /// enables debugging output for underlying crates.
     #[arg(short, long, action = clap::ArgAction::Count)]
     verbose: u8,
+
+    /// Outputs less debugging output.
+    ///
+    /// One use of this argument disables `info`, and a second use disables `warn`.
+    #[arg(short, long, action = clap::ArgAction::Count)]
+    quiet: u8,
 
     #[command(subcommand)]
     command: Commands,
@@ -37,14 +43,15 @@ struct BuildArgs {}
 pub fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    let env_spec = match cli.verbose {
+    let env_spec = match (cli.verbose, cli.quiet) {
         // rustyline is never enabled, because holy shit, the REPL is unusable
-        0 => "warn,rustyline=info,html5ever=info,selectors=info",
-        1 => "info,rustyline=info,html5ever=info,selectors=info",
-        2 => "debug,rustyline=info,html5ever=info,selectors=info",
-        3 => "trace,rustyline=info,html5ever=info,selectors=info",
-        4 => "trace,rustyline=info,html5ever=debug,selectors=debug",
-        _ => "trace,rustyline=info",
+        (0, 2) => "error",
+        (0, 1) => "warn",
+        (0, 0) => "info",
+        (1, 0) => "debug,rustyline=info,html5ever=info,selectors=info",
+        (2, 0) => "trace,rustyline=info,html5ever=info,selectors=info",
+        (3, 0) => "trace,rustyline=info,html5ever=debug,selectors=debug",
+        _ => panic!("Wrong number of -v and -q?"), // TODO: Better error
     };
     tracing_subscriber::FmtSubscriber::builder()
         .with_env_filter(env_spec)

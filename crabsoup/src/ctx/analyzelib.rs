@@ -9,6 +9,7 @@ use mlua::{
     prelude::{LuaFunction, LuaString},
     Error, Lua, Result, Table, UserData, UserDataFields, UserDataMethods, UserDataRef,
 };
+use tracing::{enabled, Level};
 
 pub fn create_analyze_table(lua: &Lua) -> Result<Table> {
     let table = lua.create_table()?;
@@ -40,6 +41,13 @@ pub fn create_analyze_table(lua: &Lua) -> Result<Table> {
                 let writer = StandardStream::stderr(ColorChoice::Always);
                 let config = term::Config::default();
                 for value in &result {
+                    let enabled_warn = enabled!(Level::WARN);
+                    let enabled_error = enabled!(Level::ERROR);
+
+                    if (!enabled_warn && !value.is_error) || (!enabled_error && value.is_error) {
+                        break;
+                    }
+
                     let diagnostic = if value.is_error {
                         Diagnostic::error()
                     } else {

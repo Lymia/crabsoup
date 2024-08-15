@@ -60,7 +60,7 @@ function module.process_pages(config: Configuration)
                 table.insert(thread_queue, {
                     name = path,
                     thread = coroutine.create(function()
-                        Log.info(`Process page: '{path}' -> '{target_path}'`)
+                        Log.debug(`Process page: '{path}' -> '{target_path}'`)
                         Sys.write_file(target_path, pages.process_page(config, path, target_path))
                     end),
                 })

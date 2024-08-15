@@ -111,7 +111,7 @@ local function compile_preloaded_chunk(
         return shared.baselib.loadstring_rt(chunk, chunkname)(chunkname)
     end
     return function(global_values: { [string]: any }?)
-        shared.baselib.debug(`Loading builtin chunk '{chunkname}'...`)
+        shared.baselib.trace(`Loading builtin chunk '{chunkname}'...`)
 
         if global_values then
             for _ in global_values do
