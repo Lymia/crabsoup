@@ -11,7 +11,9 @@ local function nyi(name)
 end
 
 --
--- Include plugin
+-- `include` plugin
+--
+-- params: file, selector, parse, action
 --
 function plugins.include(globals)
     -- Check parameters
@@ -40,7 +42,29 @@ function plugins.include(globals)
     if #selection == 1 then
         action(selection[1], data)
     else
-        Table.iter_values(function(x) action(x, HTML.clone(data)) end, selection)
+        Table.iter_values(function(x)
+            action(x, HTML.clone(data))
+        end, selection)
+    end
+end
+
+--
+-- `delete_element` plugin
+--
+-- params: selector, when_no_child
+--
+function plugins.delete_element(globals)
+    -- Insert the template into every matching selector
+    local selector = utils.parse_toml_selector(globals.config.selector)
+    local no_child_selector = utils.parse_toml_selector(globals.config.when_no_child)
+    if globals.config.when_no_child then
+        Table.iter_values(function(x)
+            if not HTML.select(x, no_child_selector) then
+                HTML.delete(x)
+            end
+        end, HTML.select(globals.page, selector))
+    else
+        Table.iter_values(HTML.delete, HTML.select(globals.page, selector))
     end
 end
 
@@ -51,7 +75,6 @@ nyi("title")
 nyi("footnotes")
 nyi("toc")
 nyi("breadcrumbs")
-nyi("delete_element")
 nyi("wrap")
 nyi("relative_links")
 nyi("absolute_links")
