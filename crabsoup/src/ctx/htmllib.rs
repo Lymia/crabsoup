@@ -119,6 +119,7 @@ fn parse<'lua>(
     encoding: Option<LuaString<'lua>>,
     force_document: bool,
     force_fragment: bool,
+    fragment_root: &str,
     active_encoding_ref: &Rc<RefCell<&'static Encoding>>,
 ) -> Result<LuaNodeRef> {
     assert!(!(force_document && force_fragment));
@@ -134,7 +135,7 @@ fn parse<'lua>(
     if (force_document || is_document(&text)) && !force_fragment {
         Ok(LuaNodeRef(parse_html().one(&*text)))
     } else {
-        let fragment = parse_fragment(qual_name("section"), vec![]).one(&*text);
+        let fragment = parse_fragment(qual_name(fragment_root), vec![]).one(&*text);
         let new_root = NodeRef::new_document();
         assert_eq!(fragment.children().count(), 1);
         for child in fragment.children().next().unwrap().children() {
@@ -155,7 +156,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
         table.raw_set(
             "parse",
             lua.create_function(move |lua, (text, encoding): (LuaString, Option<LuaString>)| {
-                parse(lua, text, encoding, false, false, &active_encoding_ref)
+                parse(lua, text, encoding, false, false, "main", &active_encoding_ref)
             })?,
         )?;
     }
@@ -164,7 +165,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
         table.raw_set(
             "parse_document",
             lua.create_function(move |lua, (text, encoding): (LuaString, Option<LuaString>)| {
-                parse(lua, text, encoding, true, false, &active_encoding_ref)
+                parse(lua, text, encoding, true, false, "main", &active_encoding_ref)
             })?,
         )?;
     }
@@ -172,9 +173,11 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
         let active_encoding_ref = active_encoding.clone();
         table.raw_set(
             "parse_fragment",
-            lua.create_function(move |lua, (text, encoding): (LuaString, Option<LuaString>)| {
-                parse(lua, text, encoding, false, true, &active_encoding_ref)
-            })?,
+            lua.create_function(
+                move |lua, (text, tag, encoding): (LuaString, LuaString, Option<LuaString>)| {
+                    parse(lua, text, encoding, false, true, tag.to_str()?, &active_encoding_ref)
+                },
+            )?,
         )?;
     }
     {
