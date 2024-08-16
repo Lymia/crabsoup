@@ -79,7 +79,7 @@ function module.load_widgets(plugins, config): { Widget }
 end
 
 local function run_widget(widget: Widget, globals: Globals)
-    Log.trace(`Running widget '{widget.name}' for page '{globals.page_file}' = {widget.plugin}`)
+    Log.trace(`Running widget '{widget.name}' for page '{globals.page_file}'`)
 
     local pass_globals = table.clone(globals)
     pass_globals.config = Table.deep_clone(widget.config) -- some plugins modify this, so unfreeze it
@@ -88,7 +88,6 @@ local function run_widget(widget: Widget, globals: Globals)
     if widget.filter(pass_globals) then
         local thread = widget.plugin(pass_globals)
         while true do
-            print(`resume thread: {Value.repr(widget)}`)
             local success, r = coroutine.resume(thread)
             if success then
                 local status = coroutine.status(thread)

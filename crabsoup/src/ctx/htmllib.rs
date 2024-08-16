@@ -58,7 +58,13 @@ fn html_to_string<'lua>(
     node.serialize(&mut Cursor::new(&mut data))?;
     let rust_str = std::str::from_utf8(&data)?;
     let processed = if pretty_print {
-        Cow::Owned(crate::html::pretty_print(rust_str).map_err(Error::runtime)?)
+        match crate::html::pretty_print(rust_str) {
+            Ok(value) => Cow::Owned(value),
+            Err(_) => {
+                warn!("Failed to pretty print HTML document.");
+                Cow::Borrowed(rust_str)
+            }
+        }
     } else {
         Cow::Borrowed(rust_str)
     };
@@ -215,8 +221,9 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
                     };
 
                     let mut data = Vec::new();
+                    let mut cursor = Cursor::new(&mut data);
                     for child in node_ref.0.children() {
-                        child.serialize(&mut Cursor::new(&mut data))?;
+                        child.serialize(&mut cursor)?;
                     }
                     let rust_str = std::str::from_utf8(&data)?;
 

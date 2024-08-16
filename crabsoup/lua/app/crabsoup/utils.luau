@@ -58,4 +58,28 @@ function module.parse_limiting_options(value)
     end
 end
 
+function module.env_from_globals(cmd, globals)
+    cmd.env = {
+        PAGE_FILE = globals.page_file,
+        TARGET_DIR = globals.target_dir,
+        TARGET_FILE = globals.target_file,
+        SITE_DIR = globals.site_dir,
+        BUILD_DIR = globals.build_dir,
+        RELATIVE_PAGE_FILE = globals.relative_page_file,
+        PAGE_URL = globals.page_url,
+    }
+end
+
+function module.parse_toml_selector(value): string
+    if not value then
+        return "#xx:not(#xx)"
+    elseif type(value) == "table" then
+        return table.concat(value, ",")
+    elseif type(value) == "string" then
+        return value
+    else
+        return error("`selector` is neither a list of strings nor a string")
+    end
+end
+
 return module

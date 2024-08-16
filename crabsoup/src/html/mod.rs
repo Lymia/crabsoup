@@ -1,6 +1,6 @@
 use anyhow::Result;
 use kuchikiki::NodeRef;
-use tidier::{FormatOptions, Indent, LineEnding};
+use tidier::{Doc, FormatOptions, Indent, LineEnding};
 
 pub mod extract_text;
 pub mod is_document;
@@ -14,7 +14,9 @@ pub fn pretty_print(text: &str) -> Result<String> {
         join_styles: true,
         ..FormatOptions::DEFAULT
     };
-    Ok(tidier::format(text, false, &opts)?)
+    let doc = Doc::new(text, false)?;
+    doc.repair()?;
+    Ok(doc.format(&opts)?)
 }
 
 pub fn clone_node(node: &NodeRef) -> NodeRef {

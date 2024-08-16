@@ -82,13 +82,13 @@ local function compile_chunk(
     end
     local load_chunk = function()
         local func = shared.baselib.load_precompiled_chunk(compiled_chunk, chunkname)
-        return func(chunkname)--result_helper(xpcall(func, debug.traceback, chunkname))
+        return result_helper(xpcall(func, debug.traceback, chunkname))
     end
 
     local require_func = create_require_func(require_env)
 
     return function(global_values: { [string]: any }?)
-        shared.baselib.debug(`Loading chunk '{chunkname}'...`)
+        shared.baselib.trace(`Loading chunk '{chunkname}'...`)
 
         local new_table = {}
         if global_values then

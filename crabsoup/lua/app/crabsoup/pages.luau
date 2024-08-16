@@ -1,6 +1,7 @@
 --!strict
 
 local template = require("crabsoup.template")
+local utils = require("crabsoup.utils")
 local widget = require("crabsoup.widget")
 
 local module = {}
@@ -44,6 +45,10 @@ function module.process_page(config, source_path, target_path)
     local extension = Sys.get_extension(source_path)
     local processor = config.raw.parsed.preprocessors[extension]
 
+    -- Create globals
+    local globals = build_globals(config, source_path, target_path)
+
+    -- Load and preprocess page
     local page
     if not processor then
         if not warned_extensions[extension] and extension ~= "htm" and extension ~= "html" then
@@ -61,15 +66,13 @@ function module.process_page(config, source_path, target_path)
             Log.trace(`Run preprocessor: {Value.repr_compact(raw_cmd)}`)
         end
         raw_cmd.capture_stdout = true
+        utils.env_from_globals(raw_cmd, globals)
 
         local command = Process.spawn(raw_cmd)
         local finished_command = Process.wait_on_yield(command)
         Process.check_status(finished_command)
         page = HTML.parse(Process.get_stdout(finished_command))
     end
-
-    -- Create globals
-    local globals = build_globals(config, source_path, target_path)
     globals.page = page
 
     -- Apply template
@@ -78,7 +81,7 @@ function module.process_page(config, source_path, target_path)
     -- Apply plugins
     widget.run_widgets(config.widget_list, globals)
 
-    return HTML.to_string(globals.page)
+    return HTML.pretty_print(globals.page)
 end
 
 return module
