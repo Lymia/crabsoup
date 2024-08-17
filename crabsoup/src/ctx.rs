@@ -2,17 +2,7 @@ use mlua::{
     prelude::LuaFunction, ChunkMode, Lua, LuaOptions, LuaSerdeExt, Result, StdLib, Table, Thread,
 };
 use serde::Serialize;
-
-mod analyzelib;
-mod baselib;
-mod codeclib;
-mod datelib;
-mod digestlib;
-mod htmllib;
-mod processlib;
-mod regexlib;
-mod stringlib;
-mod syslib;
+use crate::libs::{analyze, base, codec, date, digest, html, process, regex, string, sys};
 
 const SHARED_TABLE_LOC: &str = "crabsoup-shared";
 
@@ -31,16 +21,16 @@ impl CrabsoupLuaContext {
             // Create the shared table
             let shared_table = lua.create_table()?;
             lua.set_named_registry_value(SHARED_TABLE_LOC, &shared_table)?;
-            shared_table.set("analyze", analyzelib::create_analyze_table(&lua)?)?;
-            shared_table.set("baselib", baselib::create_base_table(&lua)?)?;
-            shared_table.set("codecs", codeclib::create_codec_table(&lua)?)?;
-            shared_table.set("Date", datelib::create_date_table(&lua)?)?;
-            shared_table.set("Digest", digestlib::create_digest_table(&lua)?)?;
-            shared_table.set("HTML", htmllib::create_html_table(&lua)?)?;
-            shared_table.set("Process", processlib::create_process_table(&lua)?)?;
-            shared_table.set("Regex", regexlib::create_regex_table(&lua)?)?;
-            shared_table.set("String", stringlib::create_string_table(&lua)?)?;
-            shared_table.set("Sys", syslib::create_sys_table(&lua)?)?;
+            shared_table.set("analyze", analyze::create_analyze_table(&lua)?)?;
+            shared_table.set("baselib", base::create_base_table(&lua)?)?;
+            shared_table.set("codecs", codec::create_codec_table(&lua)?)?;
+            shared_table.set("Date", date::create_date_table(&lua)?)?;
+            shared_table.set("Digest", digest::create_digest_table(&lua)?)?;
+            shared_table.set("HTML", html::create_html_table(&lua)?)?;
+            shared_table.set("Process", process::create_process_table(&lua)?)?;
+            shared_table.set("Regex", regex::create_regex_table(&lua)?)?;
+            shared_table.set("String", string::create_string_table(&lua)?)?;
+            shared_table.set("Sys", sys::create_sys_table(&lua)?)?;
 
             // Create the lua data table
             let sources = load_lua_sources();
