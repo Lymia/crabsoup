@@ -21,7 +21,7 @@ local function deep_copy(env)
 end
 
 local function startswith(str: string, start: string): boolean
-   return start == "" or string.sub(str, 1, #start) == start
+    return start == "" or string.sub(str, 1, #start) == start
 end
 local function call_env_chunks(env, ...)
     shared.baselib.trace(`Loading Lua environment: {env}`)

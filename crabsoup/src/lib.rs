@@ -2,7 +2,7 @@
 pub mod cli_impl;
 mod ctx;
 mod html;
-mod wyhash;
 mod libs;
+mod wyhash;
 
 pub use ctx::CrabsoupLuaContext;
