@@ -2,7 +2,7 @@
 
 local module = {}
 
-type LoadedPlugin = (globals: { [string]: any }) -> thread
+type LoadedPlugin = (globals: { [string]: any }, name_tag: string?) -> thread
 type PluginManager = typeof(setmetatable({} :: PluginManager_fields, {} :: PluginManager_mt))
 type PluginManager_fields = {
     require_ctx: RequireEnv,
@@ -44,9 +44,10 @@ local plugin_globals = {
     "relative_page_file",
     "global_config",
     "parsed_config",
+    "widget_name",
 }
 
-local builtin_modules = { "builtin_plugins.common" }
+local builtin_modules = { "plugins.simple", "plugins.toc" }
 
 function module.create_plugin_manager(lib_path)
     local require_ctx = Plugin.create_require_env(lib_path, Plugin.env_plugin)

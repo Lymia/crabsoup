@@ -18,3 +18,4 @@ declare soupault_pass: number
 declare relative_page_file: string
 declare global_config: any
 declare parsed_config: any
+declare widget_name: string

@@ -20,6 +20,9 @@ local function deep_copy(env)
     end
 end
 
+local function startswith(str: string, start: string): boolean
+   return start == "" or string.sub(str, 1, #start) == start
+end
 local function call_env_chunks(env, ...)
     shared.baselib.trace(`Loading Lua environment: {env}`)
 
@@ -34,8 +37,16 @@ local function call_env_chunks(env, ...)
     table.sort(files)
     for _, name in files do
         local chunk = shared.sources[name]
-        shared.baselib.trace(`- Loading runtime sources: @<rt>/{name}`)
-        local func = shared.baselib.loadstring_rt(chunk, `@<rt>/{name}`)
+
+        local chunkname
+        if startswith(name, "envs/") then
+            chunkname = `@<env>/{string.sub(name, 6)}`
+        else
+            chunkname = `@<rt>/{name}`
+        end
+
+        shared.baselib.trace(`- Loading runtime sources: {chunkname}`)
+        local func = shared.baselib.loadstring_rt(chunk, chunkname)
         func(...)
     end
 end

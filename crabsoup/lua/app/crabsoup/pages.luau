@@ -37,6 +37,7 @@ local function build_globals(config, source_path, target_path): any
         relative_page_file = string.sub(source_path, #relative_prefix + 1),
         global_config = config.raw.raw,
         parsed_config = config.raw.parsed,
+        widget_name = nil, -- Set by widget module
     }
 end
 

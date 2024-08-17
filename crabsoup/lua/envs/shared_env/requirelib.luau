@@ -80,15 +80,21 @@ local function compile_chunk(
             error(msg)
         end
     end
-    local load_chunk = function()
-        local func = shared.baselib.load_precompiled_chunk(compiled_chunk, chunkname)
-        return result_helper(xpcall(func, debug.traceback, chunkname))
-    end
 
     local require_func = create_require_func(require_env)
 
-    return function(global_values: { [string]: any }?)
-        shared.baselib.trace(`Loading chunk '{chunkname}'...`)
+    return function(global_values: { [string]: any }?, name_tag: string?)
+        local full_chunkname = chunkname
+        if name_tag then
+            full_chunkname ..= `#{Sys.strip_extension(name_tag)}`
+        end
+
+        shared.baselib.trace(`Loading chunk '{full_chunkname}'...`)
+
+        local load_chunk = function()
+            local func = shared.baselib.load_precompiled_chunk(compiled_chunk, full_chunkname)
+            return result_helper(xpcall(func, debug.traceback, full_chunkname))
+        end
 
         local new_table = {}
         if global_values then
@@ -142,7 +148,7 @@ function Plugin.load_plugin(
     name: string,
     source: string,
     allowed_globals: { string }?
-): (globals: { [string]: any }?) -> thread
+): (globals: { [string]: any }?, name_tag: string?) -> thread
     local parsed_globals = {}
     if allowed_globals then
         for k, v in allowed_globals do
@@ -264,7 +270,15 @@ local function try_resolve(
 
     chunk, chunkname, new_fragment = try_resolve_compiled_path(mt.compiled_chunks_path, path_fragment)
     if chunk and chunkname then
-        return compile_preloaded_chunk(require_env, `@<rt>/{chunkname}`, chunk)
+        local full_name
+        if string.startswith(chunkname, "app/") then
+            full_name = `@<app>/{string.sub(chunkname, 5)}`
+        elseif string.startswith(chunkname, "envs/") then
+            full_name = `@<env>/{string.sub(chunkname, 6)}`
+        else
+            full_name = `@<rt>/{chunkname}`
+        end
+        return compile_preloaded_chunk(require_env, full_name, chunk)
     end
     assert(new_fragment)
     fragment ..= new_fragment

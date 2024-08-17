@@ -631,6 +631,20 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
         lua.create_function(|_, elem: UserDataRef<LuaNodeRef>| Ok(elem.0 .0.as_text().is_some()))?,
     )?;
 
+    // Entity encoding & decoding
+    table.raw_set(
+        "decode_entities",
+        lua.create_function(|lua, html: LuaString| {
+            Ok(lua.create_string(html_escape::decode_html_entities(html.to_str()?).as_ref())?)
+        })?,
+    )?;
+    table.raw_set(
+        "encode_entities",
+        lua.create_function(|lua, html: LuaString| {
+            Ok(lua.create_string(html_escape::encode_text(html.to_str()?).as_ref())?)
+        })?,
+    )?;
+
     Ok(table)
 }
 

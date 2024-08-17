@@ -80,9 +80,12 @@ pub fn create_base_table(lua: &Lua) -> Result<Table> {
         if let Some(debug) = lua.inspect_stack(1) {
             if let Some(source) = debug.source().source {
                 if source.starts_with("@") {
+                    let source = source.strip_prefix("@").unwrap_or(&source);
                     let source = source.strip_suffix(".lua").unwrap_or(&source);
                     let source = source.strip_suffix(".luau").unwrap_or(&source);
-                    Ok(source.to_string().into())
+                    let source = source.replace(".lua#", "#");
+                    let source = source.replace(".luau#", "#");
+                    Ok(source.into())
                 } else {
                     Ok("<loadstring>".into())
                 }

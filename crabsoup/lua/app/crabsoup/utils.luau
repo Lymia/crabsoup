@@ -78,7 +78,27 @@ function module.parse_toml_selector(value): string
     elseif type(value) == "string" then
         return value
     else
-        return error("`selector` is neither a list of strings nor a string")
+        return error("'selector' is neither a list of strings nor a string")
+    end
+end
+
+function module.parse_command(value): { shell: string } | { string } | nil
+    if not value then
+        return nil
+    elseif type(value) == "string" then
+        return { shell = value }
+    elseif type(value) == "table" then
+        for k, v in value do
+            if type(k) ~= "number" then
+                return error("'command' should be a list, not a dictionary")
+            end
+            if type(v) ~= "string" then
+                return error("'command' should be a list of strings")
+            end
+        end
+        return value
+    else
+        return error("'command' is neither a list of strings nor a string")
     end
 end
 

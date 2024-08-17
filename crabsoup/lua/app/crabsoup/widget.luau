@@ -16,7 +16,7 @@ type WidgetsConfig = { WidgetConfig }
 
 type Widget = {
     name: string,
-    plugin: (globals: Globals) -> thread,
+    plugin: (globals: Globals, name_tag: string?) -> thread,
     filter: (globals: Globals) -> boolean,
     config: any,
     persistent_data: any,
@@ -84,15 +84,20 @@ local function run_widget(widget: Widget, globals: Globals)
     local pass_globals = table.clone(globals)
     pass_globals.config = Table.deep_clone(widget.config) -- some plugins modify this, so unfreeze it
     pass_globals.persistent_data = widget.persistent_data
+    pass_globals.widget_name = widget.name
 
+    local values = {}
     if widget.filter(pass_globals) then
-        local thread = widget.plugin(pass_globals)
+        local thread = widget.plugin(pass_globals, globals.relative_page_file)
         while true do
-            local success, r = coroutine.resume(thread)
+            local success, r = coroutine.resume(thread, unpack(values))
             if success then
                 local status = coroutine.status(thread)
                 if status == "suspended" then
-                    coroutine.yield(r)
+                    values = { coroutine.yield(r) }
+                    if values[1] and typeof(values[1]) == "PluginInstruction" and values[1]:is_exit() then
+                        break
+                    end
                 elseif status == "dead" then
                     globals.page = pass_globals.page
                     break

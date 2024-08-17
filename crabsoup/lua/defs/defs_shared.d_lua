@@ -201,6 +201,8 @@ declare HTML: {
     is_element: (NodeRef) -> boolean,
     is_text: (NodeRef) -> boolean,
     clone: (NodeRef) -> NodeRef,
+    decode_entities: (string) -> string,
+    encode_entities: (string) -> string,
 }
 
 -- Process library
@@ -247,7 +249,7 @@ declare Plugin: {
     env_standalone: Environment,
     env_plugin: Environment,
     create_require_env: (sources_path: string, env: Environment) -> RequireEnv,
-    load_plugin: (ctx: RequireEnv, name: string, source: string, allowed_globals: { string }?) -> (globals: { [string]: any }?) -> thread,
+    load_plugin: (ctx: RequireEnv, name: string, source: string, allowed_globals: { string }?) -> (globals: { [string]: any }?, name_tag: string?) -> thread,
     require_add_preload: (ctx: RequireEnv, name: string, value: any) -> (),
     require_set_strict: (ctx: RequireEnv) -> (),
     create_require_func: (ctx: RequireEnv) -> (name: string) -> any,
