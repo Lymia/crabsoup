@@ -153,6 +153,11 @@ function Plugin.load_plugin(
     source: string,
     allowed_globals: { string }?
 ): (globals: { [string]: any }?, name_tag: string?) -> thread
+    local mt = retrieve_metadata(ctx)
+    for _ in mt.loading do
+        return error("Cannot use load_plugin while loading a module.")
+    end
+
     local parsed_globals = {}
     if allowed_globals then
         for k, v in allowed_globals do
@@ -199,6 +204,7 @@ function Plugin.create_require_env(sources_path: string, env: Environment): Requ
     mt.sources_path = split_path(sources_path)
     mt.compiled_chunks_path = {}
     mt.preload = {}
+    mt.loading = {}
     mt.strict = false
     return shared.baselib.raw_setmetatable(newproxy(), mt)
 end
@@ -220,15 +226,15 @@ end
 
 local function process_path(path: string): string
     if string.find(path, "/") or string.find(path, "\\") then
-        return error(`Module path should not contain slashes: {path}`, 3)
+        return error(`Module path should not contain slashes: {path}`)
     end
     if string.find(path, "%.%.") then
-        return error(`Module path should not contain double dots: {path}`, 3)
+        return error(`Module path should not contain double dots: {path}`)
     end
 
     local rep_path = string.gsub(path, "%.", "/")
     if string.startswith(rep_path, "/") or string.endswith(rep_path, "/") then
-        return error(`Module path should not start or end with a dot: {path}`, 3)
+        return error(`Module path should not start or end with a dot: {path}`)
     end
     return rep_path
 end
@@ -291,13 +297,10 @@ local function try_resolve(
 end
 function Plugin.create_require_func(ctx: RequireEnv): (string) -> any
     local mt = retrieve_metadata(ctx)
+
     if not mt.require_func then
         local loaded = {}
-        mt.require_func = function(name)
-            if loaded[name] then
-                return loaded[name]
-            end
-
+        local function require_impl(name: string)
             local path_fragment = process_path(name)
             local fragment = ""
 
@@ -314,10 +317,10 @@ function Plugin.create_require_func(ctx: RequireEnv): (string) -> any
                 local thread = chunk()
                 local result, value = coroutine.resume(thread)
                 if not result then
-                    return error(`require failed: {value}`, 2)
+                    return error(`require failed: {value}`)
                 end
                 if coroutine.status(thread) ~= "dead" then
-                    return error("require module yielded instead of returning", 2)
+                    return error("require module yielded instead of returning")
                 end
 
                 if not value then
@@ -331,7 +334,26 @@ function Plugin.create_require_func(ctx: RequireEnv): (string) -> any
             assert(new_fragment)
             fragment ..= new_fragment
 
-            return error(`module '{name}' not found:\n{fragment}`, 2)
+            return error(`module '{name}' not found:\n{fragment}`)
+        end
+        mt.require_func = function(name)
+            if loaded[name] then
+                return loaded[name]
+            end
+
+            if mt.loading[name] then
+                return error(`module '{name}' is already loading`, 2)
+            end
+
+            mt.loading[name] = true
+            local status, result = xpcall(require_impl, debug.traceback, name)
+            mt.loading[name] = false
+
+            if status then
+                return result
+            else
+                return error(result, 2)
+            end
         end
     end
     return mt.require_func
