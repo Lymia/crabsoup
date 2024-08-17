@@ -100,6 +100,9 @@ local function run_widget(widget: Widget, globals: Globals)
                     end
                 elseif status == "dead" then
                     globals.page = pass_globals.page
+                    if typeof(globals.page) ~= "NodeRef" then
+                        error(`'page' must be a NodeRef, not a {typeof(globals.page)}`)
+                    end
                     break
                 else
                     error(`Internal error: Invalid widget coroutine status: {status}`)

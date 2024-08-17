@@ -86,7 +86,11 @@ local function compile_chunk(
     return function(global_values: { [string]: any }?, name_tag: string?)
         local full_chunkname = chunkname
         if name_tag then
-            full_chunkname ..= `#{Sys.strip_extension(name_tag)}`
+            local temp_tag = Sys.strip_extension(Sys.basename(name_tag))
+            if temp_tag == "index" and temp_tag ~= Sys.strip_extension(temp_tag) then
+                temp_tag = Sys.strip_extension(Sys.basename(Sys.dirname(name_tag)))
+            end
+            full_chunkname ..= `#{temp_tag}`
         end
 
         shared.baselib.trace(`Loading chunk '{full_chunkname}'...`)

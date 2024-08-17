@@ -22,8 +22,7 @@ function module.wait_on_processes(processes: { { name: string, thread: () -> () 
 
     while #queued ~= 0 do
         -- resume the first plausible thread
-        local active = queued[#queued]
-        queued[#queued] = nil
+        local active = table.pop(queued)
 
         local result, value, msg = coroutine.resume(active.thread, active.resume_with)
         if not result then

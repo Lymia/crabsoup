@@ -31,8 +31,7 @@ _G.HTML.delete = HTML.delete_element
 _G.HTML.prepend = HTML.prepend_child
 
 -- Advanced functions
-function _G.HTML.get_heading_level(element)
-    print(typeof(element), HTML.is_element(element), element)
+local function get_heading_level(element)
     if typeof(element) == "NodeRef" and HTML.is_element(element) then
         local tag = HTML.get_tag_name(element)
         local match = string.match(tag, "h([0-9]+)")
@@ -44,6 +43,71 @@ function _G.HTML.get_heading_level(element)
     else
         return 0
     end
+end
+_G.HTML.get_heading_level = get_heading_level
+
+function _G.HTML.get_headings_tree(element)
+    local all_headings = HTML.select(element, "h1,h2,h3,h4,h5,h6")
+
+    local stack = {}
+
+    type Recursion = {
+        root: boolean?,
+        heading: NodeRef,
+        children: { Recursion },
+    }
+    local current: {
+        base_level: number,
+        obj: Recursion,
+    } = {
+        base_level = 0,
+        obj = {
+            root = true,
+            heading = HTML.parse("a"),
+            children = {},
+        },
+    }
+
+    -- process all headings
+    for _, heading in all_headings do
+        local level = get_heading_level(heading)
+
+        -- pop to the appropriate level
+        while level <= current.base_level do
+            if #stack == 0 then
+                return error("stack underflow while processing heading tree")
+            end
+
+            local top = table.pop(stack)
+            table.insert(top.obj.children, current.obj)
+            current = top
+        end
+
+        -- push a new frame
+        table.insert(stack, current)
+        current = {
+            base_level = level,
+            obj = {
+                heading = heading,
+                children = {},
+            },
+        }
+    end
+
+    -- pop any remaining stack items
+    while #stack > 0 do
+        local top = table.pop(stack)
+        table.insert(top.obj.children, current.obj)
+        current = top
+    end
+    assert(current.obj.root)
+
+    -- Fix multiple frames
+    local out = current.obj.children[1]
+    for i = 2, #current.obj.children do
+        table.insert(out.children, current.obj.children[i])
+    end
+    return out
 end
 
 -- TODO: Implement `HTML.get_headings_tree`

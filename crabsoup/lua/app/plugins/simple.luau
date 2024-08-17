@@ -126,7 +126,7 @@ function plugins.preprocess_element(globals)
                 end
             end
 
-            input = HTML.decode_entities(input)
+            input = String.html_decode(input)
         end
 
         -- Process the input

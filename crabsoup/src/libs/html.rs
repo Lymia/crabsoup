@@ -276,12 +276,11 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
     table.raw_set(
         "select",
         lua.create_function(|lua, (html, selector): (UserDataRef<LuaNodeRef>, LuaString)| {
+            let selector = selector.to_str()?;
             let table = lua.create_table()?;
-            for elem in html
-                .0
-                .select(selector.to_str()?)
-                .map_err(|()| Error::runtime("Could not parse selector."))?
-            {
+            for elem in html.0.select(selector).map_err(|()| {
+                Error::runtime(format_args!("Could not parse selector: {selector}"))
+            })? {
                 table.raw_push(LuaNodeRef(elem.as_node().clone()))?;
             }
             Ok(table)
@@ -290,10 +289,11 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
     table.raw_set(
         "select_one",
         lua.create_function(|_, (html, selector): (UserDataRef<LuaNodeRef>, LuaString)| {
+            let selector = selector.to_str()?;
             Ok(html
                 .0
-                .select(selector.to_str()?)
-                .map_err(|()| Error::runtime("Could not parse selector."))?
+                .select(selector)
+                .map_err(|()| Error::runtime(format_args!("Could not parse selector: {selector}")))?
                 .next()
                 .map(|x| LuaNodeRef(x.as_node().clone())))
         })?,
@@ -301,8 +301,10 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
     table.raw_set(
         "matches",
         lua.create_function(|_, (node, selector): (UserDataRef<LuaNodeRef>, LuaString)| {
-            let selectors = Selectors::compile(selector.to_str()?)
-                .map_err(|()| Error::runtime("Could not parse selector."))?;
+            let selector = selector.to_str()?;
+            let selectors = Selectors::compile(selector).map_err(|()| {
+                Error::runtime(format_args!("Could not parse selector: {selector}"))
+            })?;
             if let Some(elem) = node.0.clone().into_element_ref() {
                 Ok(selectors.matches(&elem))
             } else {
@@ -629,20 +631,6 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
     table.raw_set(
         "is_text",
         lua.create_function(|_, elem: UserDataRef<LuaNodeRef>| Ok(elem.0 .0.as_text().is_some()))?,
-    )?;
-
-    // Entity encoding & decoding
-    table.raw_set(
-        "decode_entities",
-        lua.create_function(|lua, html: LuaString| {
-            Ok(lua.create_string(html_escape::decode_html_entities(html.to_str()?).as_ref())?)
-        })?,
-    )?;
-    table.raw_set(
-        "encode_entities",
-        lua.create_function(|lua, html: LuaString| {
-            Ok(lua.create_string(html_escape::encode_text(html.to_str()?).as_ref())?)
-        })?,
     )?;
 
     Ok(table)

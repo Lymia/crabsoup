@@ -63,6 +63,9 @@ declare String: {
     base64_decode: (string) -> string,
     url_encode: (str: string, exclude: {string}?) -> string,
     url_decode: (string) -> string,
+    html_encode: (string) -> string,
+    html_decode: (string) -> string,
+    escape_css: (string) -> string,
 }
 declare Sys: {
     read_file: (path: string) -> string,
@@ -201,8 +204,6 @@ declare HTML: {
     is_element: (NodeRef) -> boolean,
     is_text: (NodeRef) -> boolean,
     clone: (NodeRef) -> NodeRef,
-    decode_entities: (string) -> string,
-    encode_entities: (string) -> string,
 }
 
 -- Process library
@@ -264,69 +265,16 @@ declare function loadstring<A...>(src: string, chunkname: string?, mode: string?
 declare function loadfile<A...>(filename: string, mode: string?, env: { [string]: any }?): (((A...) -> any)?, string?)
 
 -- Standard library extensions
-declare string: {
-    byte: (s: string, f: number?, t: number?) -> ...number,
-    char: (...number) -> string,
-    find: (s: string, p: string, init: number?, plain: boolean?) -> (number?, number?, ...string),
-    format: (s: string, ...any) -> string,
-    gmatch: (s: string, p: string) -> (() -> ...string?),
-    gsub: (s: string, p: string, f: ((...string) -> (string | number | false | nil)) | { [string]: string } | string, number?) -> (string, number),
-    len: (s: string) -> number,
-    lower: (s: string) -> string,
-    match: (s: string, p: string, init: number?) -> ...string?,
-    rep: (s: string, n: number) -> string,
-    reverse: (s: string) -> string,
-    sub: (s: string, f: number, t: number?) -> string,
-    upper: (s: string) -> string,
-    split: (s: string, sep: string?) -> {string},
-    pack: (f: string, ...any) -> string,
-    packsize: (f: string) -> number,
-    unpack: (f: string, s: string) -> ...any,
-
-    -- Extended functions
+declare string: typeof(string) & {
     trim: (s: string) -> string,
     startswith: (s: string, prefix: string) -> boolean,
     endswith: (s: string, prefix: string) -> boolean,
 }
-
-declare math: {
-    frexp: (n: number) -> (number, number),
-    ldexp: (s: number, e: number) -> number,
-    fmod: (x: number, y: number) -> number,
-    modf: (n: number) -> (number, number),
-    pow: (x: number, y: number) -> number,
-    exp: (n: number) -> number,
-    ceil: (n: number) -> number,
-    floor: (n: number) -> number,
-    abs: (n: number) -> number,
-    sqrt: (n: number) -> number,
-    log: (n: number, base: number?) -> number,
-    log10: (n: number) -> number,
-    rad: (n: number) -> number,
-    deg: (n: number) -> number,
-    sin: (n: number) -> number,
-    cos: (n: number) -> number,
-    tan: (n: number) -> number,
-    sinh: (n: number) -> number,
-    cosh: (n: number) -> number,
-    tanh: (n: number) -> number,
-    atan: (n: number) -> number,
-    acos: (n: number) -> number,
-    asin: (n: number) -> number,
-    atan2: (y: number, x: number) -> number,
-    min: (number, ...number) -> number,
-    max: (number, ...number) -> number,
-    pi: number,
-    huge: number,
-    randomseed: (seed: number) -> (),
-    random: (number?, number?) -> number,
-    sign: (n: number) -> number,
-    clamp: (n: number, min: number, max: number) -> number,
-    noise: (x: number, y: number?, z: number?) -> number,
-    round: (n: number) -> number,
-
-    -- Extended functions
+declare math: typeof(math) & {
     isnan: (n: number) -> boolean,
     isinf: (n: number) -> boolean,
     isfinite: (n: number) -> boolean,
+}
+declare table: typeof(table) & {
+    pop: <T>(t: {T}) -> T,
 }

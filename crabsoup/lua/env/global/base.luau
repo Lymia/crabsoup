@@ -32,6 +32,14 @@ _G.math.isinf = baselib.is_inf
 _G.math.isfinite = baselib.is_finite
 _G.os.sleep = baselib.sleep
 
+-- Extensions to the standard table API
+function _G.table.pop(table)
+    local len = #table
+    local value = table[len]
+    table[len] = nil
+    return value
+end
+
 -- Sandboxed versions of setfenv and getfenv
 shared.orig_setfenv = _G.setfenv
 shared.orig_getfenv = _G.getfenv
