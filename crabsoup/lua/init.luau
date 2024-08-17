@@ -26,7 +26,7 @@ end
 local function call_env_chunks(env, ...)
     shared.baselib.trace(`Loading Lua environment: {env}`)
 
-    local dir = `envs/{env}/`
+    local dir = `env/{env}/`
     local files = {}
     for name in shared.sources do
         if starts_with(name, dir) then
@@ -39,7 +39,7 @@ local function call_env_chunks(env, ...)
         local chunk = shared.sources[name]
 
         local chunkname
-        if startswith(name, "envs/") then
+        if startswith(name, "env/") then
             chunkname = `@<env>/{string.sub(name, 6)}`
         else
             chunkname = `@<rt>/{name}`

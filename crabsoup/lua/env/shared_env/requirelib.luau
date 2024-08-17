@@ -273,7 +273,7 @@ local function try_resolve(
         local full_name
         if string.startswith(chunkname, "app/") then
             full_name = `@<app>/{string.sub(chunkname, 5)}`
-        elseif string.startswith(chunkname, "envs/") then
+        elseif string.startswith(chunkname, "env/") then
             full_name = `@<env>/{string.sub(chunkname, 6)}`
         else
             full_name = `@<rt>/{chunkname}`
