@@ -186,3 +186,7 @@ function _G.dofile(filename: string, mode: string?, env: any?): any
         return error(err, 2)
     end
 end
+
+function _G.unreachable(...): never
+    return error("unreachable code entered", 2)
+end

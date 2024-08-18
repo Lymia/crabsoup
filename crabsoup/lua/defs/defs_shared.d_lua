@@ -279,3 +279,5 @@ declare math: typeof(math) & {
 declare table: typeof(table) & {
     pop: <T>(t: {T}) -> T,
 }
+
+declare unreachable: <T...>(T...) -> never
