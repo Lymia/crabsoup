@@ -11,7 +11,7 @@ resolver = "2"
 opt-level = 's'
 
 [profile.release]
-opt-level = 3
+opt-level = 's'
 lto = true
 
 [workspace.dependencies]

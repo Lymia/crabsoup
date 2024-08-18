@@ -20,6 +20,11 @@ fi
 BIN_NAME="crabsoup"
 VERSION="0.1.0-alpha1"
 
+export CC="clang"
+export CFLAGS="-Os"
+export CXX="clang++"
+export CXXFLAGS="-Os"
+
 rm -rfv dist ||:
 mkdir dist
 
