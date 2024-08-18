@@ -15,10 +15,13 @@ function _G.HTML.replace_content(parent, child)
     HTML.append_child(parent, child)
 end
 function _G.HTML.wrap(node, elem)
+    assert(not HTML.is_document(elem), "`wrap` cannot be used on document nodes", 2)
     HTML.insert_after(node, elem)
     HTML.append_child(elem, node)
 end
 function _G.HTML.swap(node_a, node_b)
+    assert(not HTML.is_document(node_a) and not HTML.is_document(node_b), "`swap` cannot be used on document nodes")
+
     local temp_node = HTML.create_text("")
     HTML.insert_after(node_a, temp_node)
     HTML.insert_after(node_b, node_a)

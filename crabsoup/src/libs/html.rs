@@ -541,7 +541,13 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
         "append_child",
         lua.create_function(
             |_, (parent, child): (UserDataRef<LuaNodeRef>, UserDataRef<LuaNodeRef>)| {
-                parent.0.append(child.0.clone());
+                if child.0.as_document().is_some() {
+                    for node in child.0.children() {
+                        parent.0.append(node);
+                    }
+                } else {
+                    parent.0.append(child.0.clone());
+                }
                 Ok(())
             },
         )?,
@@ -550,7 +556,13 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
         "prepend_child",
         lua.create_function(
             |_, (parent, child): (UserDataRef<LuaNodeRef>, UserDataRef<LuaNodeRef>)| {
-                parent.0.prepend(child.0.clone());
+                if child.0.as_document().is_some() {
+                    for node in child.0.children().rev() {
+                        parent.0.prepend(node);
+                    }
+                } else {
+                    parent.0.prepend(child.0.clone());
+                }
                 Ok(())
             },
         )?,
@@ -559,7 +571,13 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
         "insert_before",
         lua.create_function(
             |_, (parent, child): (UserDataRef<LuaNodeRef>, UserDataRef<LuaNodeRef>)| {
-                parent.0.insert_before(child.0.clone());
+                if child.0.as_document().is_some() {
+                    for node in child.0.children() {
+                        parent.0.insert_before(node);
+                    }
+                } else {
+                    parent.0.insert_before(child.0.clone());
+                }
                 Ok(())
             },
         )?,
@@ -568,7 +586,13 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
         "insert_after",
         lua.create_function(
             |_, (parent, child): (UserDataRef<LuaNodeRef>, UserDataRef<LuaNodeRef>)| {
-                parent.0.insert_after(child.0.clone());
+                if child.0.as_document().is_some() {
+                    for node in child.0.children().rev() {
+                        parent.0.insert_after(node);
+                    }
+                } else {
+                    parent.0.insert_after(child.0.clone());
+                }
                 Ok(())
             },
         )?,
@@ -595,6 +619,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
             for child in elem.0.children().rev() {
                 elem.0.insert_after(child);
             }
+            elem.0.detach();
             Ok(())
         })?,
     )?;
@@ -631,6 +656,16 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
     table.raw_set(
         "is_text",
         lua.create_function(|_, elem: UserDataRef<LuaNodeRef>| Ok(elem.0 .0.as_text().is_some()))?,
+    )?;
+
+    // Undocumented functions unknown to type checking.
+    // Basically exclusively for internal use for debugging.
+    table.raw_set(
+        "_debug_node",
+        lua.create_function(|_, elem: UserDataRef<LuaNodeRef>| {
+            dbg!(&elem.0.data());
+            Ok(())
+        })?,
     )?;
 
     Ok(table)
