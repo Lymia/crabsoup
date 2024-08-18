@@ -37,7 +37,7 @@ local function matches_limits(pages, sections, path_regexes, include_subsections
             section ..= "/"
         end
 
-        local tail = if not include_subsections then "[^/]+" else ".*"
+        local tail = if not include_subsections then "[^/]+$" else ""
         table.insert(regexes, `^{Regex.escape(section)}{tail}`)
     end
 
