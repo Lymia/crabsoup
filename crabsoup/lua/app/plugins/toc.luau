@@ -126,16 +126,19 @@ end
 local function toc(globals)
     local ctx = build_ctx(globals)
 
-    local nodes = tag_with_ids(ctx, HTML.get_headings_tree(globals.page) :: any)
-    local toc_node = build_toc(ctx, nodes, 1)
-    if ctx.heading_links then
-        build_section_tags(ctx, nodes, true)
-    end
+    local tree = HTML.get_headings_tree(globals.page)
+    if tree then
+        local nodes = tag_with_ids(ctx, tree :: any)
+        local toc_node = build_toc(ctx, nodes, 1)
+        if ctx.heading_links then
+            build_section_tags(ctx, nodes, true)
+        end
 
-    local selector = utils.parse_toml_selector(globals.config.selector)
-    local node = HTML.select_one(globals.page, selector)
-    if node then
-        HTML.append(node, toc_node)
+        local selector = utils.parse_toml_selector(globals.config.selector)
+        local node = HTML.select_one(globals.page, selector)
+        if node then
+            HTML.append(node, toc_node)
+        end
     end
 end
 
