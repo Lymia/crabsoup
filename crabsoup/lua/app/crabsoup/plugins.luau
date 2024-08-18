@@ -47,7 +47,7 @@ local plugin_globals = {
     "widget_name",
 }
 
-local builtin_modules = { "plugins.simple", "plugins.toc" }
+local builtin_modules = { "widget.basic", "widget.toc" }
 
 function module.create_plugin_manager(lib_path)
     local require_ctx = Plugin.create_require_env(lib_path, Plugin.env_plugin)

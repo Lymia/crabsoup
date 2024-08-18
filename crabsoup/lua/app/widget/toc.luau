@@ -2,11 +2,14 @@
 
 local utils = require("crabsoup.utils")
 
+-- TODO: Support for customizing slugs.
+
 type TocContext = {
     page: NodeRef,
     relative_page_file: string,
     list_tag: string,
     max_level: number,
+    max_heading_link_level: number,
 
     toc_list_class: string?,
     toc_class_levels: boolean,
@@ -15,6 +18,9 @@ type TocContext = {
     heading_link_text: string?,
     heading_link_class: string?,
     heading_links_append: boolean,
+
+    ignore_heading_selectors: string,
+    ignore_heading_link_selectors: string,
 }
 type TocIndex = {
     id: string?,
@@ -25,13 +31,17 @@ type TocIndex = {
 local function build_ctx(globals): TocContext
     local config = globals.config
     if config.min_level and config.min_level ~= 2 then
-        Log.warn("`min_level` attribute not supported!")
+        Log.warn(`Crabsoup's 'toc' widget does not support the 'min_level' attribute!`)
+    end
+    if config.valid_html ~= nil and not config.valid_html then
+        Log.warn(`Crabsoup's 'toc' widget does not support 'valid_html = false'.`)
     end
     return {
         page = globals.page,
         relative_page_file = globals.relative_page_file,
         list_tag = if config.numbered_list then "ol" else "ul",
         max_level = config.max_level or 6,
+        max_heading_link_level = config.max_heading_link_level or config.max_level or 6,
 
         toc_list_class = config.toc_list_class,
         toc_class_levels = not not config.toc_class_levels,
@@ -40,6 +50,11 @@ local function build_ctx(globals): TocContext
         heading_link_text = config.heading_link_text,
         heading_link_class = config.heading_link_class,
         heading_links_append = not not config.heading_links_append,
+
+        ignore_heading_selectors = utils.parse_toml_selector(globals.ignore_heading_selectors),
+        ignore_heading_link_selectors = utils.parse_toml_selector(
+            globals.ignore_heading_link_selectors or globals.ignore_heading_selectors
+        ),
     }
 end
 
@@ -86,7 +101,10 @@ local function build_toc(ctx: TocContext, node: TocIndex, level: number): NodeRe
 
     for _, v in node.children do
         if v.heading then
-            if HTML.get_heading_level(v.heading) <= ctx.max_level then
+            if
+                HTML.get_heading_level(v.heading) <= ctx.max_level
+                and not HTML.matches(v.heading, ctx.ignore_heading_selectors)
+            then
                 local li = HTML.create_element("li")
                 local link = HTML.create_element("a", HTML.inner_text(v.heading))
                 HTML.set_attribute(link, "href", `#{v.id}`)
@@ -106,16 +124,21 @@ end
 
 local function build_section_tags(ctx: TocContext, node: TocIndex, is_root: boolean)
     if not is_root and node.id and node.heading then
-        local heading_link = HTML.create_element("a", ctx.heading_link_text)
-        if ctx.heading_link_class then
-            HTML.add_class(heading_link, ctx.heading_link_class)
-        end
-        HTML.set_attribute(heading_link, "href", `#{node.id}`)
+        if
+            HTML.get_heading_level(node.heading) <= ctx.max_heading_link_level
+            and not HTML.matches(node.heading, ctx.ignore_heading_link_selectors)
+        then
+            local heading_link = HTML.create_element("a", ctx.heading_link_text)
+            if ctx.heading_link_class then
+                HTML.add_class(heading_link, ctx.heading_link_class)
+            end
+            HTML.set_attribute(heading_link, "href", `#{node.id}`)
 
-        if ctx.heading_links_append then
-            HTML.append(node.heading, heading_link)
-        else
-            HTML.prepend(node.heading, heading_link)
+            if ctx.heading_links_append then
+                HTML.append(node.heading, heading_link)
+            else
+                HTML.prepend(node.heading, heading_link)
+            end
         end
     end
 

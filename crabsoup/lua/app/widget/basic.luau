@@ -209,15 +209,15 @@ function plugins.title(globals)
     elseif type(globals.config.selector) == "table" then
         for k, v in globals.config.selector do
             if type(k) ~= "number" then
-                Plugin.fail("'selector' should be a list, not a dictionary")
+                Plugin.fail(`'selector' for widget '{globals.widget_name}' should be a list, not a dictionary`)
             end
             if type(v) ~= "string" then
-                Plugin.fail("'selector' should be a list of strings")
+                Plugin.fail(`'selector' for widget '{globals.widget_name}' should be a list of strings`)
             end
         end
         selectors = globals.config.selector
     else
-        Plugin.fail("'selector' should be a list of strings or a string")
+        Plugin.fail(`'selector' for widget '{globals.widget_name}' should be a list of strings or a string`)
     end
 
     local title = nil
