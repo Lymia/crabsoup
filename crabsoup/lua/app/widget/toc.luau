@@ -8,6 +8,7 @@ type TocContext = {
     page: NodeRef,
     relative_page_file: string,
     list_tag: string,
+    min_level: number,
     max_level: number,
     max_heading_link_level: number,
 
@@ -30,9 +31,6 @@ type TocIndex = {
 
 local function build_ctx(globals): TocContext
     local config = globals.config
-    if config.min_level and config.min_level ~= 2 then
-        Log.warn(`Crabsoup's 'toc' widget does not support the 'min_level' attribute!`)
-    end
     if config.valid_html ~= nil and not config.valid_html then
         Log.warn(`Crabsoup's 'toc' widget does not support 'valid_html = false'.`)
     end
@@ -40,6 +38,8 @@ local function build_ctx(globals): TocContext
         page = globals.page,
         relative_page_file = globals.relative_page_file,
         list_tag = if config.numbered_list then "ol" else "ul",
+
+        min_level = config.min_level or 2,
         max_level = config.max_level or 6,
         max_heading_link_level = config.max_heading_link_level or config.max_level or 6,
 
@@ -90,13 +90,22 @@ local function tag_with_ids(ctx: TocContext, node): TocIndex
 end
 
 local function build_toc(ctx: TocContext, node: TocIndex, level: number): NodeRef
-    local tag = HTML.create_element(ctx.list_tag)
-    if ctx.toc_list_class then
-        local class = ctx.toc_list_class
-        if ctx.toc_class_levels then
-            class = `{class}-{level}`
+    local tag_level = if node.heading then HTML.get_heading_level(node.heading) else 0
+    print(node.id, level, tag_level)
+    local omitted = false
+    local tag
+    if tag_level + 1 < ctx.min_level then
+        tag = HTML.create_document() -- acts as a container for the children
+        omitted = true
+    else
+        tag = HTML.create_element(ctx.list_tag)
+        if ctx.toc_list_class then
+            local class = ctx.toc_list_class
+            if ctx.toc_class_levels then
+                class = `{class}-{level}`
+            end
+            HTML.add_class(tag, class)
         end
-        HTML.add_class(tag, class)
     end
 
     for _, v in node.children do
@@ -105,16 +114,22 @@ local function build_toc(ctx: TocContext, node: TocIndex, level: number): NodeRe
                 HTML.get_heading_level(v.heading) <= ctx.max_level
                 and not HTML.matches(v.heading, ctx.ignore_heading_selectors)
             then
-                local li = HTML.create_element("li")
-                local link = HTML.create_element("a", HTML.inner_text(v.heading))
-                HTML.set_attribute(link, "href", `#{v.id}`)
-                HTML.append(li, link)
+                if omitted then
+                    if #v.children > 0 then
+                        HTML.append(tag, build_toc(ctx, v, level))
+                    end
+                else
+                    local li = HTML.create_element("li")
+                    local link = HTML.create_element("a", HTML.inner_text(v.heading))
+                    HTML.set_attribute(link, "href", `#{v.id}`)
+                    HTML.append(li, link)
 
-                if #v.children > 0 then
-                    HTML.append(li, build_toc(ctx, v, level + 1))
+                    if #v.children > 0 then
+                        HTML.append(li, build_toc(ctx, v, level + 1))
+                    end
+
+                    HTML.append(tag, li)
                 end
-
-                HTML.append(tag, li)
             end
         end
     end
@@ -124,8 +139,10 @@ end
 
 local function build_section_tags(ctx: TocContext, node: TocIndex, is_root: boolean)
     if not is_root and node.id and node.heading then
+        local level = HTML.get_heading_level(node.heading)
         if
-            HTML.get_heading_level(node.heading) <= ctx.max_heading_link_level
+            level >= ctx.min_level
+            and level <= ctx.max_heading_link_level
             and not HTML.matches(node.heading, ctx.ignore_heading_link_selectors)
         then
             local heading_link = HTML.create_element("a", ctx.heading_link_text)

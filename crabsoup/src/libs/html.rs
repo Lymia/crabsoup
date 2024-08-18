@@ -537,62 +537,74 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
     // - Implemented in lua: HTML.delete
     // - Implemented in lua: HTML.wrap
     // - Implemented in lua: HTML.swap
+    fn append_recurse(parent: &NodeRef, child: &NodeRef) {
+        if child.as_document().is_some() {
+            for node in child.children() {
+                append_recurse(parent, &node);
+            }
+        } else {
+            parent.append(child.clone());
+        }
+    }
     table.raw_set(
         "append_child",
         lua.create_function(
             |_, (parent, child): (UserDataRef<LuaNodeRef>, UserDataRef<LuaNodeRef>)| {
-                if child.0.as_document().is_some() {
-                    for node in child.0.children() {
-                        parent.0.append(node);
-                    }
-                } else {
-                    parent.0.append(child.0.clone());
-                }
+                append_recurse(&parent.0, &child.0);
                 Ok(())
             },
         )?,
     )?;
+    fn prepend_recurse(parent: &NodeRef, child: &NodeRef) {
+        if child.as_document().is_some() {
+            for node in child.children().rev() {
+                prepend_recurse(parent, &node);
+            }
+        } else {
+            parent.prepend(child.clone());
+        }
+    }
     table.raw_set(
         "prepend_child",
         lua.create_function(
             |_, (parent, child): (UserDataRef<LuaNodeRef>, UserDataRef<LuaNodeRef>)| {
-                if child.0.as_document().is_some() {
-                    for node in child.0.children().rev() {
-                        parent.0.prepend(node);
-                    }
-                } else {
-                    parent.0.prepend(child.0.clone());
-                }
+                prepend_recurse(&parent.0, &child.0);
                 Ok(())
             },
         )?,
     )?;
+    fn insert_before_recurse(parent: &NodeRef, child: &NodeRef) {
+        if child.as_document().is_some() {
+            for node in child.children() {
+                insert_before_recurse(parent, &node);
+            }
+        } else {
+            parent.insert_before(child.clone());
+        }
+    }
     table.raw_set(
         "insert_before",
         lua.create_function(
             |_, (parent, child): (UserDataRef<LuaNodeRef>, UserDataRef<LuaNodeRef>)| {
-                if child.0.as_document().is_some() {
-                    for node in child.0.children() {
-                        parent.0.insert_before(node);
-                    }
-                } else {
-                    parent.0.insert_before(child.0.clone());
-                }
+                insert_before_recurse(&parent.0, &child.0);
                 Ok(())
             },
         )?,
     )?;
+    fn insert_after_recurse(parent: &NodeRef, child: &NodeRef) {
+        if child.as_document().is_some() {
+            for node in child.children().rev() {
+                insert_after_recurse(parent, &node);
+            }
+        } else {
+            parent.insert_after(child.clone());
+        }
+    }
     table.raw_set(
         "insert_after",
         lua.create_function(
             |_, (parent, child): (UserDataRef<LuaNodeRef>, UserDataRef<LuaNodeRef>)| {
-                if child.0.as_document().is_some() {
-                    for node in child.0.children().rev() {
-                        parent.0.insert_after(node);
-                    }
-                } else {
-                    parent.0.insert_after(child.0.clone());
-                }
+                insert_after_recurse(&parent.0, &child.0);
                 Ok(())
             },
         )?,
@@ -617,7 +629,7 @@ pub fn create_html_table(lua: &Lua) -> Result<Table> {
         "unwrap",
         lua.create_function(|_, elem: UserDataRef<LuaNodeRef>| {
             for child in elem.0.children().rev() {
-                elem.0.insert_after(child);
+                insert_after_recurse(&elem.0, &child);
             }
             elem.0.detach();
             Ok(())
