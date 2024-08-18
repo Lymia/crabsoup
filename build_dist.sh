@@ -18,7 +18,7 @@ else
 fi
 
 BIN_NAME="crabsoup"
-VERSION="0.1.0-alpha2"
+VERSION="0.1.0-alpha3"
 
 export CC="clang"
 export CFLAGS="-Os"
