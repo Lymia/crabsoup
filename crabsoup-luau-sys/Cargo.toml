@@ -8,17 +8,18 @@ description = "Internal crate for crabsoup (for now)."
 repository = "https://github.com/Lymia/crabsoup"
 
 include = [
-    "bindings",
-    "examples",
     "luau/Analysis",
     "luau/Ast/include",
     "luau/Common/include",
     "luau/Config",
     "src",
+    "build.rs",
     "Cargo.toml",
     "LICENSE.md",
     "README.md",
 ]
+
+license = "Apache-2.0"
 
 [dependencies]
 mlua-sys = { version = "=0.6.2  ", features = ["luau", "luau-codegen", "vendored"] }

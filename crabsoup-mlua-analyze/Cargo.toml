@@ -9,16 +9,18 @@ repository = "https://github.com/Lymia/crabsoup"
 
 include = [
     "bindings",
-    "examples",
     "luau/Analysis/include",
     "luau/Ast/include",
     "luau/Common/include",
     "luau/Config/include",
     "src",
+    "build.rs",
     "Cargo.toml",
     "LICENSE.md",
     "README.md",
 ]
+
+license = "Apache-2.0"
 
 [dependencies]
 crabsoup-luau-sys = { workspace = true }
