@@ -44,4 +44,3 @@ This is unlikely to happen in practice, as in practice, you only access the pare
 ### HTML Chaining
 
 HTML chaining (where you can use `nil` in place of any `NodeRef` and have the function return `nil` instead of raising an error) is not supported in crabsoup. It would make the type signatures for the `HTML` library significantly more complicated, and has little benefits (only two functions possibly return `nil` in place of a node: `HTML.parent` and `HTML.select_one`, both of which manual checking is reasonable for).
-    
