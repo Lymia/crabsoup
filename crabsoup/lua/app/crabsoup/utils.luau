@@ -33,8 +33,12 @@ local function matches_limits(pages, sections, path_regexes, include_subsections
         while string.endswith(section, "/") do
             section = string.sub(section, 1, #section - 1)
         end
+        if section ~= "" then
+            section ..= "/"
+        end
+
         local tail = if include_subsections then "[^/]+" else ".*"
-        table.insert(regexes, `^{Regex.escape(section)}/{tail}`)
+        table.insert(regexes, `^{Regex.escape(section)}{tail}`)
     end
 
     return function(raw_path)
