@@ -5,6 +5,8 @@ use std::io::Cursor;
 fn options() -> ser::Options {
     let mut opts = ser::Options::new();
     opts.set_array_metatable = false;
+    opts.serialize_none_to_null = false;
+    opts.serialize_unit_to_null = false;
     opts.detect_serde_json_arbitrary_precision = true;
     opts
 }

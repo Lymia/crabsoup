@@ -2,6 +2,7 @@ use crate::CrabsoupLuaContext;
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use serde::Serialize;
+use std::path::PathBuf;
 
 #[derive(Parser)]
 #[command(version)]
@@ -38,7 +39,10 @@ enum Commands {
 
 #[derive(Parser, Serialize)]
 #[command(version)]
-struct BuildArgs {}
+struct BuildArgs {
+    #[arg(short, long)]
+    config: Option<PathBuf>,
+}
 
 pub fn main() -> Result<()> {
     let cli = Cli::parse();

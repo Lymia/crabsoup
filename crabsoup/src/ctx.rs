@@ -1,6 +1,7 @@
 use crate::libs::{analyze, base, codec, date, digest, html, process, regex, string, sys};
 use mlua::{
-    prelude::LuaFunction, ChunkMode, Lua, LuaOptions, LuaSerdeExt, Result, StdLib, Table, Thread,
+    prelude::LuaFunction, serde::ser, ChunkMode, Lua, LuaOptions, LuaSerdeExt, Result, StdLib,
+    Table, Thread,
 };
 use serde::Serialize;
 
@@ -78,7 +79,12 @@ impl CrabsoupLuaContext {
     }
 
     pub fn run_main(&self, args: impl Serialize) -> Result<()> {
-        let value = self.lua.to_value(&args)?;
+        let mut options = ser::Options::new();
+        options.serialize_none_to_null = false;
+        options.serialize_unit_to_null = false;
+        options.set_array_metatable = false;
+
+        let value = self.lua.to_value_with(&args, options)?;
         let shared_table = self.lua.named_registry_value::<Table>(SHARED_TABLE_LOC)?;
         shared_table
             .get::<_, LuaFunction>("run_main")?
