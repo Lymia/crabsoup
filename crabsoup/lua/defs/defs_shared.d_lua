@@ -197,7 +197,7 @@ declare HTML: {
     delete_content: (NodeRef) -> (),
     unwrap: (NodeRef) -> (),
     get_heading_level: (node: NodeRef) -> number,
-    get_headings_tree: (node: NodeRef) -> HeadingsTreeADT,
+    get_headings_tree: (node: NodeRef) -> {HeadingsTreeADT},
     is_comment: (NodeRef) -> boolean,
     is_doctype: (NodeRef) -> boolean,
     is_document: (NodeRef) -> boolean,

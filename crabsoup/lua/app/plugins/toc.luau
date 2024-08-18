@@ -18,7 +18,7 @@ type TocContext = {
 }
 type TocIndex = {
     id: string?,
-    heading: NodeRef,
+    heading: NodeRef?,
     children: { TocIndex },
 }
 
@@ -44,25 +44,27 @@ local function build_ctx(globals): TocContext
 end
 
 local function tag_with_ids(ctx: TocContext, node): TocIndex
-    local id = HTML.get_attribute(node.heading, "id")
-    if id then
-        if #HTML.select(ctx.page, `[id='{String.escape_css(id)}']`) ~= 1 then
-            Log.error(`Duplicated id '#{id}' found in page '{ctx.relative_page_file}'.`)
-        end
-        node.id = id
-    else
-        local orig_slug = String.slugify(HTML.inner_text(node.heading))
-        local slug = orig_slug
+    if node.heading then
+        local id = HTML.get_attribute(node.heading, "id")
+        if id then
+            if #HTML.select(ctx.page, `[id='{String.escape_css(id)}']`) ~= 1 then
+                Log.error(`Duplicated id '#{id}' found in page '{ctx.relative_page_file}'.`)
+            end
+            node.id = id
+        else
+            local orig_slug = String.slugify(HTML.inner_text(node.heading))
+            local slug = orig_slug
 
-        local i = 2
-        while HTML.select_one(ctx.page, `[id='{String.escape_css(slug)}']`) do
-            slug = `{orig_slug}-{i}`
-            i += 1
-        end
+            local i = 2
+            while HTML.select_one(ctx.page, `[id='{String.escape_css(slug)}']`) do
+                slug = `{orig_slug}-{i}`
+                i += 1
+            end
 
-        -- Assign the ID
-        HTML.set_attribute(node.heading, "id", slug)
-        node.id = slug
+            -- Assign the ID
+            HTML.set_attribute(node.heading, "id", slug)
+            node.id = slug
+        end
     end
 
     for _, v in node.children do
@@ -83,17 +85,19 @@ local function build_toc(ctx: TocContext, node: TocIndex, level: number): NodeRe
     end
 
     for _, v in node.children do
-        if HTML.get_heading_level(v.heading) <= ctx.max_level then
-            local li = HTML.create_element("li")
-            local link = HTML.create_element("a", HTML.inner_text(v.heading))
-            HTML.set_attribute(link, "href", `#{v.id}`)
-            HTML.append(li, link)
+        if v.heading then
+            if HTML.get_heading_level(v.heading) <= ctx.max_level then
+                local li = HTML.create_element("li")
+                local link = HTML.create_element("a", HTML.inner_text(v.heading))
+                HTML.set_attribute(link, "href", `#{v.id}`)
+                HTML.append(li, link)
 
-            if #v.children > 0 then
-                HTML.append(li, build_toc(ctx, v, level + 1))
+                if #v.children > 0 then
+                    HTML.append(li, build_toc(ctx, v, level + 1))
+                end
+
+                HTML.append(tag, li)
             end
-
-            HTML.append(tag, li)
         end
     end
 
@@ -101,7 +105,7 @@ local function build_toc(ctx: TocContext, node: TocIndex, level: number): NodeRe
 end
 
 local function build_section_tags(ctx: TocContext, node: TocIndex, is_root: boolean)
-    if not is_root and node.id then
+    if not is_root and node.id and node.heading then
         local heading_link = HTML.create_element("a", ctx.heading_link_text)
         if ctx.heading_link_class then
             HTML.add_class(heading_link, ctx.heading_link_class)
@@ -123,8 +127,10 @@ end
 local function toc(globals)
     local ctx = build_ctx(globals)
 
-    local tree = HTML.get_headings_tree(globals.page)
-    if tree then
+    local tree: TocIndex = {
+        children = HTML.get_headings_tree(globals.page) :: any,
+    }
+    if #tree.children > 0 then
         local nodes = tag_with_ids(ctx, tree :: any)
         local toc_node = build_toc(ctx, nodes, 1)
         if ctx.heading_links then

@@ -106,11 +106,7 @@ function _G.HTML.get_headings_tree(element)
     assert(current.obj.root)
 
     -- Fix multiple frames
-    local out = current.obj.children[1]
-    for i = 2, #current.obj.children do
-        table.insert(out.children, current.obj.children[i])
-    end
-    return out
+    return current.obj.children
 end
 
 -- TODO: Implement `HTML.get_headings_tree`
