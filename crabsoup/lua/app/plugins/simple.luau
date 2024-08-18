@@ -244,9 +244,54 @@ function plugins.title(globals)
     HTML.append_child(title_elem, HTML.create_text(title))
 end
 
+--
+-- `wrap` plugin
+--
+-- params: wrapper, wrapper_selector, selector, wrap_all
+--
+function plugins.wrap(globals)
+    require_param(globals, "wrapper", "wrap")
+    require_param(globals, "selector", "wrap")
+
+    -- Decode fragment
+    local fragment = HTML.parse_fragment(globals.config.wrapper, "div")
+    local elem
+    if globals.config.wrapper_selector then
+        local selector = utils.parse_toml_selector(globals.config.wrapper_selector)
+        elem = HTML.select_one(fragment, selector) or error("`wrapper_selector` did not match any selectors")
+    else
+        local elem_children = Table.filter_list(HTML.is_element, HTML.children(fragment))
+        if #elem_children == 1 then
+            elem = elem_children[1]
+        else
+            return error("`wrap` requires a single element or `wrapper_selector` to be specified.")
+        end
+    end
+
+    -- Wrap fragment
+    local selector = utils.parse_toml_selector(globals.config.selector)
+    local targets
+    if globals.config.wrap_all == nil or globals.config.wrap_all then
+        targets = HTML.select(globals.page, selector)
+    else
+        local target = HTML.select_one(globals.page, selector)
+        if target then
+            targets = { target }
+        else
+            targets = {}
+        end
+    end
+    if #targets == 1 then
+        HTML.wrap(targets[1], elem)
+    else
+        for _, v in targets do
+            HTML.wrap(v, HTML.clone(elem))
+        end
+    end
+end
+
 nyi("footnotes")
 nyi("breadcrumbs")
-nyi("wrap")
 nyi("relative_links")
 nyi("absolute_links")
 

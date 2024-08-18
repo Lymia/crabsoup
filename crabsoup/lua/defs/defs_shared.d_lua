@@ -254,6 +254,7 @@ declare Plugin: {
     require_add_preload: (ctx: RequireEnv, name: string, value: any) -> (),
     require_set_strict: (ctx: RequireEnv) -> (),
     create_require_func: (ctx: RequireEnv) -> (name: string) -> any,
+    traceback: (any?) -> string,
 }
 declare require: (name: string) -> any
 declare require_env: RequireEnv

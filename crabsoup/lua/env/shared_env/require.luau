@@ -5,6 +5,15 @@ local shared, _G = ...
 local Plugin = _G.Plugin or {}
 _G.Plugin = Plugin
 
+-- Error handling
+local function traceback(message: any?): string
+    print(_G.Value.repr(tostring(message)))
+
+    local msg_str = tostring(message)
+    return debug.traceback(msg_str)
+end
+Plugin.traceback = traceback
+
 -- Environment implementation
 local env_standalone = shared.baselib.create_opaque_environment()
 local env_plugin = shared.baselib.create_opaque_environment()
@@ -97,7 +106,7 @@ local function compile_chunk(
 
         local load_chunk = function()
             local func = shared.baselib.load_precompiled_chunk(compiled_chunk, full_chunkname)
-            return result_helper(xpcall(func, debug.traceback, full_chunkname))
+            return result_helper(xpcall(func, traceback, full_chunkname))
         end
 
         local new_table = {}
@@ -284,7 +293,7 @@ local function try_resolve(
         if string.startswith(chunkname, "app/") then
             full_name = `@<app>/{string.sub(chunkname, 5)}`
         elseif string.startswith(chunkname, "env/") then
-            full_name = `@<env>/{string.sub(chunkname, 6)}`
+            full_name = `@<env>/{string.sub(chunkname, 5)}`
         else
             full_name = `@<rt>/{chunkname}`
         end
@@ -346,7 +355,7 @@ function Plugin.create_require_func(ctx: RequireEnv): (string) -> any
             end
 
             mt.loading[name] = true
-            local status, result = xpcall(require_impl, debug.traceback, name)
+            local status, result = xpcall(require_impl, traceback, name)
             mt.loading[name] = false
 
             if status then

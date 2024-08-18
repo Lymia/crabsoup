@@ -8,7 +8,7 @@ function module.wait_on_processes(processes: { { name: string, thread: () -> () 
         queued[k] = {
             name = v.name,
             thread = coroutine.create(function()
-                return xpcall(v.thread, debug.traceback)
+                return xpcall(v.thread, Plugin.traceback)
             end),
             resume_with = nil :: any?,
         }

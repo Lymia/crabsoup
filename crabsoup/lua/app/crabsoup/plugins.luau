@@ -95,7 +95,7 @@ function PluginManager:register_plugin_from_toml(config)
         if v.file and v.lua_source then
             error(`'[plugin.{k}]' declares both a 'file' and 'lua_source' field. Please only use one.`)
         elseif v.file then
-            self:register_plugin(v.file, v)
+            self:register_plugin(v.file, k)
         elseif v.lua_source then
             self:register_inline_plugin(k, v.lua_source)
         else

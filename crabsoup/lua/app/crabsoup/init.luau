@@ -54,9 +54,19 @@ function module.process_pages(config: Configuration)
         keep_extensions[v] = true
     end
 
-    Log.debug(`Recreate directory: '{config.raw.parsed.settings.build_dir}'`)
-    Sys.delete_recursive(config.raw.parsed.settings.build_dir)
-    Sys.mkdir(config.raw.parsed.settings.build_dir)
+    local build_dir = config.raw.parsed.settings.build_dir
+    Log.debug(`Prepare directory: '{build_dir}'`)
+    if not Sys.file_exists(build_dir) then
+        Sys.mkdir(build_dir)
+    end
+    if not Sys.is_dir(build_dir) then
+        Sys.delete_recursive(build_dir)
+        Sys.mkdir(build_dir)
+    end
+    for _, v in Sys.list_dir(build_dir) do
+        local full_path = `{build_dir}/{v}`
+        Sys.delete_recursive(full_path)
+    end
 
     Log.info("Starting website generation...")
     local dir_len = config.raw.parsed.settings.site_dir
@@ -70,11 +80,22 @@ function module.process_pages(config: Configuration)
         else
             if extensions[Sys.get_extension(path)] then
                 -- process target path
-                if not keep_extensions[Sys.get_extension(target_path)] then
+
+                if config.raw.parsed.settings.clean_urls then
                     local stripped = Sys.strip_extension(target_path)
-                    target_path = `{stripped}.{config.raw.parsed.settings.default_extension}`
+                    if Sys.basename(stripped) ~= "index" then
+                        target_path = `{stripped}/index.html`
+                    else
+                        target_path = `{stripped}.html`
+                    end
+                else
+                    if not keep_extensions[Sys.get_extension(target_path)] then
+                        local stripped = Sys.strip_extension(target_path)
+                        target_path = `{stripped}.{config.raw.parsed.settings.default_extension}`
+                    end
                 end
 
+                Sys.mkdir(Sys.dirname(target_path))
                 if Sys.file_exists(target_path) then
                     Log.error(`Skipping page (because it already exists): '{path}' -> '{target_path}'`)
                 end

@@ -40,7 +40,7 @@ local function call_env_chunks(env, ...)
 
         local chunkname
         if startswith(name, "env/") then
-            chunkname = `@<env>/{string.sub(name, 6)}`
+            chunkname = `@<env>/{string.sub(name, 5)}`
         else
             chunkname = `@<rt>/{name}`
         end

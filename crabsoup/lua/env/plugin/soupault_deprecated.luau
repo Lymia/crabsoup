@@ -112,6 +112,8 @@ function Sys.random(n)
     return math.random(0, n)
 end
 
+Sys.strip_extensions = Sys.strip_all_extensions
+
 -- Function definitions for 'HTML' module
 local function join_selectors(selectors: any?): string
     if type(selectors) == "table" then

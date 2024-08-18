@@ -32,8 +32,12 @@ end
 local function parse_template(default_template: Template, name: string, value): Template
     local template = table.clone(default_template)
     template.name = name
-    template.data = HTML.parse_document(Sys.read_file(value.file))
-    template.selector = table.concat(value.content_selector, ",")
+    if value.file then
+        template.data = HTML.parse_document(Sys.read_file(value.file))
+    end
+    if #value.content_selector > 0 then
+        template.selector = table.concat(value.content_selector, ",")
+    end
     template.filter = utils.parse_limiting_options(value)
     return template
 end
