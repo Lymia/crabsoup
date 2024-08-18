@@ -7,34 +7,49 @@ local widget = require("crabsoup.widget")
 local module = {}
 
 local function build_globals(config, source_path, target_path): any
-    local relative_prefix = config.raw.parsed.settings.site_dir
+    local relative_prefix = config.settings.site_dir
     while string.endswith(relative_prefix, "/") do
         relative_prefix = string.sub(relative_prefix, 1, #relative_prefix - 1)
     end
-    local len = #relative_prefix
     relative_prefix ..= "/"
 
     assert(string.startswith(source_path, relative_prefix), "Internal error: could not build relative_page_file")
+
+    local relative_page_file = string.sub(source_path, #relative_prefix + 1)
+    local page_url
+
+    local name = Sys.basename(relative_page_file)
+    if name == "index.html" or name == "index.htm" then
+        page_url = Sys.dirname(relative_page_file)
+    else
+        if config.settings.clean_urls then
+            page_url = Sys.strip_extension(relative_page_file)
+        else
+            page_url = relative_page_file
+        end
+    end
 
     return {
         page = nil, -- Set by process_page
         page_file = source_path,
         target_dir = `{Sys.dirname(target_path)}/`,
         target_file = target_path,
-        nav_path = {}, -- TODO
-        page_url = "", -- TODO
+        nav_path = Sys.split_path_url(Sys.dirname_url(page_url)),
+        page_url = `/{string.gsub(page_url, "\\", "/")}`,
         config = nil, -- Set by widget module
         soupault_config = config.raw.raw,
+        site_dir = config.settings.site_dir,
+        build_dir = config.settings.build_dir,
+        persistent_data = {}, -- Set by widget module
+        global_data = config.global_data,
+
+        -- Index-related globals
         site_index = {}, -- TODO
         index_entry = nil, -- TODO
-        site_dir = config.raw.parsed.settings.site_dir,
-        build_dir = config.raw.parsed.settings.build_dir,
-        persistent_data = {}, -- Set by widget module
-        global_data = {}, -- TODO
         soupault_pass = 0, -- TODO
 
         -- Crabsoup extensions
-        relative_page_file = string.sub(source_path, #relative_prefix + 1),
+        relative_page_file = relative_page_file,
         global_config = config.raw.raw,
         parsed_config = config.raw.parsed,
         widget_name = nil, -- Set by widget module

@@ -91,7 +91,6 @@ end
 
 local function build_toc(ctx: TocContext, node: TocIndex, level: number): NodeRef
     local tag_level = if node.heading then HTML.get_heading_level(node.heading) else 0
-    print(node.id, level, tag_level)
     local omitted = false
     local tag
     if tag_level + 1 < ctx.min_level then

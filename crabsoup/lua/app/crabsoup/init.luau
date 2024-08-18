@@ -9,8 +9,11 @@ local widget = require("crabsoup.widget")
 
 type Configuration = {
     raw: any,
+    settings: any,
     plugin_manager: any,
     widget_list: { any },
+    templates: any,
+    global_data: any,
 }
 
 local module = {}
@@ -36,9 +39,11 @@ function module.init_from_configuration(toml_file): Configuration
     -- return the full object
     return {
         raw = config,
+        settings = config.parsed.settings,
         plugin_manager = plugin_manager,
         widget_list = widget_list,
         templates = templates,
+        global_data = {},
     }
 end
 
