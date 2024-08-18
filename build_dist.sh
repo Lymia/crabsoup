@@ -32,7 +32,7 @@ rustup toolchain add beta
 rustup target add --toolchain beta x86_64-unknown-linux-musl aarch64-unknown-linux-musl x86_64-apple-darwin aarch64-apple-darwin x86_64-pc-windows-gnu
 cargo install cargo-zigbuild
 
-cargo +beta clean
+#cargo +beta clean
 cargo +beta zigbuild -p $BIN_NAME --target x86_64-unknown-linux-musl --release
 cargo +beta zigbuild -p $BIN_NAME --target aarch64-unknown-linux-musl --release
 #cargo +beta zigbuild -p $BIN_NAME --target x86_64-apple-darwin --release

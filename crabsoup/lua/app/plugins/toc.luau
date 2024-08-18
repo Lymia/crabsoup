@@ -47,7 +47,7 @@ local function tag_with_ids(ctx: TocContext, node): TocIndex
     local id = HTML.get_attribute(node.heading, "id")
     if id then
         if #HTML.select(ctx.page, `[id='{String.escape_css(id)}']`) ~= 1 then
-            Log.warn(`Duplicated id '#{id}' found in page '{ctx.relative_page_file}'.`)
+            Log.error(`Duplicated id '#{id}' found in page '{ctx.relative_page_file}'.`)
         end
         node.id = id
     else
@@ -56,9 +56,6 @@ local function tag_with_ids(ctx: TocContext, node): TocIndex
 
         local i = 2
         while HTML.select_one(ctx.page, `[id='{String.escape_css(slug)}']`) do
-            if i == 2 then
-                Log.warn(`Slug id '#{slug}' already exists in '{ctx.relative_page_file}'. Using alternative.`)
-            end
             slug = `{orig_slug}-{i}`
             i += 1
         end
