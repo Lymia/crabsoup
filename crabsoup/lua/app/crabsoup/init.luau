@@ -80,7 +80,6 @@ function module.process_pages(config: Configuration)
         else
             if extensions[Sys.get_extension(path)] then
                 -- process target path
-
                 if config.raw.parsed.settings.clean_urls then
                     local stripped = Sys.strip_extension(target_path)
                     if Sys.basename(stripped) ~= "index" then

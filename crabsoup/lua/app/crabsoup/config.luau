@@ -251,14 +251,14 @@ local function merge_config(config, default_config)
             new_table[k] = v
         end
         for k, v in config do
-            if new_table[k] then
+            if new_table[k] ~= nil then
                 new_table[k] = merge_config(v, new_table[k])
             else
                 new_table[k] = v
             end
         end
         return new_table
-    elseif config then
+    elseif config ~= nil then
         return config
     else
         return default_config
