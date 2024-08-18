@@ -6,16 +6,44 @@ type TocContext = {
     page: NodeRef,
     relative_page_file: string,
     list_tag: string,
+    max_level: number,
+
+    toc_list_class: string?,
+    toc_class_levels: boolean,
+
+    heading_links: boolean,
+    heading_link_text: string?,
+    heading_link_class: string?,
+    heading_links_append: boolean,
 }
+type TocIndex = {
+    id: string?,
+    heading: NodeRef,
+    children: { TocIndex },
+}
+
 local function build_ctx(globals): TocContext
+    local config = globals.config
+    if config.min_level and config.min_level ~= 2 then
+        Log.warn("`min_level` attribute not supported!")
+    end
     return {
         page = globals.page,
         relative_page_file = globals.relative_page_file,
-        list_tag = if globals.numbered_list then "ol" else "ul",
+        list_tag = if config.numbered_list then "ol" else "ul",
+        max_level = config.max_level or 6,
+
+        toc_list_class = config.toc_list_class,
+        toc_class_levels = not not config.toc_class_levels,
+
+        heading_links = not not config.heading_links,
+        heading_link_text = config.heading_link_text,
+        heading_link_class = config.heading_link_class,
+        heading_links_append = not not config.heading_links_append,
     }
 end
 
-local function tag_with_ids(ctx: TocContext, node)
+local function tag_with_ids(ctx: TocContext, node): TocIndex
     local id = HTML.get_attribute(node.heading, "id")
     if id then
         if #HTML.select(ctx.page, `[id='{String.escape_css(id)}']`) ~= 1 then
@@ -43,34 +71,66 @@ local function tag_with_ids(ctx: TocContext, node)
     for _, v in node.children do
         tag_with_ids(ctx, v)
     end
+
+    return node
 end
 
-local function build_toc(ctx: TocContext, node, level: number): NodeRef
+local function build_toc(ctx: TocContext, node: TocIndex, level: number): NodeRef
     local tag = HTML.create_element(ctx.list_tag)
-    HTML.add_class(tag, "toc") -- TODO: arguments
+    if ctx.toc_list_class then
+        local class = ctx.toc_list_class
+        if ctx.toc_class_levels then
+            class = `{class}-{level}`
+        end
+        HTML.add_class(tag, class)
+    end
 
     for _, v in node.children do
-        local li = HTML.create_element("li")
-        local link = HTML.create_element("a", HTML.inner_text(v.heading))
-        HTML.set_attribute(link, "href", `#{v.id}`)
-        HTML.append(li, link)
+        if HTML.get_heading_level(v.heading) <= ctx.max_level then
+            local li = HTML.create_element("li")
+            local link = HTML.create_element("a", HTML.inner_text(v.heading))
+            HTML.set_attribute(link, "href", `#{v.id}`)
+            HTML.append(li, link)
 
-        if #v.children > 0 then
-            HTML.append(li, build_toc(ctx, v, level + 1))
+            if #v.children > 0 then
+                HTML.append(li, build_toc(ctx, v, level + 1))
+            end
+
+            HTML.append(tag, li)
         end
-
-        HTML.append(tag, li)
     end
 
     return tag
 end
 
+local function build_section_tags(ctx: TocContext, node: TocIndex, is_root: boolean)
+    if not is_root and node.id then
+        local heading_link = HTML.create_element("a", ctx.heading_link_text)
+        if ctx.heading_link_class then
+            HTML.add_class(heading_link, ctx.heading_link_class)
+        end
+        HTML.set_attribute(heading_link, "href", `#{node.id}`)
+
+        if ctx.heading_links_append then
+            HTML.append(node.heading, heading_link)
+        else
+            HTML.prepend(node.heading, heading_link)
+        end
+    end
+
+    for _, v in node.children do
+        build_section_tags(ctx, v, false)
+    end
+end
+
 local function toc(globals)
     local ctx = build_ctx(globals)
-    local headings = HTML.get_headings_tree(globals.page) :: any
 
-    tag_with_ids(ctx, headings)
-    local toc_node = build_toc(ctx, headings, 1)
+    local nodes = tag_with_ids(ctx, HTML.get_headings_tree(globals.page) :: any)
+    local toc_node = build_toc(ctx, nodes, 1)
+    if ctx.heading_links then
+        build_section_tags(ctx, nodes, true)
+    end
 
     local selector = utils.parse_toml_selector(globals.config.selector)
     local node = HTML.select_one(globals.page, selector)
