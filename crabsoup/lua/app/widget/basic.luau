@@ -248,14 +248,14 @@ end
 --
 -- `wrap` plugin
 --
--- params: wrapper, wrapper_selector, selector, wrap_all
+-- params: wrapper, wrapper_selector, selector, wrap_all, fragment_root
 --
 function plugins.wrap(globals)
     require_param(globals, "wrapper", "wrap")
     require_param(globals, "selector", "wrap")
 
     -- Decode fragment
-    local fragment = HTML.parse_fragment(globals.config.wrapper, "div")
+    local fragment = HTML.parse_fragment(globals.config.wrapper, "div", globals.config.fragment_root or "main")
     local elem
     if globals.config.wrapper_selector then
         local selector = utils.parse_toml_selector(globals.config.wrapper_selector)
@@ -291,7 +291,67 @@ function plugins.wrap(globals)
     end
 end
 
-nyi("footnotes")
+--
+-- `footnotes` plugin
+--
+-- params: selector, footnote_selector, footnote_template, ref_template, footnote_link_class, back_links, fragment_root
+--
+function plugins.footnotes(globals)
+    require_param(globals, "selector", "footnotes")
+    require_param(globals, "footnote_selector", "footnotes")
+
+    -- Decode fragments and selectors
+    local root = globals.config.fragment_root or "main"
+    local footnote_template = utils.only_child(HTML.parse_fragment(globals.config.footnote_template or "<p></p>", root))
+    local ref_template = utils.only_child(HTML.parse_fragment(globals.config.ref_template or "<sup></sup>", root))
+    local selector = utils.parse_toml_selector(globals.config.selector)
+    local footnote_selector = utils.parse_toml_selector(globals.config.footnote_selector)
+
+    -- Find footnote container
+    local container_node = HTML.select_one(globals.page, selector)
+    if not container_node then
+        return error(`Could not find footnote container element: {selector}`)
+    end
+    local container = container_node or unreachable()
+
+    -- Move footnotes to container.
+    local i = 0
+    for _, elem in HTML.select(globals.page, footnote_selector) do
+        i += 1
+
+        -- Change footnote reference
+        local footnote = HTML.clone(footnote_template)
+        HTML.wrap(elem, footnote)
+        HTML.unwrap(elem)
+
+        -- Create footnote link elements.
+        local link_elem = HTML.clone(ref_template)
+        local html_link = HTML.create_element("a", tostring(i))
+        HTML.append(link_elem, html_link)
+
+        local backlink_elem = HTML.clone(ref_template)
+        local html_backlink = HTML.create_element("a", tostring(i))
+        HTML.append(backlink_elem, html_backlink)
+        HTML.append(backlink_elem, HTML.create_text(" "))
+
+        -- Append links
+        HTML.insert_after(footnote, link_elem)
+        HTML.prepend(footnote, backlink_elem)
+
+        -- Move to the footnote section
+        HTML.append(container, footnote)
+
+        -- Build links to and from the footnote anchors
+        local id_forward = utils.find_unique_id(globals.page, `footnote-link-{i}`)
+        local id_backward = utils.find_unique_id(globals.page, `footnote-backlink-{i}`)
+
+        HTML.set_attribute(link_elem, "id", `{id_backward}`)
+        HTML.set_attribute(backlink_elem, "id", `{id_forward}`)
+        HTML.set_attribute(html_link, "href", `#{id_forward}`)
+        HTML.set_attribute(html_backlink, "href", `#{id_backward}`)
+    end
+end
+
 nyi("breadcrumbs")
 nyi("relative_links")
 nyi("absolute_links")

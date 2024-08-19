@@ -59,7 +59,7 @@ local function build_ctx(globals): TocContext
     }
 end
 
-local function tag_with_ids(ctx: TocContext, node): TocIndex
+local function tag_with_ids(page: NodeRef, ctx: TocContext, node): TocIndex
     if node.heading then
         local id = HTML.get_attribute(node.heading, "id")
         if id then
@@ -68,23 +68,15 @@ local function tag_with_ids(ctx: TocContext, node): TocIndex
             end
             node.id = id
         else
-            local orig_slug = String.slugify(HTML.inner_text(node.heading))
-            local slug = orig_slug
-
-            local i = 2
-            while HTML.select_one(ctx.page, `[id='{String.escape_css(slug)}']`) do
-                slug = `{orig_slug}-{i}`
-                i += 1
-            end
-
             -- Assign the ID
+            local slug = utils.find_unique_id(page, String.slugify(HTML.inner_text(node.heading)))
             HTML.set_attribute(node.heading, "id", slug)
             node.id = slug
         end
     end
 
     for _, v in node.children do
-        tag_with_ids(ctx, v)
+        tag_with_ids(page, ctx, v)
     end
 
     return node
@@ -171,7 +163,7 @@ local function toc(globals)
         children = HTML.get_headings_tree(globals.page) :: any,
     }
     if #tree.children > 0 then
-        local nodes = tag_with_ids(ctx, tree :: any)
+        local nodes = tag_with_ids(globals.page, ctx, tree :: any)
         local toc_node = build_toc(ctx, nodes, 1)
         if ctx.heading_links then
             build_section_tags(ctx, nodes, true)

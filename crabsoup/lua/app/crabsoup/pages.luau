@@ -1,4 +1,5 @@
 --!strict
+--!native
 
 local template = require("crabsoup.template")
 local utils = require("crabsoup.utils")
@@ -6,7 +7,6 @@ local widget = require("crabsoup.widget")
 
 local module = {}
 
-@native
 local function build_globals(config, source_path, target_path): any
     local relative_prefix = config.settings.site_dir
     while string.endswith(relative_prefix, "/") do
@@ -69,7 +69,6 @@ local function strip_doctype(elem)
 end
 
 local warned_extensions = {}
-@native
 function module.process_page(config, source_path, target_path)
     local extension = Sys.get_extension(source_path)
     local processor = config.raw.parsed.preprocessors[extension]
@@ -82,7 +81,7 @@ function module.process_page(config, source_path, target_path)
     if not processor then
         if not warned_extensions[extension] and extension ~= "htm" and extension ~= "html" then
             warned_extensions[extension] = true
-            Log.warn("Extension '.{extension}' has no preprocessor defined. It will be treated as a HTML document.")
+            Log.warn(`Extension '.{extension}' has no preprocessor defined. It will be treated as a HTML document.`)
         end
         page = HTML.parse(Sys.read_file(source_path))
     else

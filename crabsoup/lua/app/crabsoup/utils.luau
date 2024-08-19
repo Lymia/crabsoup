@@ -107,4 +107,25 @@ function module.parse_command(value): { shell: string } | { string } | nil
     end
 end
 
+function module.find_unique_id(page: NodeRef, base_id: string): string
+    local id = base_id
+
+    local i = 2
+    while HTML.select_one(page, `[id='{String.escape_css(id)}']`) do
+        id = `{base_id}-{i}`
+        i += 1
+    end
+
+    return id
+end
+
+function module.only_child(node: NodeRef): NodeRef
+    local elems = Table.filter_list(HTML.is_element, HTML.children(node))
+    if #elems == 1 then
+        return elems[1]
+    else
+        return error(`Fragment '{HTML.to_string(node)}' should contain exactly one element.`)
+    end
+end
+
 return module
