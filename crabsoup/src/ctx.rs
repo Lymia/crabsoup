@@ -1,19 +1,31 @@
 use crate::libs::{analyze, base, codec, date, digest, html, process, regex, string, sys};
 use mlua::{
-    prelude::LuaFunction, serde::ser, ChunkMode, Lua, LuaOptions, LuaSerdeExt, Result, StdLib,
-    Table, Thread,
+    ffi::luau_setfflag, prelude::LuaFunction, serde::ser, ChunkMode, Lua, LuaOptions, LuaSerdeExt,
+    Result, StdLib, Table, Thread,
 };
 use serde::Serialize;
+use std::sync::OnceLock;
 
 const SHARED_TABLE_LOC: &str = "crabsoup-shared";
 
 include!(concat!(env!("OUT_DIR"), "/luau_modules.rs"));
+
+fn set_fflags() {
+    static ONCE_LOCK: OnceLock<()> = OnceLock::new();
+    ONCE_LOCK.get_or_init(|| unsafe {
+        luau_setfflag(c"LuauAttributeSyntax".as_ptr(), 1);
+        luau_setfflag(c"LuauNativeAttribute".as_ptr(), 1);
+        luau_setfflag(c"LintRedundantNativeAttribute".as_ptr(), 1);
+    });
+}
 
 pub struct CrabsoupLuaContext {
     lua: Lua,
 }
 impl CrabsoupLuaContext {
     pub fn new() -> Result<Self> {
+        set_fflags();
+
         let libs = StdLib::ALL ^ StdLib::PACKAGE;
         let lua = Lua::new_with(libs, LuaOptions::new())?;
 

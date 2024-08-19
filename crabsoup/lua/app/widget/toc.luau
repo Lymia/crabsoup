@@ -1,4 +1,5 @@
 --!strict
+--!native
 
 local utils = require("crabsoup.utils")
 

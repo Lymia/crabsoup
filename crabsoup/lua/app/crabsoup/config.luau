@@ -67,6 +67,13 @@ local schema: Schema = {
             __allow_unknown = true,
         },
     },
+    hooks = {
+        __kind = "string_map",
+        __inner = {
+            file = ty_string,
+            lua_source = ty_string,
+        },
+    },
     templates = {
         __kind = "string_map",
         __inner = {

@@ -6,6 +6,7 @@ local widget = require("crabsoup.widget")
 
 local module = {}
 
+@native
 local function build_globals(config, source_path, target_path): any
     local relative_prefix = config.settings.site_dir
     while string.endswith(relative_prefix, "/") do
@@ -57,6 +58,7 @@ local function build_globals(config, source_path, target_path): any
 end
 
 local warned_extensions = {}
+@native
 function module.process_page(config, source_path, target_path)
     local extension = Sys.get_extension(source_path)
     local processor = config.raw.parsed.preprocessors[extension]

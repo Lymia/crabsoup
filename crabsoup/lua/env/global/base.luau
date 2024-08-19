@@ -14,14 +14,17 @@ local string_sub = string.sub
 _G._CRABSOUP_VERSION = baselib._VERSION
 
 -- Extensions to the standard string API
+@native
 function _G.string.trim(str)
     return string_gsub(str, "^%s*(.-)%s*$", "%1")
 end
 
+@native
 function _G.string.startswith(str: string, start: string): boolean
     return start == "" or string_sub(str, 1, #start) == start
 end
 
+@native
 function _G.string.endswith(str: string, ending: string): boolean
     return ending == "" or string_sub(str, -#ending) == ending
 end
@@ -33,6 +36,7 @@ _G.math.isfinite = baselib.is_finite
 _G.os.sleep = baselib.sleep
 
 -- Extensions to the standard table API
+@native
 function _G.table.pop(table)
     local len = #table
     local value = table[len]
@@ -52,6 +56,7 @@ function shared.mark_system_fenv(env)
     system_fenv[env] = true
 end
 
+@native
 local function get_function_for_level(level: number): (...any) -> any
     if not baselib.is_finite(level) or math_round(level) ~= level then
         return error("numeric level must be an integer", 3)
@@ -66,6 +71,8 @@ local function get_function_for_level(level: number): (...any) -> any
         return func
     end
 end
+
+@native
 local function retrieve_target(target: number | (...any) -> any | nil): (any?, (...any) -> any, string?)
     local target_out, result, source
     if not target or target == 0 then
@@ -86,6 +93,7 @@ local function retrieve_target(target: number | (...any) -> any | nil): (any?, (
     return target_out, result, source
 end
 
+@native
 function _G.getfenv(target: number | (...any) -> any | nil): any
     local _, result, source = retrieve_target(target)
     if system_fenv[result] then
@@ -98,6 +106,8 @@ function _G.getfenv(target: number | (...any) -> any | nil): any
     baselib.deoptimize_env(result)
     return result
 end
+
+@native
 function _G.setfenv(target: number | (...any) -> any | nil, table: any)
     if typeof(table) ~= "table" then
         return error("function environment must be a table", 2)
@@ -122,6 +132,8 @@ end
 
 -- Reimplement base library functions
 local getfenv = _G.getfenv
+
+@native
 local function loadstring(chunk: string, chunkname: string?, mode: string?, env: any?): (((...any) -> any)?, string?)
     if type(chunk) ~= "string" then
         return error("chunk must be a string")
@@ -144,6 +156,7 @@ local function loadstring(chunk: string, chunkname: string?, mode: string?, env:
     return baselib.loadstring(chunk, chunkname, env)
 end
 
+@native
 function _G.load(
     chunk: () -> string? | string,
     chunkname: string?,
@@ -174,10 +187,12 @@ end
 
 _G.loadstring = loadstring
 
+@native
 function _G.loadfile(filename: string, mode: string?, env: any?): (((...any) -> any)?, string?)
     return load(Sys.read_file(filename), `@{filename}`, mode, env)
 end
 
+@native
 function _G.dofile(filename: string, mode: string?, env: any?): any
     local chunk, err = loadfile(filename, mode, env)
     if chunk then

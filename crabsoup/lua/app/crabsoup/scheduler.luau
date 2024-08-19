@@ -2,6 +2,7 @@
 
 local module = {}
 
+@native
 function module.wait_on_processes(processes: { { name: string, thread: () -> () } })
     local queued = {}
     for k, v in processes do

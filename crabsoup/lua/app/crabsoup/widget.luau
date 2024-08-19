@@ -22,6 +22,7 @@ type Widget = {
     persistent_data: any,
 }
 
+@native
 local function parse_widgets(config): WidgetsConfig
     local list = {} :: WidgetsConfig
     for k, v in config.parsed.widgets do
@@ -37,6 +38,7 @@ local function parse_widgets(config): WidgetsConfig
     return list
 end
 
+@native
 local function resolve_widgets(plugins, widgets: WidgetsConfig): { Widget }
     local full_list = {}
     for k, v in widgets do
@@ -74,10 +76,12 @@ local function resolve_widgets(plugins, widgets: WidgetsConfig): { Widget }
     return resolved_list
 end
 
+@native
 function module.load_widgets(plugins, config): { Widget }
     return resolve_widgets(plugins, parse_widgets(config))
 end
 
+@native
 local function run_widget(widget: Widget, globals: Globals)
     Log.trace(`Running widget '{widget.name}' for page '{globals.page_file}'`)
 
@@ -114,6 +118,7 @@ local function run_widget(widget: Widget, globals: Globals)
     end
 end
 
+@native
 function module.run_widgets(widgets: { Widget }, globals: Globals)
     for _, v in widgets do
         run_widget(v, globals)

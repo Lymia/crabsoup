@@ -40,6 +40,11 @@ local plugin_globals = {
     "global_data",
     "soupault_pass",
 
+    -- Hook-specific globals
+    "force",
+    "page_source",
+    "hook_config",
+
     -- crabsoup extensions
     "relative_page_file",
     "global_config",
@@ -73,6 +78,20 @@ function PluginManager:register_inline_plugin(name, source, override)
     self.plugins[name] = Plugin.load_plugin(self.require_ctx, name, source, plugin_globals)
 end
 
+local function load_plugin(self, table_name, prefix, table)
+    for k, v in table do
+        if v.file and v.lua_source then
+            error(`'[{table_name}.{k}]' declares both a 'file' and 'lua_source' field. Please only use one.`)
+        elseif v.file then
+            self:register_plugin(v.file, `{prefix}{k}`)
+        elseif v.lua_source then
+            self:register_inline_plugin(`{prefix}{k}`, v.lua_source)
+        else
+            error(`'[{table_name}.{k}]' does not declare a 'file' our 'lua_source' field.`)
+        end
+    end
+end
+
 function PluginManager:register_plugin_from_toml(config)
     for _, v in builtin_modules do
         local module = require(v)
@@ -91,17 +110,8 @@ function PluginManager:register_plugin_from_toml(config)
         end
     end
 
-    for k, v in config.parsed.plugins do
-        if v.file and v.lua_source then
-            error(`'[plugin.{k}]' declares both a 'file' and 'lua_source' field. Please only use one.`)
-        elseif v.file then
-            self:register_plugin(v.file, k)
-        elseif v.lua_source then
-            self:register_inline_plugin(k, v.lua_source)
-        else
-            error(`'[plugin.{k}]' does not declare a 'file' our 'lua_source' field.`)
-        end
-    end
+    load_plugin(self, "plugin", "", config.parsed.plugins)
+    load_plugin(self, "hooks", "$hook:", config.parsed.plugins)
 end
 
 function PluginManager:register_plugins_from_dir(dir)

@@ -1,4 +1,5 @@
 --!strict
+--!native
 
 local shared, _G = ...
 
@@ -194,7 +195,19 @@ local function compile_chunk(
         new_table["require"] = require_func
         new_table["require_env"] = require_env
 
-        return shared.baselib.load_in_new_thread(load_chunk, setmetatable(new_table, { __index = mt.env_table }))
+        local env_table = mt.env_table
+        return shared.baselib.load_in_new_thread(
+            load_chunk,
+            setmetatable(new_table, {
+                __index = function(t, n): any?
+                    if parsed_globals[n] then
+                        return error(`Global '{n}' is not available in this context.`)
+                    else
+                        return env_table[n]
+                    end
+                end,
+            })
+        )
     end
 end
 local function compile_preloaded_chunk(
@@ -395,7 +408,7 @@ function Plugin.create_require_func(ctx: RequireEnv): (string) -> any
                 local thread = chunk()
                 local result, value = coroutine.resume(thread)
                 if not result then
-                    return error(`require failed: {value}`)
+                    return error(`require failed:\n{value}`)
                 end
                 if coroutine.status(thread) ~= "dead" then
                     return error("require module yielded instead of returning")

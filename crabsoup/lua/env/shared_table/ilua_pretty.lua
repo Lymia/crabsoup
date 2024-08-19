@@ -1,3 +1,5 @@
+--!native
+
 --
 -- ilua_pretty.lua
 --

@@ -1,6 +1,6 @@
 use anyhow::Result;
 use crabsoup_mlua_analyze::LuaAnalyzerBuilder;
-use mlua::Compiler;
+use mlua::{ffi::luau_setfflag, Compiler};
 use std::path::PathBuf;
 
 fn compile_script(input: &[u8], has_require: bool) -> Vec<u8> {
@@ -15,6 +15,14 @@ fn compile_script(input: &[u8], has_require: bool) -> Vec<u8> {
 }
 
 pub fn main() -> Result<()> {
+    // TODO: Set this in a far cleaner way
+    unsafe {
+        luau_setfflag(c"LuauAttributeSyntax".as_ptr(), 1);
+        luau_setfflag(c"LuauNativeAttribute".as_ptr(), 1);
+        luau_setfflag(c"LintRedundantNativeAttribute".as_ptr(), 1);
+    }
+
+    // do the actual compilation
     let mut out_path = PathBuf::from(std::env::var("OUT_DIR")?);
     out_path.push("luau_compiled");
     std::fs::create_dir_all(&out_path)?;

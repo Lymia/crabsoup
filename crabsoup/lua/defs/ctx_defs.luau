@@ -113,6 +113,10 @@ do
         analyzer:set_deprecation("tan", "math.tan")
         analyzer:set_deprecation("random", "math.random")
         analyzer:set_deprecation("randomseed", "math.randomseed")
+
+        -- Plugin globals
+        analyzer:set_deprecation("force")
+        analyzer:set_deprecation("hook_config", "config")
     end
 
     module.plugin = {}

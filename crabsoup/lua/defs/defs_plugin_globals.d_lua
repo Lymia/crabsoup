@@ -14,6 +14,11 @@ declare persistent_data: any
 declare global_data: any
 declare soupault_pass: number
 
+-- Hook-specific globals
+declare force: boolean
+declare page_source: string
+declare hook_config: any
+
 -- Crabsoup extensions
 declare relative_page_file: string
 declare global_config: any
