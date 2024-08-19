@@ -4,7 +4,7 @@ local module = {}
 
 local init = require("crabsoup.init")
 
-function module.main(args)
+local function main(args): any
     Log.info(`crabsoup v{Plugin.crabsoup_version()} (compatible: Soupault v{Plugin.soupault_version()})`)
 
     print(Value.repr(args))
@@ -22,6 +22,14 @@ function module.main(args)
 
     local config = init.init_from_configuration(target)
     init.process_pages(config)
+
+    return nil
+end
+function module.main(args)
+    local result, value = xpcall(main, Plugin.traceback, args)
+    if not result then
+        Log.error(`Error encountered while generating website:\n{value}`)
+    end
 end
 
 return module

@@ -6,13 +6,82 @@ local Plugin = _G.Plugin or {}
 _G.Plugin = Plugin
 
 -- Error handling
-local function traceback(message: any?): string
-    print(_G.Value.repr(tostring(message)))
+local function traceback_impl(message: any?, is_plugin: boolean): string
+    local msg_str = string.trim(tostring(message)) .. "\n"
 
-    local msg_str = tostring(message)
-    return debug.traceback(msg_str)
+    local has_traceback_line = string.find(msg_str, "\nstack traceback:\n")
+    local has_omitted_line = string.find(msg_str, "\t%(... system code omitted...%)\n")
+
+    if not has_omitted_line then
+        if not has_traceback_line then
+            msg_str ..= "stack traceback:\n"
+        else
+            msg_str ..= `\t[C]: coroutine call from thread '{coroutine.running() or "main"}'\n`
+        end
+
+        local level = 2
+        local frames = {}
+        local initial_omit = true
+        while true do
+            local source, line, name = debug.info(level, "sln")
+            if not source then
+                break
+            end
+
+            -- Omit initial frames that are mostly junk
+            if initial_omit then
+                local is_error = source == "[C]" and name == "error"
+                local is_traceback = source == "<env>/shared_env/require.luau" and string.startswith(name, "traceback")
+                if is_error or is_traceback then
+                    level += 1
+                    continue
+                end
+                initial_omit = false
+            end
+
+            -- build a traceback line
+            local traceback_line = `{source}:`
+            if line >= 0 then
+                traceback_line ..= `{line}:`
+            end
+            traceback_line ..= " "
+            if name and name ~= "" then
+                traceback_line ..= `in function '{name}'`
+            else
+                traceback_line ..= "in ?"
+            end
+
+            table.insert(frames, `\t{traceback_line}\n`)
+            level += 1
+        end
+
+        if is_plugin then
+            -- attempt to omit the xpcall + base frames.
+            if string.startswith(frames[#frames], "\t<env>/shared_env/require.luau:") then
+                frames[#frames] = nil
+
+                if frames[#frames] == "\t[C]: in function 'xpcall'\n" then
+                    frames[#frames] = nil
+                end
+            end
+
+            msg_str ..= table.concat(frames, "")
+            msg_str ..= "\t(... system code omitted...)\n"
+        else
+            msg_str ..= table.concat(frames, "")
+        end
+    end
+
+    return string.trim(msg_str)
+end
+local function traceback(message: any?): string
+    return traceback_impl(message, false)
+end
+local function traceback_plugin(message: any?): string
+    return traceback_impl(message, true)
 end
 Plugin.traceback = traceback
+Plugin.traceback_plugin = traceback_plugin
 
 -- Environment implementation
 local env_standalone = shared.baselib.create_opaque_environment()
@@ -106,7 +175,7 @@ local function compile_chunk(
 
         local load_chunk = function()
             local func = shared.baselib.load_precompiled_chunk(compiled_chunk, full_chunkname)
-            return result_helper(xpcall(func, traceback, full_chunkname))
+            return result_helper(xpcall(func, if is_module then traceback else traceback_plugin, full_chunkname))
         end
 
         local new_table = {}
