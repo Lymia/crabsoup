@@ -10,6 +10,7 @@ local widget = require("crabsoup.widget")
 type Configuration = {
     raw: any,
     settings: any,
+    doctype: NodeRef,
     plugin_manager: any,
     widget_list: { any },
     templates: any,
@@ -17,6 +18,16 @@ type Configuration = {
 }
 
 local module = {}
+
+local function extract_doctype(elem)
+    local node = HTML.parse_document(elem)
+    for _, v in HTML.children(node) do
+        if HTML.is_doctype(v) then
+            return v
+        end
+    end
+    return error("No doctype found ")
+end
 
 function module.init_from_configuration(toml_file): Configuration
     -- load and parse configurations
@@ -40,6 +51,7 @@ function module.init_from_configuration(toml_file): Configuration
     return {
         raw = config,
         settings = config.parsed.settings,
+        doctype = extract_doctype(config.parsed.settings.doctype),
         plugin_manager = plugin_manager,
         widget_list = widget_list,
         templates = templates,

@@ -76,7 +76,7 @@ doctype = "<!DOCTYPE html>"
 pretty_print_html = true
 
 # Plugins can be either automatically discovered or loaded explicitly.
-# By default discovery is enabled and the place where soupault is looking is the plugins/ subdirectory
+# By default, discovery is enabled and the place where soupault is looking is the plugins/ subdirectory
 # in your project.
 # E.g., a file at plugins/my-plugin.lua will be registered as a widget named "my-plugin".
 plugin_discovery = true

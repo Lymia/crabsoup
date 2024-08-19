@@ -57,6 +57,17 @@ local function build_globals(config, source_path, target_path): any
     }
 end
 
+local function has_doctype(elem)
+    return Table.for_any(HTML.is_doctype, HTML.children(elem))
+end
+local function strip_doctype(elem)
+    for _, v in HTML.children(elem) do
+        if HTML.is_doctype(v) then
+            HTML.delete(v)
+        end
+    end
+end
+
 local warned_extensions = {}
 @native
 function module.process_page(config, source_path, target_path)
@@ -99,6 +110,15 @@ function module.process_page(config, source_path, target_path)
     -- Apply plugins
     widget.run_widgets(config.widget_list, globals)
 
+    -- Fix doctype
+    if not config.settings.keep_doctype then
+        strip_doctype(globals.page)
+    end
+    if not has_doctype(globals.page) then
+        HTML.prepend(globals.page, HTML.clone(config.doctype))
+    end
+
+    -- Return and pretty print the page
     return HTML.pretty_print(globals.page)
 end
 
