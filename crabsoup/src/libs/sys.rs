@@ -214,7 +214,9 @@ pub fn create_sys_table(lua: &Lua) -> Result<Table> {
         "join_path",
         lua.create_function(|lua, (path_a, path_b): (LuaString, LuaString)| {
             let mut path = PathBuf::from(path_a.to_str()?);
-            path.push(path_b.to_str()?);
+            for component in PathBuf::from(path_b.to_str()?).components() {
+                path.push(component.as_os_str().to_string_lossy().trim_start_matches('/'));
+            }
             Ok(lua.create_string(&*path.to_string_lossy())?)
         })?,
     )?;
