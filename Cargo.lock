@@ -443,6 +443,7 @@ dependencies = [
  "toml",
  "tracing",
  "tracing-subscriber",
+ "typed-path",
  "urlencoding",
  "wyrand",
 ]
@@ -1948,6 +1949,12 @@ dependencies = [
  "tracing-core",
  "tracing-log",
 ]
+
+[[package]]
+name = "typed-path"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "04645b6c01cfb2ddabffc7c67ae6bfe7c3e28a5c37d729f6bb498e784f1fd70c"
 
 [[package]]
 name = "typeid"

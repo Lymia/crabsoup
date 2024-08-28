@@ -1,4 +1,5 @@
 --!strict
+--!native
 
 local utils = require("crabsoup.utils")
 
@@ -59,7 +60,6 @@ function module.parse_templates(config): TemplateInfo
     }
 end
 
-@native
 local function resolve_template(info: TemplateInfo, globals: Globals): Template
     local matches = {}
     local matches_k = {}
@@ -81,7 +81,6 @@ local function resolve_template(info: TemplateInfo, globals: Globals): Template
     end
 end
 
-@native
 function module.apply_template(info: TemplateInfo, globals: Globals): ()
     local template = resolve_template(info, globals)
 

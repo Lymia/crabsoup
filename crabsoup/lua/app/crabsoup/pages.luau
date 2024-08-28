@@ -35,7 +35,7 @@ local function build_globals(config, source_path, target_path): any
         page_file = source_path,
         target_dir = `{Sys.dirname(target_path)}/`,
         target_file = target_path,
-        nav_path = Sys.split_path_url(Sys.dirname_url(page_url)),
+        nav_path = Sys.split_path(Sys.dirname(page_url)),
         page_url = `/{string.gsub(page_url, "\\", "/")}`,
         config = nil, -- Set by widget module
         soupault_config = config.raw.raw,

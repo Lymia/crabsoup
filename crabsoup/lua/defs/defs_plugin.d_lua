@@ -21,6 +21,14 @@ declare Sys: typeof(Sys) & {
     get_program_output: (string) -> string,
     random: (number) -> number,
     strip_extensions: (path: string) -> string,
+    basename_unix: (path: string) -> string,
+    basename_url: (path: string) -> string,
+    dirname_unix: (path: string) -> string,
+    dirname_url: (path: string) -> string,
+    join_path_unix: (path: string, fragment: string) -> string,
+    join_url: (path: string, fragment: string) -> string,
+    split_path_unix: (path: string) -> {string},
+    split_path_url: (path: string) -> {string},
 }
 declare Table: typeof(Table) & {
     has_key: <K, V>(value: { [K]: V }, key: K) -> boolean,

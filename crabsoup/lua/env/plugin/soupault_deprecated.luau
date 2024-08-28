@@ -114,6 +114,16 @@ end
 
 Sys.strip_extensions = Sys.strip_all_extensions
 
+Sys.basename_unix = Sys.basename
+Sys.dirname_unix = Sys.dirname
+Sys.join_path_unix = Sys.join_path
+Sys.split_path_unix = Sys.split_path
+
+Sys.basename_url = Sys.basename
+Sys.dirname_url = Sys.dirname
+Sys.join_url = Sys.join_path
+Sys.split_path_url = Sys.split_path
+
 -- Function definitions for 'HTML' module
 local function join_selectors(selectors: any?): string
     if type(selectors) == "table" then

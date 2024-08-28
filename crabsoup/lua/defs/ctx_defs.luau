@@ -61,6 +61,14 @@ do
         analyzer:set_deprecation("Sys.get_program_output", "Process.run_output")
         analyzer:set_deprecation("Sys.random", "math.random")
         analyzer:set_deprecation("Sys.strip_extensions", "Sys.strip_all_extensions")
+        analyzer:set_deprecation("Sys.basename_unix", "Sys.basename")
+        analyzer:set_deprecation("Sys.dirname_unix", "Sys.dirname")
+        analyzer:set_deprecation("Sys.join_path_unix", "Sys.join_path")
+        analyzer:set_deprecation("Sys.split_path_unix", "Sys.split_path")
+        analyzer:set_deprecation("Sys.basename_url", "Sys.basename")
+        analyzer:set_deprecation("Sys.dirname_url", "Sys.dirname")
+        analyzer:set_deprecation("Sys.join_url", "Sys.join_path")
+        analyzer:set_deprecation("Sys.split_path_url", "Sys.split_path")
 
         -- Table library
         analyzer:set_deprecation("Table.has_key", "table[x]")
