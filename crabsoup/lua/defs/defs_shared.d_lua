@@ -52,6 +52,11 @@ declare Log: {
     info: <T>(...T) -> (),
     debug: <T>(...T) -> (),
     trace: <T>(...T) -> (),
+    error_enabled: boolean,
+    warn_enabled: boolean,
+    info_enabled: boolean,
+    debug_enabled: boolean,
+    trace_enabled: boolean,
 }
 declare String: {
     truncate: (str: string, length: number, trailer: string?) -> string,

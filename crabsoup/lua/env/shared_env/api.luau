@@ -71,17 +71,6 @@ function Plugin.crabsoup_version(): string
     return crabsoup_version
 end
 
--- Function definitions for `Log` module
-local Log = _G.Log or {}
-_G.Log = Log
-
-Log.trace = baselib.trace
-Log.debug = baselib.debug
-Log.info = baselib.info
-Log.warn = baselib.warn
-Log.warning = baselib.warn
-Log.error = baselib.error
-
 -- Function definitions for `Date` module
 local Date = _G.Date or {}
 _G.Date = Date

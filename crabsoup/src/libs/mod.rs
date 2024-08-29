@@ -4,6 +4,7 @@ pub mod codec;
 pub mod date;
 pub mod digest;
 pub mod html;
+pub mod log;
 pub mod process;
 pub mod regex;
 pub mod string;

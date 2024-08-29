@@ -32,7 +32,9 @@ function module.wait_on_processes(processes: { { name: string, thread: () -> () 
 
         if coroutine.status(active.thread) == "suspended" then
             if typeof(value) == "Process" then
-                Log.trace(`Deferring page '{active.name}' to wait for process...`)
+                if Log.trace_enabled then
+                    Log.trace(`Deferring page '{active.name}' to wait for process...`)
+                end
                 table.insert(deferred, { obj = active, proc = value })
             elseif typeof(value) == "PluginInstruction" then
                 if value:is_exit() then
@@ -66,7 +68,9 @@ function module.wait_on_processes(processes: { { name: string, thread: () -> () 
             for i = #deferred, 1, -1 do
                 local obj = deferred[i]
                 if obj.proc and Process.is_completed(obj.proc) then
-                    Log.trace(`Resuming deferred page '{obj.obj.name}'`)
+                    if Log.trace_enabled then
+                        Log.trace(`Resuming deferred page '{obj.obj.name}'`)
+                    end
                     obj.obj.resume_with = Process.wait_on(obj.proc)
                     table.insert(queued, obj.obj)
                     table.remove(deferred, i)

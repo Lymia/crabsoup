@@ -24,7 +24,7 @@ local function startswith(str: string, start: string): boolean
     return start == "" or string.sub(str, 1, #start) == start
 end
 local function call_env_chunks(env, ...)
-    shared.baselib.trace(`Loading Lua environment: {env}`)
+    Log.trace(`Loading Lua environment: {env}`)
 
     local dir = `env/{env}/`
     local files = {}
@@ -45,7 +45,7 @@ local function call_env_chunks(env, ...)
             chunkname = `@<rt>/{name}`
         end
 
-        shared.baselib.trace(`- Loading runtime sources: {chunkname}`)
+        Log.trace(`- Loading runtime sources: {chunkname}`)
         local func = shared.baselib.loadstring_rt(chunk, chunkname)
         func(...)
     end
@@ -98,6 +98,7 @@ _G.CSV = shared.codecs.CSV
 _G.Date = shared.Date
 _G.Digest = shared.Digest
 _G.HTML = shared.HTML
+_G.Log = shared.Log
 _G.JSON = shared.codecs.JSON
 _G.Process = shared.Process
 _G.Regex = shared.Regex

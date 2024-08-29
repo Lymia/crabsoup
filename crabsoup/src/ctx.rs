@@ -1,4 +1,4 @@
-use crate::libs::{analyze, base, codec, date, digest, html, process, regex, string, sys};
+use crate::libs::{analyze, base, codec, date, digest, html, log, process, regex, string, sys};
 use mlua::{
     ffi::luau_setfflag, prelude::LuaFunction, serde::ser, ChunkMode, Lua, LuaOptions, LuaSerdeExt,
     Result, StdLib, Table, Thread,
@@ -40,6 +40,7 @@ impl CrabsoupLuaContext {
             shared_table.set("Date", date::create_date_table(&lua)?)?;
             shared_table.set("Digest", digest::create_digest_table(&lua)?)?;
             shared_table.set("HTML", html::create_html_table(&lua)?)?;
+            shared_table.set("Log", log::create_log_table(&lua)?)?;
             shared_table.set("Process", process::create_process_table(&lua)?)?;
             shared_table.set("Regex", regex::create_regex_table(&lua)?)?;
             shared_table.set("String", string::create_string_table(&lua)?)?;

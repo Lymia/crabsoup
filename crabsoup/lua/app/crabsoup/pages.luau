@@ -88,10 +88,14 @@ function module.process_page(config, source_path, target_path)
         local raw_cmd = table.clone(processor) :: any
         if raw_cmd.shell then
             raw_cmd.shell = `{raw_cmd.shell} "{source_path}"`
-            Log.trace(`Run preprocessor: {raw_cmd.shell}`)
+            if Log.trace_enabled then
+                Log.trace(`Run preprocessor: {raw_cmd.shell}`)
+            end
         else
             table.insert(raw_cmd, source_path)
-            Log.trace(`Run preprocessor: {Value.repr_compact(raw_cmd)}`)
+            if Log.trace_enabled then
+                Log.trace(`Run preprocessor: {Value.repr_compact(raw_cmd)}`)
+            end
         end
         raw_cmd.capture_stdout = true
         utils.env_from_globals(raw_cmd, globals)

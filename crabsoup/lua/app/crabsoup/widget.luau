@@ -80,7 +80,9 @@ function module.load_widgets(plugins, config): { Widget }
 end
 
 local function run_widget(widget: Widget, globals: Globals)
-    Log.trace(`Running widget '{widget.name}' for page '{globals.page_file}'`)
+    if Log.trace_enabled then
+        Log.trace(`Running widget '{widget.name}' for page '{globals.page_file}'`)
+    end
 
     local pass_globals = table.clone(globals)
     pass_globals.config = Table.deep_clone(widget.config) -- some plugins modify this, so unfreeze it

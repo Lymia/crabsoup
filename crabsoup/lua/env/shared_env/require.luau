@@ -148,7 +148,7 @@ local function compile_chunk(
         return error(`Type error in '{chunkname}'!`)
     end
 
-    shared.baselib.debug(`Compiling chunk '{chunkname}'...`)
+    Log.debug(`Compiling chunk '{chunkname}'...`)
     local compiled_chunk = shared.baselib.compile_for_environment(chunk, allowed_globals)
 
     local function result_helper(status, ...)
@@ -172,7 +172,7 @@ local function compile_chunk(
             full_chunkname ..= `#{temp_tag}`
         end
 
-        shared.baselib.trace(`Loading chunk '{full_chunkname}'...`)
+        Log.trace(`Loading chunk '{full_chunkname}'...`)
 
         local load_chunk = function()
             local func = shared.baselib.load_precompiled_chunk(compiled_chunk, full_chunkname)
@@ -222,7 +222,7 @@ local function compile_preloaded_chunk(
         return shared.baselib.loadstring_rt(chunk, chunkname)(chunkname)
     end
     return function(global_values: { [string]: any }?)
-        shared.baselib.trace(`Loading builtin chunk '{chunkname}'...`)
+        Log.trace(`Loading builtin chunk '{chunkname}'...`)
 
         if global_values then
             for _ in global_values do
@@ -416,7 +416,7 @@ function Plugin.create_require_func(ctx: RequireEnv): (string) -> any
 
                 if not value then
                     value = true
-                    shared.baselib.warn(`Module '{name}' returned no value. This is likely not what you want.`)
+                    Log.warn(`Module '{name}' returned no value. This is likely not what you want.`)
                 end
                 loaded[name] = value
 

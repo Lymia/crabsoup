@@ -7,12 +7,11 @@ use mlua::{
     },
     lua_State,
     prelude::LuaString,
-    ChunkMode, Compiler, Error, Lua, MultiValue, Result, Table, UserData, UserDataFields,
-    UserDataMethods, UserDataRef, Value,
+    ChunkMode, Compiler, Error, Lua, Result, Table, UserData, UserDataFields, UserDataMethods,
+    UserDataRef, Value,
 };
 use rustyline::{error::ReadlineError, DefaultEditor};
 use std::borrow::Cow;
-use tracing::{debug, error, info, trace, warn};
 
 pub fn create_base_table(lua: &Lua) -> Result<Table> {
     let table = lua.create_table()?;
@@ -75,77 +74,6 @@ pub fn create_base_table(lua: &Lua) -> Result<Table> {
     table.raw_set("is_nan", lua.create_function(|_, f: f64| Ok(f.is_nan()))?)?;
     table.raw_set("is_inf", lua.create_function(|_, f: f64| Ok(f.is_infinite()))?)?;
     table.raw_set("is_finite", lua.create_function(|_, f: f64| Ok(f.is_finite()))?)?;
-
-    fn target(lua: &Lua) -> Result<Cow<'static, str>> {
-        if let Some(debug) = lua.inspect_stack(1) {
-            if let Some(source) = debug.source().source {
-                if source.starts_with("@") {
-                    let source = source.strip_prefix("@").unwrap_or(&source);
-                    let source = source.strip_suffix(".lua").unwrap_or(&source);
-                    let source = source.strip_suffix(".luau").unwrap_or(&source);
-                    let source = source.replace(".lua#", "#");
-                    let source = source.replace(".luau#", "#");
-                    Ok(source.into())
-                } else {
-                    Ok("<loadstring>".into())
-                }
-            } else {
-                Ok(module_path!().into())
-            }
-        } else {
-            Ok(module_path!().into())
-        }
-    }
-    fn value_to_str(value: &MultiValue) -> Result<String> {
-        let mut values = String::new();
-        for value in value.iter() {
-            if !values.is_empty() {
-                values.push('\t');
-            }
-            values.push_str(&value.to_string()?);
-        }
-        Ok(values)
-    }
-    table.raw_set(
-        "error",
-        lua.create_function(|lua, value: MultiValue| {
-            let target_str = target(lua)?;
-            error!(target: "Lua", "{target_str}: {}", value_to_str(&value)?);
-            Ok(())
-        })?,
-    )?;
-    table.raw_set(
-        "warn",
-        lua.create_function(|lua, value: MultiValue| {
-            let target_str = target(lua)?;
-            warn!(target: "Lua", "{target_str}: {}", value_to_str(&value)?);
-            Ok(())
-        })?,
-    )?;
-    table.raw_set(
-        "info",
-        lua.create_function(|lua, value: MultiValue| {
-            let target_str = target(lua)?;
-            info!(target: "Lua", "{target_str}: {}", value_to_str(&value)?);
-            Ok(())
-        })?,
-    )?;
-    table.raw_set(
-        "debug",
-        lua.create_function(|lua, value: MultiValue| {
-            let target_str = target(lua)?;
-            debug!(target: "Lua", "{target_str}: {}", value_to_str(&value)?);
-            Ok(())
-        })?,
-    )?;
-    table.raw_set(
-        "trace",
-        lua.create_function(|lua, value: MultiValue| {
-            let target_str = target(lua)?;
-            trace!(target: "Lua", "{target_str}: {}", value_to_str(&value)?);
-            Ok(())
-        })?,
-    )?;
 
     table.raw_set(
         "plugin_fail",

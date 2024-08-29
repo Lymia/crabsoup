@@ -117,7 +117,9 @@ function module.process_pages(config: Configuration)
                 end
 
                 -- enqueue the processor
-                Log.trace(`Enqueue page: '{path}' -> '{target_path}'`)
+                if Log.trace_enabled then
+                    Log.trace(`Enqueue page: '{path}' -> '{target_path}'`)
+                end
                 table.insert(thread_queue, {
                     name = path,
                     thread = function()
