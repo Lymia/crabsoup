@@ -255,7 +255,7 @@ function plugins.wrap(globals)
     require_param(globals, "selector", "wrap")
 
     -- Decode fragment
-    local fragment = HTML.parse_fragment(globals.config.wrapper, "div", globals.config.fragment_root or "main")
+    local fragment = HTML.parse_fragment(globals.config.wrapper, globals.config.fragment_root or "main")
     local elem
     if globals.config.wrapper_selector then
         local selector = utils.parse_toml_selector(globals.config.wrapper_selector)
